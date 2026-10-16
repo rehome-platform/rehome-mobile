@@ -10,8 +10,10 @@ import { colors, spacing } from "@/theme";
 
 export function Screen({
   children,
+  header, // thường là <AppHeader />; đứng yên ở trên, không cuộn
+  footer, // nút chính cố định ở đáy; bàn phím mở thì nằm ngay trên bàn phím
   scroll = false, // true: nội dung cuộn được (form dài)
-  padded = true, // true: cách mép 16
+  padded = true, // true: nội dung cách mép 16
   edges = ["top", "bottom"], // cạnh nào cần tránh tai thỏ / thanh điều hướng
   style,
   contentStyle,
@@ -36,11 +38,13 @@ export function Screen({
 
   return (
     <SafeAreaView edges={edges} style={[styles.fill, styles.bg, style]}>
+      {header}
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {content}
+        {footer ? <View style={styles.footer}>{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -51,4 +55,10 @@ const styles = StyleSheet.create({
   grow: { flexGrow: 1 },
   bg: { backgroundColor: colors.background },
   padded: { padding: spacing.lg },
+  footer: {
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral,
+  },
 });
