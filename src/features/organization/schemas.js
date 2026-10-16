@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { OPERATION_SCOPES, ORG_TYPES } from "@/features/organization/constants";
+import {
+  FILE_RULES,
+  OPERATION_SCOPES,
+  ORG_TYPES,
+} from "@/features/organization/constants";
 import { PASSWORD_REGEX, PHONE_REGEX } from "@/utils/validators";
 
 const CONTACT_PHONE_REGEX = /^0\d{9,10}$/; // di động 10 số hoặc số bàn 11 số (02x xxxx xxxx)
@@ -84,3 +88,43 @@ export const orgRepresentativeSchema = z
     path: ["confirmPassword"],
     error: "Hai mật khẩu chưa khớp",
   });
+
+// OA-03: giấy tờ. Tệp chỉ nằm trong máy (uri); upload khi gửi hồ sơ [CHỜ BE /uploads]
+const CCCD_REGEX = /^\d{12}$/;
+
+const fileSchema = z.object({
+  uri: z.string(),
+  name: z.string(),
+  mimeType: z.string(),
+  size: z.number().nullable(),
+});
+const requiredFile = (message) =>
+  fileSchema.nullable().refine((f) => f !== null, message);
+
+export const orgDocumentsSchema = z.object({
+  cccdFront: requiredFile("Vui lòng thêm ảnh mặt trước CCCD"),
+  cccdBack: requiredFile("Vui lòng thêm ảnh mặt sau CCCD"),
+  cccdName: required("Vui lòng nhập họ tên trên thẻ"),
+  cccdNumber: z
+    .string()
+    .trim()
+    .min(1, "Vui lòng nhập số CCCD")
+    .regex(CCCD_REGEX, "Số CCCD gồm 12 chữ số"),
+  cccdIssueDate: z.string().min(1, "Vui lòng chọn ngày cấp"), // "YYYY-MM-DD"
+  cccdIssuePlace: required("Vui lòng nhập nơi cấp"),
+  legalDocs: z
+    .array(
+      z.object({
+        file: fileSchema,
+        docType: required("Vui lòng nhập loại giấy tờ"),
+        docNumber: z.string().trim(),
+        issueDate: z.string().nullable(),
+        issuer: z.string().trim(),
+      }),
+    )
+    .min(1, "Vui lòng thêm ít nhất 1 giấy tờ pháp lý")
+    .max(
+      FILE_RULES.maxLegalDocs,
+      `Tối đa ${FILE_RULES.maxLegalDocs} giấy tờ pháp lý`,
+    ),
+});

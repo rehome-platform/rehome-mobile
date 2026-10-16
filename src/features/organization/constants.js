@@ -52,3 +52,10 @@ export const OPERATION_SCOPES = [
 
 // Tên 4 bước — dùng cho Stepper
 export const ORG_REGISTER_STEPS = ["Tổ chức", "Đại diện", "Giấy tờ", "Nhận đồ"];
+
+// OA-03: ràng buộc tệp. Tối đa 10 tệp = 2 ảnh CCCD + 8 giấy tờ pháp lý; tối thiểu 3 (2 CCCD + 1 giấy tờ)
+export const FILE_RULES = {
+  maxSizeMB: 5,
+  maxLegalDocs: 8,
+  mimeTypes: ["image/jpeg", "image/png", "application/pdf"],
+};
