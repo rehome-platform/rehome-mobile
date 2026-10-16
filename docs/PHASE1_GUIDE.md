@@ -6,7 +6,8 @@
 > Ký hiệu: **[GIẢ ĐỊNH]** = mình tạm đặt vì chưa có quyết định, phải sửa khi có thông tin thật. **[CHỜ BE]** / **[CHỜ LEAD]** = đã hỏi, đang chờ trả lời (danh sách ở `CLAUDE.md`).
 > API: **code theo thứ đang chạy thật** (Swagger + code `../rehome-backend` nhánh develop), không theo `docs/API_CONTRACT.md` khi lệch. URL, field, cách bóc response chỉ nằm trong `features/*/api/*.real.js` và `src/lib/api`.
 
-> **Trạng thái 16/10 (cuối ngày):** đã xong mục 1 → 8 (nền, API, store, điều hướng) và **AU-02, AU-03, AU-04 chạy với BE thật** (đăng ký → OTP qua mail → đăng nhập). Code trong repo là bản chuẩn; các đoạn code mẫu bên dưới đã được cập nhật theo code thật. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
+> **Trạng thái 17/10 (trưa):** xong mục 1 → 8 và **AU-02 → AU-07, thanh tab Member, PR-01 → PR-04 chạy với BE thật**. Còn: AU-01 splash, OA (tổ chức), Google. **Code trong repo là bản chuẩn** — các đoạn code mẫu từ mục 9 trở đi chỉ là spec rút gọn; khi lệch thì theo code. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
+> **Wireframe là tham khảo** (chốt 17/10): chỗ nào thực tế các app làm tốt hơn thì làm theo thực tế, ghi lại trong bảng 0.3 để lead xem.
 > **Thay đổi lớn so với bản đầu:** không mock auth nữa (gọi thật, test bằng tài khoản thật); `authStore.signIn(tokens)` tự gọi `getMe()`; BE đã có `code` lỗi (`ACCOUNT_BANNED`, `EMAIL_NOT_VERIFIED`, `WRONG_PASSWORD`…) và gửi được mail OTP.
 
 ---
@@ -24,21 +25,23 @@
 | AU-05         | Quên mật khẩu: nhập email → gửi OTP               | `(auth)/forgot-password`                                    | P0      |
 | AU-06         | Đặt mật khẩu mới: OTP + mật khẩu mới              | `(auth)/reset-password`                                     | P0      |
 | AU-07         | Đổi mật khẩu                                      | `(member)/profile/change-password`, `(org)/change-password` | P1      |
+| BR-01 (tab)   | Thanh tab Member (4 tab), 3 tab đầu "Sắp có"      | `(member)/(tabs)/_layout`, `index`, `community`, `consign`  | P0      |
 | PR-01         | Tab Cá nhân (menu tài khoản), có bản Guest        | `(member)/(tabs)/account`                                   | P0      |
-| PR-02         | Xem hồ sơ                                         | `(member)/profile`                                          | P1      |
+| (mới)         | Cài đặt (Hồ sơ, Đổi mật khẩu, Phiên bản)          | `(member)/settings`                                         | P1      |
+| PR-02         | Xem hồ sơ                                         | `(member)/profile` (`profile/index.js`)                     | P1      |
 | PR-03         | Sửa hồ sơ                                         | `(member)/profile/edit`                                     | P1      |
-| PR-04         | Mã Member (mã text + QR)                          | `(member)/profile/member-code`                              | P1      |
+| PR-04         | Mã Member (QR + mã chữ)                           | `(member)/profile/member-code`                              | P1      |
 | OA-01 → OA-04 | Đăng ký tổ chức 4 bước                            | `(auth)/org-register/*`                                     | P1      |
 | (OA-05)       | Xem lại hồ sơ trước khi gửi (wireframe chưa vẽ)   | `(auth)/org-register/review`                                | P1      |
 | OA-06         | Tổ chức: chờ xác minh / bị từ chối                | `(org-status)/verification`                                 | P1      |
 | —             | Khung tab của Organization đã duyệt (màn giữ chỗ) | `(org)/(tabs)/*`                                            | P2      |
 
-**Thứ tự (cập nhật cuối 16/10):**
+**Thứ tự (cập nhật 17/10):**
 
 - 16/10 ✅: tạo project, theme, component, lớp API, store, khung điều hướng, **AU-02, AU-03, AU-04** (thật).
-- 17/10: AU-07 (thật), AU-05/06 (mock), AU-01 splash, thanh tab Member, PR-01 → PR-04.
+- 17/10 ✅ (sáng): AU-07, AU-05/06 (**thật**, không cần mock), thanh tab Member, PR-01 + Cài đặt, PR-02 → PR-04. Chiều: AU-01 splash, bắt đầu OA.
 - 18/10: OA-01 → OA-06 (mock phần BE chưa có), khung tab tổ chức.
-- 19/10: Google (nếu có OAuth client + dev build), tự test checklist mục 10, mở PR.
+- 19/10: Google (nếu có OAuth client + dev build), tự test checklist mục 10, mở PR `feature/phase1-auth` → `develop`.
 
 Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đổi ảnh đại diện thật, đổi email.
 
@@ -46,15 +49,15 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 
 - **4 tiêu chí của kế hoạch:** Guest đăng ký được Member/Organization · Đăng nhập (kể cả Google) · Đổi/quên mật khẩu · Member xem/sửa hồ sơ.
 
-| Tiêu chí                 | Màn         | Gọi thật / mock                         | Trạng thái 16/10             |
+| Tiêu chí                 | Màn         | Gọi thật / mock                         | Trạng thái 17/10             |
 | ------------------------ | ----------- | --------------------------------------- | ---------------------------- |
 | Guest đăng ký Member     | AU-03, AU-04 | Thật                                   | ✅ chạy với BE thật           |
 | Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ⏳                        |
 | Đăng nhập email          | AU-02       | Thật                                    | ✅                            |
-| Đăng nhập Google         | AU-02       | Mock tới khi có OAuth client + dev build | ⏳ [CHỜ BE/LEAD]             |
-| Đổi mật khẩu             | AU-07       | Thật                                    | ⏳                            |
-| Quên mật khẩu            | AU-05, 06   | Mock (BE gửi link, chưa gửi OTP)        | ⏳ [CHỜ BE]                   |
-| Member xem/sửa hồ sơ     | PR-01 → 04  | Thật (ảnh đại diện mock)                | ⏳                            |
+| Đăng nhập Google         | AU-02       | Tạm `Alert` tới khi có OAuth client + dev build | ⏳ [CHỜ BE/LEAD]     |
+| Đổi mật khẩu             | AU-07       | Thật                                    | ✅                            |
+| Quên mật khẩu            | AU-05, 06   | Thật (`resend-otp` FORGOT_PASSWORD)     | ✅ [CHỜ BE xác nhận cách dùng] |
+| Member xem/sửa hồ sơ     | Tab, PR-01 → 04 | Thật (ảnh đại diện: Toast "sắp có") | ✅                            |
 
 - Chạy được trên Android thật qua Expo Go, không màn đỏ, không warning nghiêm trọng.
 - Mọi luồng trong mục 10 (checklist) chạy được: API BE đã có thì **gọi thật**, chưa có thì mock.
@@ -66,8 +69,8 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 
 | #   | Nội dung                                                                                                                                                   | Cách làm trong Phase 1                                                                                                           |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Quên mật khẩu: wireframe AU-05/06 dùng **liên kết qua email**; bạn đã chốt dùng **OTP 6 số**                                                               | Làm OTP, **gọi mock** (BE hiện gửi link web) [CHỜ BE]. Màn AU-06 gộp: ô OTP + mật khẩu mới. Nhờ lead sửa wireframe               |
-| 2   | Mã Member: ghi chú wireframe ngày 11/10 **bỏ quét QR** (PR-04 chỉ hiện mã text); bạn muốn **QR + mã text**                                                 | Làm cả hai, QR tách thành component riêng để bỏ dễ. Cần chốt với lead                                                            |
+| 1   | Quên mật khẩu: wireframe AU-05/06 dùng **liên kết qua email**; bạn đã chốt dùng **OTP 6 số**                                                               | Làm OTP, **gọi thật** qua `resend-otp` (FORGOT_PASSWORD) — `/password/forgot` gửi link web nên không dùng [CHỜ BE xác nhận]. Màn AU-06 gộp: ô OTP + mật khẩu mới. Nhờ lead sửa wireframe |
+| 2   | Mã Member: ghi chú wireframe ngày 11/10 **bỏ quét QR** (PR-04 chỉ hiện mã text); bạn muốn **QR + mã text**                                                 | Làm cả hai, QR tách thành component riêng `MemberQr` để bỏ dễ (xem #21). Cần chốt với lead                                        |
 | 3   | Tab dưới của Member lệch giữa các màn: BR-01 có 4 tab (Mua sắm, Cộng đồng, Ký gửi, Cá nhân); PR-01 có 5 tab (Khám phá, Cộng đồng, Thử đồ, Ký gửi, Cá nhân) | **[GIẢ ĐỊNH]** 4 tab theo BR-01; khai báo bằng mảng cấu hình để đổi nhanh. Hỏi lead                                              |
 | 4   | Tab Organization (OC-01, OP-01): Chiến dịch, Bài viết, Tin nhắn, Hồ sơ                                                                                     | Làm khung, nội dung để Phase 6                                                                                                   |
 | 5   | Đăng ký tổ chức (OA-01 → 04) **không có ô mật khẩu**, và OA-05 "Xem lại hồ sơ" chưa vẽ                                                                     | **[GIẢ ĐỊNH]** thêm Mật khẩu + Nhập lại ở bước 2, và tự làm màn Xem lại. Toàn bộ tổ chức **gọi mock** (BE chưa có mật khẩu, upload) [CHỜ BE] [CHỜ LEAD] |
@@ -82,6 +85,11 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | 14  | AU-04: "Mã có hiệu lực 10 phút"; lỗi riêng "mã đã hết hạn"                                                                                                 | **5 phút** theo BE; hiện nguyên message BE (BE không phân biệt sai/hết hạn)                                                      |
 | 15  | AU-05/06 vẽ luồng **link**, có màn "Liên kết không còn dùng được"                                                                                          | OTP: AU-05 "Gửi mã"; AU-06 thêm `OtpInput`, bỏ màn liên kết hỏng                                                                |
 | 16  | AU-07 ghi "thiết bị này giữ nguyên" sau khi đổi mật khẩu                                                                                                   | BE thu hồi token mọi thiết bị → mobile **chủ động đăng xuất** [CHỜ BE xác nhận]                                                 |
+| 17  | Thanh tab: BR-01 vẽ 4 tab, PR-01 vẽ 5 tab (có "Thử đồ")                                                                                                    | **4 tab** (Mua sắm · Cộng đồng · Ký gửi · Cá nhân): thử đồ mở từ trang sản phẩm (business rule), ảnh đã thử ở PR-01 [CHỜ LEAD] |
+| 18  | PR-01: thẻ ví + Rút tiền; các mục đơn hàng/ký gửi… có số đếm; không có Đổi mật khẩu; nút "Cài đặt" chưa có màn                                              | Ẩn thẻ ví (Phase 4); mục phase sau **mờ + nhãn "Sắp có", bấm → Toast**; thêm **màn Cài đặt** (Hồ sơ, Đổi mật khẩu, Phiên bản); Đăng xuất **hỏi xác nhận** |
+| 19  | PR-02/03 có Ngày sinh, Giới tính, "Hoạt động trên ReHome", "Đổi email"                                                                                      | **Ẩn** (DB chưa có cột / phase sau / không có UC). Dòng thông tin: nhãn trên, giá trị dưới (email dài không vỡ dòng)            |
+| 20  | PR-03 "Đổi ảnh đại diện"; nút "Lưu thay đổi" mờ                                                                                                            | Ảnh đại diện → Toast "sắp có" (chưa có `/uploads`, không gửi `file://` lên BE). Lưu **mờ khi chưa sửa** (`isDirty`); Huỷ khi đã sửa → hỏi "Bỏ thay đổi?" |
+| 21  | PR-04 chỉ mã chữ (ghi chú 11/10 bỏ QR)                                                                                                                     | **QR + mã chữ** (API 25 `/counter/lookup` có `qrPayload`), tự tăng độ sáng, Sao chép mã [CHỜ LEAD giữ QR] [CHỜ BE định dạng `qrPayload`] |
 
 ---
 
@@ -111,7 +119,7 @@ git checkout -b feature/phase1-auth
 ```
 
 Quy ước commit dùng giống repo web của nhóm (Conventional Commits): `feat: ...`, `fix: ...`, `chore: ...`, `docs: ...`, `refactor: ...`.
-Commit nhỏ, mỗi commit một việc. Hỏi lead PR merge vào `develop` hay `main` (repo web đang có `develop`).
+Commit nhỏ, mỗi commit một việc. **PR vào `develop`** (lead đồng ý 17/10; đã tạo `develop` từ `main` và push). Nhánh sau tạo từ `develop`: `git checkout develop && git pull && git checkout -b feature/<việc>`.
 
 ---
 
@@ -396,7 +404,7 @@ export const textStyles = {
 
 ### 6.3. Component cần cho Phase 1 (`src/components/ui/`)
 
-| Component                                 | Yêu cầu                                                                                          | 16/10 |
+| Component                                 | Yêu cầu                                                                                          | 17/10 |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------ | ----- |
 | `Screen`                                  | SafeArea + nền + `KeyboardAvoidingView` + `scroll`; `header` (đứng yên), `footer` (nút cố định đáy, nằm trên bàn phím) | ✅ |
 | `AppHeader`                               | Nút ← trong ô vuông (`onBack` tuỳ chọn, không truyền = không có ←) + tiêu đề + `right`           | ✅    |
@@ -405,14 +413,17 @@ export const textStyles = {
 | `OtpInput`                                | 6 ô vẽ + **một** `TextInput` trong suốt phủ lên (gõ liên tục, xoá lùi, dán cả mã), chỉ nhận số   | ✅    |
 | `RadioCard`, `Checkbox`                   | Chọn Cá nhân / Tổ chức (AU-03), loại hình (OA-01); điều khoản có link lồng (AU-03)               | ✅    |
 | `NoteBox`, `Divider`, `ErrorBox`          | Ghi chú viền đứt; "── hoặc ──"; khung lỗi server của form                                        | ✅    |
-| `PasswordChecklist`                       | Các dòng ✓: ≥ 8 ký tự, có chữ và số (thêm "khác mật khẩu hiện tại" ở AU-07)                      | ⏳    |
+| `PasswordChecklist`                       | Các dòng ✓ cập nhật theo `watch`: ≥ 8 ký tự, có chữ và số (+ "Khác mật khẩu hiện tại" khi truyền `currentPassword`) | ✅ |
+| `EmptyState`                              | Icon tròn + tiêu đề + mô tả (+ children); dùng cho tab "Sắp có", danh sách trống                 | ✅    |
+| `Avatar`                                  | Ảnh tròn; chưa có ảnh → chữ cái đầu của **tên gọi** (từ cuối) trên nền `primary`                  | ✅    |
+| `ListItem`, `ListGroup`                   | Dòng menu (icon, tiêu đề, mô tả, `badge`, `›`; `disabled`, `muted`, `danger`); nhóm bo góc tự kẻ giữa các dòng | ✅ |
 | `ChipGroup`                               | Chọn ngày T2 … CN (OA-04)                                                                        | ⏳    |
 | `Stepper`                                 | 4 bước: Tổ chức · Đại diện · Giấy tờ · Nhận đồ (✓ cho bước đã xong)                              | ⏳    |
 | `FileItem`                                | Tên file, nút Xoá, các ô khai báo giấy tờ (OA-03)                                                | ⏳    |
-| `EmptyState`, `ErrorState`, `LoadingView` | Dùng chung cho mọi màn có dữ liệu                                                                | ⏳    |
-| `ConfirmDialog`                           | Xác nhận đăng xuất                                                                               | ⏳    |
+| `ErrorState`, `LoadingView`               | Dùng chung cho màn có dữ liệu (khi cần)                                                          | ⏳    |
+| ~~`ConfirmDialog`~~                       | Không cần: dùng `Alert.alert` (nút `destructive`) của hệ điều hành                                | —     |
 
-Icon dùng `@expo/vector-icons` (Ionicons) — phải cài (mục 4.2).
+Icon dùng `@expo/vector-icons` (Ionicons) — phải cài (mục 4.2). Ngoài `components/ui`: `src/hooks/useCountdown.js` (+ `formatCountdown`), `src/utils/format.js` (`formatPhone`), `src/utils/toast.js` (`showToast`: Android `ToastAndroid`, iOS `Alert`), `features/profile/components/MemberQr.js`.
 
 ---
 
@@ -427,17 +438,15 @@ export const ENV = {
   USE_MOCK: process.env.EXPO_PUBLIC_USE_MOCK === "true",
 };
 
-// Bật/tắt mock theo từng nhóm API: backend xong nhóm nào thì đổi nhóm đó sang ENV.USE_MOCK
+// Nhóm API BE chưa có / chưa dùng được → mock. BE xong nhóm nào thì đổi nhóm đó sang false
 export const MOCK = {
-  auth: ENV.USE_MOCK, // đăng ký, OTP, đăng nhập, refresh, logout — BE đã có
-  profile: ENV.USE_MOCK, // /members/me, /members/me/code — BE đã có
-  password: true, // quên / đặt lại mật khẩu — [CHỜ BE] bản OTP (đổi mật khẩu thuộc nhóm auth, BE đã có)
+  password: false, // quên / đặt lại mật khẩu — gọi thật qua resend-otp + verify-otp + password/reset
   upload: true, // [CHỜ BE] POST /uploads
   organization: true, // [CHỜ BE] đăng ký có mật khẩu, trạng thái hồ sơ
 };
 ```
 
-Nhóm nào BE chưa có thì để `true` cứng: dù `.env` đặt `USE_MOCK=false` để test API thật, các nhóm này vẫn chạy mock.
+Bản đầu có thêm `auth`, `profile` — đã bỏ (auth và hồ sơ luôn gọi thật). Nhóm BE chưa có thì để `true` cứng: dù `.env` đặt `USE_MOCK=false`, các nhóm này vẫn chạy mock.
 
 ### 7.2. `src/lib/api/errors.js`
 
@@ -681,10 +690,11 @@ export async function getMe() {
 export const changePassword = async ({ oldPassword, newPassword, newPasswordRepeat }) =>
   unwrap(await api.post("/api/auth/password/change", { oldPassword, newPassword, newPasswordRepeat }));
 
-// Quên mật khẩu — BE hiện gửi LINK web, chưa gửi OTP [CHỜ BE]. Viết sẵn theo luồng đã thống nhất, đang dùng mock.
-export const forgotPassword = async ({ email }) => {
-  await api.post("/api/auth/password/forgot", { email }); // 204
-};
+// Quên mật khẩu (AU-05) — gửi OTP "đặt lại mật khẩu" qua resend-otp (purpose FORGOT_PASSWORD).
+// KHÔNG dùng /api/auth/password/forgot vì API đó gửi LINK web (localhost), điện thoại không mở được.
+// Luôn trả như nhau dù email có tồn tại hay không. Gửi lại < 60 giây → 429. [Báo BE xác nhận cách dùng này]
+export const forgotPassword = ({ email }) =>
+  resendOtp({ email, purpose: OTP_PURPOSE.FORGOT_PASSWORD });
 
 export const verifyResetOtp = async ({ email, otp }) =>
   unwrap(await api.post("/api/auth/verify-otp", { email, otp, purpose: OTP_PURPOSE.FORGOT_PASSWORD })); // { message, resetToken }
@@ -746,16 +756,16 @@ export async function resetPassword() {
 | Đổi mật khẩu (AU-07) | `POST /api/auth/password/change` | `oldPassword, newPassword, newPasswordRepeat` | Chuỗi "Đổi mật khẩu thành công"; thu hồi token mọi thiết bị → mobile đăng xuất. Lỗi 400 có `code`: `WRONG_PASSWORD`, `NEW_PASSWORD_SAME_AS_OLD`, `PASSWORD_CONFIRM_MISMATCH`, `PASSWORD_NOT_SET`. Token hết hạn → 500 (không tự refresh) |
 | Thông tin Member    | `GET /members/me`                | —                                              | `{ accountId, email, phone, fullName, avatarUrl, memberCode, emailVerified }` |
 | Sửa hồ sơ Member    | `PATCH /members/me`              | `fullName, phone, avatarUrl` (ô trống = giữ nguyên) | `{ accountId, fullName, phone, avatarUrl }` → gọi lại `GET /members/me` |
-| Mã Member           | `GET /members/me/code`           | —                                              | `{ memberCode }`                                             |
+| Mã Member           | `GET /members/me/code`           | —                                              | `{ memberCode }` — **không dùng** (đã có `user.memberCode`)   |
+| Quên mật khẩu (AU-05) | `POST /api/auth/resend-otp`    | `email, purpose: 'FORGOT_PASSWORD'`            | `{ message }`, mail "ReHome - Mã OTP đặt lại mật khẩu". **Không** dùng `/password/forgot` (gửi link web) |
+| Kiểm OTP (AU-06)    | `POST /api/auth/verify-otp`      | `email, otp, purpose: 'FORGOT_PASSWORD'`       | `{ message, resetToken }`                                    |
+| Đặt lại mật khẩu (AU-06) | `POST /api/auth/password/reset` | `email, resetToken, newPassword, confirmPassword` | `{ message }`; thu hồi token mọi thiết bị                   |
 
-**Mock** (hình dạng theo BE hiện có hoặc theo yêu cầu đã gửi BE):
+**Mock / chưa làm** (hình dạng theo BE hiện có hoặc theo yêu cầu đã gửi BE):
 
 | Việc                       | API BE hiện có / đang chờ                                                                 | Mock trả                                     |
 | -------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Quên mật khẩu (AU-05)      | `POST /api/auth/password/forgot { email }`: hiện gửi **link web**, không gửi OTP [CHỜ BE] | 204                                          |
-| Xác nhận OTP quên mật khẩu | `POST /api/auth/verify-otp { email, otp, purpose: 'FORGOT_PASSWORD' }`                    | `{ message, resetToken }`                    |
-| Đặt lại mật khẩu (AU-06)   | `POST /api/auth/password/reset { email, resetToken, newPassword, confirmPassword }`       | `{ message }`                                |
-| Upload ảnh/tệp             | Chưa có (`POST /uploads`) [CHỜ BE]                                                        | `{ url }`                                    |
+| Upload ảnh/tệp             | Chưa có (`POST /uploads`) [CHỜ BE]. PR-03 "Đổi ảnh đại diện" tạm hiện Toast "sắp có"      | `{ url }`                                    |
 | Đăng ký tổ chức            | `POST /api/organizations/register/organization` (JSON, giấy tờ là URL, **không có mật khẩu**) [CHỜ BE] | `{ accountId, verificationStatus: 'PENDING' }` |
 | Trạng thái / nộp lại hồ sơ | Chưa có (API 4) [CHỜ BE]                                                                  | `{ verificationStatus, rejectionReason, documents[] }` |
 | Đăng nhập Google           | `POST /api/auth/google { idToken }` có sẵn, nhưng cần dev build                           | như đăng nhập                                |
@@ -941,16 +951,17 @@ export default function RootLayout() {
 ### 8.4. Tab Member: khai báo bằng mảng để đổi nhanh
 
 ```js
-// src/app/(member)/(tabs)/_layout.js
+// src/app/(member)/(tabs)/_layout.js — ✅ đã làm 17/10
 import { Tabs } from "expo-router";
-import { colors } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, fonts } from "@/theme";
 
+// [GIẢ ĐỊNH] 4 tab theo BR-01 — chờ lead chốt (PR-01 vẽ 5 tab). Đổi tab chỉ cần sửa mảng này
 const TABS = [
-  // [GIẢ ĐỊNH] theo BR-01 — chờ lead chốt
-  { name: "index", title: "Mua sắm" },
-  { name: "community", title: "Cộng đồng" },
-  { name: "consign", title: "Ký gửi" },
-  { name: "account", title: "Cá nhân" },
+  { name: "index", title: "Mua sắm", icon: "bag-handle" },
+  { name: "community", title: "Cộng đồng", icon: "people" },
+  { name: "consign", title: "Ký gửi", icon: "cube" },
+  { name: "account", title: "Cá nhân", icon: "person-circle" },
 ];
 
 export default function MemberTabs() {
@@ -959,17 +970,32 @@ export default function MemberTabs() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12 },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.neutral },
       }}
     >
-      {TABS.map((t) => (
-        <Tabs.Screen key={t.name} name={t.name} options={{ title: t.title }} />
+      {TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            // Đang chọn: icon đặc; chưa chọn: icon rỗng ("-outline")
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons name={focused ? tab.icon : `${tab.icon}-outline`} size={size} color={color} />
+            ),
+          }}
+        />
       ))}
     </Tabs>
   );
 }
 ```
 
-Icon: dùng `@expo/vector-icons`. Template SDK 58 **không có sẵn**, phải `npx expo install @expo/vector-icons` (mục 4.2). Tab Mua sắm, Cộng đồng, Ký gửi ở Phase 1 là màn giữ chỗ "Sắp có".
+- Tab Mua sắm, Cộng đồng, Ký gửi ở Phase 1 là `EmptyState` "… — sắp có". Màn trong tab dùng `Screen edges={["top"]}` (thanh tab tự lo phía dưới).
+- Màn con (Cài đặt, Hồ sơ, Đổi mật khẩu…) đặt **ngoài** `(tabs)` (trong `(member)/`), nên mở ra **che thanh tab**.
+- Thêm/xoá/đổi tên file trong `src/app` → chạy lại `npx expo start --clear` (Fast Refresh không nhận đổi cấu trúc route).
 
 ---
 
@@ -1078,69 +1104,66 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 
 ### AU-05 · Quên mật khẩu (bản OTP — khác wireframe)
 
-- **Phase 1 gọi mock** (`MOCK.password`): BE hiện gửi link web, chưa gửi OTP [CHỜ BE]. Luồng mục tiêu: forgot → verify-otp (FORGOT_PASSWORD) → reset (bảng 7.6).
-- Nhập "Email \*" → nút "Gửi mã" → luôn chuyển sang AU-06.
-- Không báo "email không tồn tại", để tránh dò tài khoản.
-- Ghi chú: tài khoản tổ chức đặt lại bằng email người đại diện, cùng luồng này.
+> **✅ Đã làm 17/10** (`ForgotPasswordScreen.js`, route `(auth)/forgot-password.js`), **gọi thật**.
+
+- "Quên mật khẩu?" ở AU-02 mang theo email đã gõ (`params.email`) → điền sẵn.
+- "Nhập email đã đăng ký" + mô tả "gửi **mã 6 số**… hiệu lực 5 phút"; nút **"Gửi mã"** ở footer → `authApi.forgotPassword` = `resend-otp` (FORGOT_PASSWORD) → luôn `router.push("/reset-password", { email })`.
+- Không báo "email không tồn tại" (BE trả như nhau — chống dò tài khoản).
+- Khung ghi chú tổ chức của wireframe **ẩn** (tổ chức chưa đăng nhập được), như AU-02.
 
 ### AU-06 · Đặt mật khẩu mới
 
-- **Trường:** `OtpInput` (mã gửi tới email) + Mật khẩu mới _ + `PasswordChecklist` + Nhập lại _.
-- **Lỗi:** "Hai mật khẩu chưa khớp" · OTP sai · OTP hết hạn (kèm link "Gửi lại mã").
-- **Thành công:**
-  - Hiện thông báo "Đổi mật khẩu thành công", về Đăng nhập.
-  - Ghi chú wireframe: đặt xong, **mọi thiết bị đang đăng nhập bị đăng xuất** (backend xử lý).
+> **✅ Đã làm 17/10** (`ResetPasswordScreen.js`, route `(auth)/reset-password.js`), **gọi thật**.
+
+- Header có ← (wireframe không có — để quay lại sửa email). "Nhập mã 6 số đã gửi tới **email**…".
+- **Trường:** `OtpInput` trong `Controller` (zod: `/^\d{6}$/`), "Mã có hiệu lực 5 phút", đếm ngược 60 giây + "Gửi lại mã" (`useCountdown`) · Mật khẩu mới \* + `PasswordChecklist` (2 dòng) · Nhập lại \*. Nút "Đặt mật khẩu" ở footer, luôn bấm được.
+- **Bấm "Đặt mật khẩu":** gọi lần lượt `verifyResetOtp` → `resetToken` → `resetPassword`. Lỗi ở bước kiểm mã (gắn `e.field = "otp"`) → dưới 6 ô; lỗi khác → `ErrorBox`. Mã đã bị dùng nếu bước 2 lỗi → phải gửi lại mã.
+- **Thành công:** `router.dismissTo("/login", { email, passwordReset: "1" })` → AU-02 điền sẵn email + "Đặt lại mật khẩu thành công…". BE đăng xuất mọi thiết bị (ghi chú ② giữ, "liên kết" → "mã").
+- AU-02 gom thông báo xanh vào `NOTICES` (`verified`, `passwordChanged`, `passwordReset`).
 
 ### AU-07 · Đổi mật khẩu
 
-- **Trường:** Mật khẩu hiện tại _ · Mật khẩu mới _ · checklist (≥ 8, có chữ và số, **khác mật khẩu hiện tại**) · Nhập lại \*.
-- **API (gọi thật, F008):** `authApi.changePassword({ oldPassword, newPassword, newPasswordRepeat })` → `POST /api/auth/password/change`.
-  - Đường dẫn nằm dưới `/api/auth` nên `client.js` **không tự refresh**; access token hết hạn → BE trả 500 [CHỜ BE]. Trước khi gửi, gọi `authApi.getMe()` (đi qua `/members/me`, có refresh) để chắc token còn hạn.
-- **Lỗi** (BE trả 400 dạng B, chưa có `code` [CHỜ BE `WRONG_PASSWORD`]): hiện `message` của BE trong khung lỗi trên nút Lưu; không so chữ trong message. Các message hiện có: "Mật khẩu xác nhận không khớp." · "WRONG_PASSWORD: mật khẩu cũ không đúng." · "Mật khẩu mới phải khác mật khẩu cũ." · "Tài khoản chưa có mật khẩu" (tài khoản Google). Mobile validate trước 3 lỗi đầu bằng zod nên thường chỉ còn gặp lỗi sai mật khẩu cũ. Khi BE có `code: WRONG_PASSWORD` → hiện dưới ô "Mật khẩu hiện tại".
-- **Thành công:** BE thu hồi refresh token **mọi thiết bị, kể cả máy đang dùng** (khác ghi chú wireframe "thiết bị này giữ nguyên" — đã hỏi BE). Mobile **chủ động `signOut()`**, về AU-02, hiện "Đổi mật khẩu thành công, mời đăng nhập lại".
-- Dùng chung cho Member (từ PR-01) và Tổ chức (từ tab Hồ sơ).
+> **✅ Đã làm 17/10** (`ChangePasswordScreen.js`, route `(member)/profile/change-password.js`, mở từ **Cài đặt**), **gọi thật**.
+
+- **Trường:** Mật khẩu hiện tại \* · Mật khẩu mới \* + `PasswordChecklist` 3 dòng (`currentPassword` = ô hiện tại, theo `watch`) · Nhập lại \*. `changePasswordSchema`: tên field giống BE (`oldPassword`, `newPassword`, `newPasswordRepeat`), `.refine` mới ≠ cũ, nhập lại khớp.
+- **API:** `authApi.changePassword` → `POST /api/auth/password/change`. Nằm dưới `/api/auth` nên `client.js` **không tự refresh** → gọi `authApi.getMe()` trước trong `mutationFn` [CHỜ BE chuyển đường dẫn / trả 401].
+- **Lỗi theo `code`:** `WRONG_PASSWORD` → dưới ô "Mật khẩu hiện tại"; `NEW_PASSWORD_SAME_AS_OLD` → dưới ô "Mật khẩu mới"; khác (`PASSWORD_NOT_SET`, mạng) → `ErrorBox`.
+- **Thành công:** BE thu hồi token mọi thiết bị → `signOut()` rồi `router.replace("/login", { passwordChanged: "1" })` (phải tự chuyển vì `(member)` vẫn mở cho khách). Ghi chú sửa thành "bạn và mọi thiết bị… phải đăng nhập lại".
+- Tổ chức dùng lại màn này khi làm `(org)`.
 
 ### PR-01 · Tab Cá nhân
 
-- **Member:**
-  - **Đầu trang:** họ tên + "MB-004821 · tham gia 08/2026" → bấm mở PR-02. BE chưa có `createdAt` [CHỜ BE] → tạm chỉ hiện mã Member.
-  - **Danh sách mục:**
-    - Số dư ví → Phase 4: ẩn hoặc "—".
-    - "Mã Member của tôi — Đọc cho nhân viên khi tới kho" → PR-04.
-    - Đơn hàng, Hàng ký gửi, Yêu cầu trả hàng, Địa chỉ giao hàng, Ảnh thử đồ, Tổ chức đang theo dõi, Tin nhắn → Phase sau: hiện mờ kèm "Sắp có".
-    - Đổi mật khẩu → AU-07.
-    - Đăng xuất → `ConfirmDialog` "Bạn có chắc muốn đăng xuất?" → `signOut()`.
-- **Guest:** "Bạn đang xem với tư cách khách" + nút Đăng nhập / Tạo tài khoản.
+> **✅ Đã làm 17/10** (`features/profile/screens/AccountScreen.js`, route `(member)/(tabs)/account.js`). Thiết kế theo wireframe PR-01 + điều chỉnh (bảng 0.3 #18).
+
+- **Member:** header "Cá nhân" + nút ⚙ (ô vuông) → **Cài đặt**. Thẻ đầu: `Avatar` (chữ cái đầu tên gọi) + tên + mã Member + `›` → PR-02 (không có "tham gia MM/YYYY" — chưa có `createdAt` [CHỜ BE]). `ListGroup`: "Mã Member của tôi — Đọc cho nhân viên khi tới kho" → PR-04. `ListGroup` "Sắp có": 7 mục `muted` + nhãn "Sắp có", bấm → `showToast("… sẽ có ở phiên bản sau.")`. `ListGroup`: **Đăng xuất** (`danger`) → `Alert.alert` xác nhận (nút `destructive`) → `signOut()`. Thẻ ví **ẩn** (Phase 4).
+- **Guest:** thẻ "Bạn đang xem với tư cách khách" + mô tả + Đăng nhập (`/login`) / Tạo tài khoản (`/register`).
+- **Cài đặt** (`SettingsScreen.js`, route `(member)/settings.js`): nhóm "Tài khoản" (Hồ sơ cá nhân → PR-02, Đổi mật khẩu → AU-07), nhóm "Khác" (Phiên bản ứng dụng = `Constants.expoConfig.version`).
 
 ### PR-02 · Hồ sơ cá nhân
 
-- Hiện: ảnh đại diện, Họ và tên, mã Member, Email (badge "Đã xác minh"), Số điện thoại, Ngày sinh, Giới tính (chưa có thì "—").
-- **Không có nút "Xác thực email"**: Member chưa xác thực không đăng nhập được nên không bao giờ thấy màn này.
-- Nút "Sửa" → PR-03.
-- Khối "Hoạt động trên ReHome" (đơn đã mua, món ký gửi, đánh giá) → Phase sau, ẩn.
-- Dữ liệu: `useQuery(['me'], authApi.getMe)`, khởi tạo bằng `user` trong store.
+> **✅ Đã làm 17/10** (`ProfileScreen.js`, route `(member)/profile/index.js`), **gọi thật**.
+
+- Header ← "Hồ sơ cá nhân" + nút **"Sửa"** (ô vuông) → PR-03. `Avatar` 80 + tên + mã.
+- `ListGroup` 3 dòng (nhãn trên, giá trị dưới): Họ và tên · Email + "✓ Đã xác minh" · Số điện thoại (`formatPhone`, chưa có thì "Chưa cập nhật"). **Ẩn** Ngày sinh, Giới tính, "Hoạt động trên ReHome". Không có nút "Xác thực email".
+- **Dữ liệu:** `useQuery({ queryKey: ["me"], queryFn: getMe + setUser, initialData: storeUser, initialDataUpdatedAt: 0 })` → hiện ngay dữ liệu store, vẫn tải lại khi mở màn. Lỗi tải → `ErrorBox` "Không tải được thông tin mới nhất…" + "Thử lại", vẫn hiện dữ liệu cũ.
 
 ### PR-03 · Sửa hồ sơ
 
-- **Trường:**
-  - Đổi ảnh đại diện (`expo-image-picker`). Cách upload chưa rõ → mock.
-  - Họ và tên \*.
-  - Ngày sinh (không có trong DB, xem 0.3 #6).
-  - Email chỉ đọc, kèm "Đổi email" để P2.
-  - Số điện thoại \* (lỗi: "Số điện thoại phải có 10 chữ số"; helper: "Kho gọi số này khi có việc gấp với hàng ký gửi của bạn").
-- **Ghi chú:** "Hồ sơ này không phải địa chỉ giao hàng."
-- **Nút:** Huỷ · Lưu thay đổi.
-- **API:** `PATCH /members/me { fullName, phone, avatarUrl }`. Ảnh đại diện: upload mock trả `{ url }` rồi gửi `avatarUrl` [CHỜ BE `POST /uploads`].
-- **Lưu thành công:** response PATCH thiếu `email`, `memberCode` → không `setUser` bằng response; gọi lại `getMe()` (hoặc `invalidateQueries(['me'])`) rồi `setUser` + quay lại.
+> **✅ Đã làm 17/10** (`EditProfileScreen.js`, route `(member)/profile/edit.js`), **gọi thật** (`profileApi.updateMe` → `PATCH /members/me { fullName, phone }`).
+
+- `Avatar` + "Đổi ảnh đại diện" → **Toast "sắp có"** [CHỜ BE `POST /uploads`] — không gửi `file://` lên BE.
+- Họ và tên \* · Email **chỉ đọc** (nền xám, "Đã xác minh", helper "Email dùng để đăng nhập, không thay đổi được.") · Số điện thoại \* (định dạng sẵn `0912 345 678`, helper "Kho gọi số này…"). **Ẩn** Ngày sinh, bỏ "Đổi email". `NoteBox` "không phải địa chỉ giao hàng".
+- Footer: **Huỷ** + **Lưu thay đổi** (`disabled={!isDirty}`). Huỷ / ← khi `isDirty` → `Alert` "Bỏ thay đổi?" ("Sửa tiếp" / "Bỏ thay đổi").
+- **Lưu thành công:** `updateMe` → `getMe()` (PATCH thiếu email/memberCode) → `setUser` + `queryClient.setQueryData(["me"])` → Toast "Đã lưu thay đổi" → quay lại. Lỗi 500 (trùng SĐT, BE chưa kiểm) → dưới ô SĐT.
+- Chưa chặn cử chỉ Back của Android khi đang sửa (nâng cao, để sau).
 
 ### PR-04 · Mã Member
 
-- **Nội dung:**
-  - Mã cỡ lớn "MB-004821" + họ tên.
-  - QR của chính chuỗi mã (`react-native-qrcode-svg`, `value={memberCode}`).
-  - Nút "Sao chép mã" (`expo-clipboard`, kèm thông báo "Đã sao chép").
-- Chữ: "Đọc mã này cho nhân viên khi tới kho ký gửi, rút hàng hoặc nhận hàng".
-- **P2:** tăng độ sáng màn hình khi mở, trả lại khi rời (`expo-brightness`).
+> **✅ Đã làm 17/10** (`MemberCodeScreen.js`, route `(member)/profile/member-code.js`). Lấy `user.memberCode` (không gọi `/members/me/code`).
+
+- "Đưa mã QR cho nhân viên quét, hoặc đọc mã bên dưới…". Thẻ viền `primary`: **QR** (`MemberQr`, `react-native-qrcode-svg`, chữ đậm trên nền trắng, `ecl="M"`, tạm chứa đúng `memberCode`) + "Mã Member" + **mã cỡ 44, giãn chữ**, `selectable`, `adjustsFontSizeToFit` + tên. Footer: "Sao chép mã" (`expo-clipboard` + Toast) + "Màn này tự tăng độ sáng…".
+- **Độ sáng:** `useFocusEffect` → `Brightness.setBrightnessAsync(1)` khi mở; rời màn → Android `restoreSystemBrightnessAsync()`, iOS đặt lại giá trị cũ.
+- QR: [CHỜ LEAD giữ QR] [CHỜ BE định dạng `qrPayload` của API 25].
 
 ### OA-01 → OA-04 · Đăng ký tổ chức (4 bước)
 
@@ -1228,7 +1251,8 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 
 Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=false` (auth gọi thật; nhóm `password`, `upload`, `organization` vẫn mock theo `MOCK`). Dùng tài khoản thật (mẹo Gmail `+testN`). ✅ = đã test 16/10.
 
-- [ ] Mở app lần đầu: splash → tab Mua sắm (Guest). Tab Cá nhân hiện bản Guest. _(hiện là màn tạm "Bạn đang xem với tư cách khách")_
+- [ ] Mở app lần đầu: splash (AU-01) → tab Mua sắm (Guest). Tab Cá nhân hiện bản Guest.
+- [x] ✅ Thanh 4 tab: icon đặc/rỗng theo tab đang chọn; 3 tab đầu "Sắp có".
 - [x] ✅ Đăng ký Member: bỏ trống / mật khẩu yếu / không khớp / chưa tích điều khoản → đều báo lỗi đúng ô.
 - [ ] Đăng ký với email đã có tài khoản → lỗi dưới ô Email "Email này đã có tài khoản…".
 - [x] ✅ Đăng ký thật trong app → AU-04 → mail OTP về → nhập mã → về Đăng nhập (email điền sẵn) → đăng nhập được.
@@ -1236,12 +1260,13 @@ Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=false` (auth 
 - [x] ✅ Đăng nhập Member bằng email; sai mật khẩu báo lỗi dưới ô mật khẩu; nút không bấm được 2 lần khi đang tải.
 - [x] ✅ Đăng nhập tài khoản chưa xác thực → `EMAIL_NOT_VERIFIED` → tự gửi mã (mail mới), sang AU-04 với câu "Tài khoản chưa xác thực email…" → nhập mã → đăng nhập được.
 - [ ] Đăng nhập tài khoản bị khoá (nhờ BE khoá) → ở lại AU-02, khung "Tài khoản của bạn đã bị khoá."; đang dùng app mà bị khoá → tự đăng xuất, về AU-02 với khung đó.
-- [ ] Để access token hết hạn (> 15 phút) rồi tắt app mở lại → app tự refresh (BE trả 403 body rỗng), vẫn vào "Xin chào…".
+- [ ] Để access token hết hạn (> 15 phút) rồi tắt app mở lại → app tự refresh (BE trả 403 body rỗng), vẫn đăng nhập.
 - [x] ✅ **Tắt hẳn app rồi mở lại → vẫn đăng nhập.** Đăng xuất → về Guest; mở lại app → vẫn là Guest. Đã đăng nhập thì vuốt Back không quay lại màn Đăng nhập (thoát app).
-- [ ] Quên mật khẩu (mock): nhập email → OTP `123456` + mật khẩu mới → về Đăng nhập.
-- [ ] Đổi mật khẩu (API thật): sai mật khẩu hiện tại → hiện message BE; mật khẩu mới trùng mật khẩu cũ → bị chặn; thành công → đăng xuất, về AU-02 với thông báo "mời đăng nhập lại", đăng nhập lại bằng mật khẩu mới được.
-- [ ] Hồ sơ: xem, sửa, lưu → PR-02 cập nhật ngay; không có nút "Xác thực email".
-- [ ] Mã Member: mã text đúng, QR hiện, Sao chép mã hoạt động.
+- [x] ✅ Quên mật khẩu (thật): nhập email → mail "Mã OTP đặt lại mật khẩu" → nhập mã + mật khẩu mới → về Đăng nhập (email điền sẵn, thông báo) → đăng nhập bằng mật khẩu mới.
+- [x] ✅ Đổi mật khẩu (thật): sai mật khẩu hiện tại → lỗi dưới ô; thành công → đăng xuất, về AU-02 "mời đăng nhập lại", đăng nhập lại bằng mật khẩu mới được.
+- [x] ✅ Tab Cá nhân: thẻ đầu → PR-02; mục "Sắp có" bấm → Toast; Đăng xuất hỏi xác nhận; ⚙ → Cài đặt → Đổi mật khẩu; bản khách có Đăng nhập / Tạo tài khoản.
+- [x] ✅ Hồ sơ: xem (PR-02), sửa tên/SĐT, lưu → PR-02 và PR-01 cập nhật ngay; nút Lưu mờ khi chưa sửa; Huỷ khi đã sửa hỏi "Bỏ thay đổi?".
+- [x] ✅ Mã Member: QR + mã chữ, Sao chép mã, độ sáng tăng khi mở và trả lại khi rời.
 - [ ] Đăng ký tổ chức đủ 4 bước + Xem lại; back giữ dữ liệu; file > 5 MB bị chặn; thiếu CCCD mặt sau bị chặn; gửi xong → OA-06 Chờ xác minh.
 - [ ] Tổ chức (mock, khi làm OA): trạng thái REJECTED → OA-06 Bị từ chối có lý do; VERIFIED → tab tổ chức; tổ chức **không** vào được màn Member.
 - [ ] Tắt Wi-Fi rồi thao tác → báo lỗi mạng, app không crash.
@@ -1265,7 +1290,7 @@ git commit -m "feat(auth): login, register, otp, forgot password (mock api)"
 git push -u origin feature/phase1-auth
 ```
 
-Lên GitHub → **Compare & pull request** → base là `develop` (hoặc `main`, theo lead). Nội dung PR gợi ý:
+Lên GitHub → **Compare & pull request** → **base: `develop`** ← compare: `feature/phase1-auth` (kiểm kỹ, mặc định có thể là `main`). Nội dung PR gợi ý:
 
 ```markdown
 ## Phase 1 — Auth & Hồ sơ (Mobile)
@@ -1332,7 +1357,7 @@ eas update --branch preview --message "Phase 1 auth"
 2. Mã Member: giữ QR hay chỉ mã text (ghi chú ngày 11/10 bỏ QR)?
 3. Đăng ký tổ chức: mật khẩu nhập ở bước nào; có màn Xem lại không?
 4. Sửa wireframe AU-05/06 sang OTP; xoá ghi chú ③ ở AU-04.
-5. PR merge vào `develop` hay `main`; tên package Android.
+5. ~~PR merge vào `develop` hay `main`~~ → `develop` (đã chốt 17/10); tên package Android.
 6. Địa chỉ email hỗ trợ ReHome (thông báo tài khoản bị khoá).
 
 **Backend:** đã gửi, đang chờ; danh sách đầy đủ ở mục "Đang chờ xác nhận" trong `CLAUDE.md` (nhãn [CHỜ BE]). Còn hỏi thêm:

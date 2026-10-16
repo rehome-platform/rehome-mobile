@@ -12,8 +12,13 @@ import {
 import { queryClient } from "@/lib/query/queryClient";
 import { useAuthStore } from "@/stores/authStore";
 import { ROLES } from "@/constants/roles";
+import { BootSplash } from "@/components/ui/BootSplash";
 
-SplashScreen.preventAutoHideAsync(); // giữ splash native cho tới khi sẵn sàng
+// Mở app không kèm đường dẫn → mặc định vào nhóm (member) (tab Mua sắm).
+// Không khai báo thì Expo Router lấy nhóm đứng đầu theo bảng chữ cái là "(auth)" → khách bị đưa vào màn Đăng nhập.
+export const unstable_settings = {
+  anchor: "(member)",
+};
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -29,11 +34,12 @@ export default function RootLayout() {
     useAuthStore.getState().bootstrap(); // khôi phục phiên khi mở app
   }, []);
 
-  const ready = fontsLoaded && status !== "loading";
+  // Font xong là ẩn splash native ngay; phần khôi phục phiên (có thể lâu) hiện bằng BootSplash
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
-  }, [ready]);
-  if (!ready) return null; // AU-01: splash native vẫn đang hiện
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+  if (!fontsLoaded) return null; // splash native vẫn đang hiện (thường < 1 giây)
+  if (status === "loading") return <BootSplash />; // AU-01: đang kiểm tra đăng nhập
 
   const isAuthed = status === "authenticated";
   const isOrg = isAuthed && user?.role === ROLES.ORGANIZATION;
