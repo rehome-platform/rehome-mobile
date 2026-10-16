@@ -106,7 +106,12 @@ export default function OrgReviewScreen() {
 
       <ReviewSection title="Tổ chức" onEdit={() => edit("info")}>
         <View style={styles.orgHead}>
-          <Avatar uri={info.logoUri} name={info.displayName} size={48} />
+          <Avatar
+            uri={info.logoUri}
+            name={info.displayName}
+            size={48}
+            initialOf="first"
+          />
           <View style={styles.flex}>
             <Text style={styles.orgName}>{info.displayName}</Text>
             <Text style={styles.muted}>{info.legalName}</Text>

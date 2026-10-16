@@ -2,10 +2,12 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "@/theme";
 
 // Ảnh đại diện tròn; chưa có ảnh
-export function Avatar({ uri, name = "", size = 56 }) {
-  const initial =
-    name.trim().split(/\s+/).pop()?.charAt(0).toUpperCase() || "?";
-  const box = { width: size, height: size, borderRadius: size / 2 };
+// initialOf: "last" — tên người VN, lấy chữ đầu của TÊN ("Nguyễn Văn An" → "A")
+//            "first" — tên tổ chức, lấy chữ đầu của từ đầu ("Mái ấm Hoa Hồng" → "M")
+export function Avatar({ uri, name = "", size = 56, initialOf = "last" }) {
+  const words = name.trim().split(/\s+/);
+  const word = initialOf === "first" ? words[0] : words[words.length - 1];
+  const initial = word?.charAt(0).toUpperCase() || "?";
 
   if (uri) {
     return (

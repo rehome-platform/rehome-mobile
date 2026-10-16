@@ -270,7 +270,12 @@ export default function OrgInfoScreen() {
       <View style={styles.group}>
         <Text style={styles.groupLabel}>Logo</Text>
         <View style={styles.logoRow}>
-          <Avatar uri={logoUri} name={displayName || "?"} size={64} />
+          <Avatar
+            uri={logoUri}
+            name={displayName || "?"}
+            size={64}
+            initialOf="first"
+          />
           <View style={styles.logoActions}>
             <Button
               title={logoUri ? "Đổi logo" : "Chọn logo"}
