@@ -1,12 +1,4 @@
-import {
-  Alert,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  ToastAndroid,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -16,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ListGroup, ListItem } from "@/components/ui/ListItem";
 import { useAuthStore } from "@/stores/authStore";
+import { showToast } from "@/utils/toast";
 
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Ví (Phase 4) ẩn hẳn ở Phase 1 — số tiền giả dễ gây hiểu nhầm.
@@ -28,12 +21,7 @@ const COMING_SOON = [
   { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
   { icon: "chatbubbles-outline", title: "Tin nhắn" },
 ];
-// Bấm mục chưa làm → thông báo ngắn. Android: Toast (tự tắt, không chặn); iOS không có Toast → dùng Alert
-const showComingSoon = (title) => {
-  const message = `${title} sẽ có ở phiên bản sau.`;
-  if (Platform.OS === "android") ToastAndroid.show(message, ToastAndroid.SHORT);
-  else Alert.alert("Sắp có", message);
-};
+const showComingSoon = (title) => showToast(`${title} sẽ có ở phiên bản sau.`);
 
 export default function AccountScreen() {
   const status = useAuthStore((s) => s.status);
