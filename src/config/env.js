@@ -6,8 +6,6 @@ export const ENV = {
 
 // Bật/tắt mock theo từng nhóm API: backend xong nhóm nào thì đổi nhóm đó sang ENV.USE_MOCK
 export const MOCK = {
-  auth: ENV.USE_MOCK, // đăng ký, OTP, đăng nhập, refresh, logout — BE đã có
-  profile: ENV.USE_MOCK, // /members/me, /members/me/code — BE đã có
   password: true, // quên / đặt lại / đổi mật khẩu — [CHỜ BE]
   upload: true, // [CHỜ BE] POST /uploads
   organization: true, // [CHỜ BE] đăng ký có mật khẩu, trạng thái hồ sơ

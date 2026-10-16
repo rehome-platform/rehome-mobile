@@ -1,0 +1,91 @@
+import { jwtDecode } from "jwt-decode";
+import { api, unwrap } from "@/lib/api/client";
+import { tokenStorage } from "@/lib/storage/tokenStorage";
+import { ROLES } from "@/constants/roles";
+import { OTP_PURPOSE } from "@/constants/auth";
+
+// ===== Đăng ký + OTP =====
+export const register = async ({ fullName, email, phone, password }) =>
+  unwrap(
+    await api.post("/api/auth/register", { fullName, email, phone, password }),
+  ); // { message }
+
+export const verifyRegisterOtp = async ({ email, otp }) =>
+  unwrap(
+    await api.post("/api/auth/verify-otp", {
+      email,
+      otp,
+      purpose: OTP_PURPOSE.REGISTER,
+    }),
+  ); // { message }, không trả token
+
+export const resendOtp = async ({ email, purpose }) =>
+  unwrap(await api.post("/api/auth/resend-otp", { email, purpose })); // { message }; gửi lại < 60 giây → 429
+
+// ===== Đăng nhập / phiên =====
+export const login = async ({ email, password }) =>
+  unwrap(await api.post("/api/auth/login", { email, password })); // { accessToken, refreshToken, tokenType } — KHÔNG có user
+
+export const logout = async () => {
+  await api.post("/api/auth/logout"); // cần header Authorization; token hết hạn → BE trả 500, nơi gọi bỏ qua lỗi
+};
+
+// [TẠM] đọc role từ claim "roles" ("ROLE_MEMBER"); bỏ khi login trả account.role [CHỜ BE]
+export function roleFromToken(accessToken) {
+  if (!accessToken) return null;
+  const { roles = "" } = jwtDecode(accessToken);
+  return roles.split(",")[0]?.replace("ROLE_", "") || null;
+}
+
+// BE chưa có /me chung → tự ghép user từ JWT + /members/me
+export async function getMe() {
+  const role = roleFromToken(await tokenStorage.getAccessToken());
+  if (role !== ROLES.MEMBER) return { role }; // tổ chức: chưa có API thông tin [CHỜ BE]
+  const profile = unwrap(await api.get("/members/me")); // không có tiền tố /api
+  return { role, ...profile };
+}
+
+// ===== Mật khẩu =====
+// Đổi mật khẩu (AU-07) — BE đã có (F008). Thành công trả CHUỖI "Đổi mật khẩu thành công".
+// Lưu ý: nằm dưới /api/auth nên client.js KHÔNG tự refresh; token hết hạn → BE trả 500 [CHỜ BE]
+export const changePassword = async ({
+  oldPassword,
+  newPassword,
+  newPasswordRepeat,
+}) =>
+  unwrap(
+    await api.post("/api/auth/password/change", {
+      oldPassword,
+      newPassword,
+      newPasswordRepeat,
+    }),
+  );
+
+// Quên mật khẩu — BE hiện gửi LINK web, chưa gửi OTP [CHỜ BE]. Viết sẵn theo luồng đã thống nhất, đang dùng mock.
+export const forgotPassword = async ({ email }) => {
+  await api.post("/api/auth/password/forgot", { email }); // 204
+};
+
+export const verifyResetOtp = async ({ email, otp }) =>
+  unwrap(
+    await api.post("/api/auth/verify-otp", {
+      email,
+      otp,
+      purpose: OTP_PURPOSE.FORGOT_PASSWORD,
+    }),
+  ); // { message, resetToken }
+
+export const resetPassword = async ({
+  email,
+  resetToken,
+  newPassword,
+  confirmPassword,
+}) =>
+  unwrap(
+    await api.post("/api/auth/password/reset", {
+      email,
+      resetToken,
+      newPassword,
+      confirmPassword,
+    }),
+  ); // { message }
