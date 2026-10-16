@@ -23,9 +23,16 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  signIn: async ({ accessToken, refreshToken, user }) => {
+  // Nhận token từ login → lưu → lấy thông tin user. Lỗi thì xoá token và ném lỗi ra cho màn hình
+  signIn: async ({ accessToken, refreshToken }) => {
     await tokenStorage.save({ accessToken, refreshToken });
-    set({ status: "authenticated", user, sessionError: null });
+    try {
+      const user = await authApi.getMe();
+      set({ status: "authenticated", user, sessionError: null });
+    } catch (e) {
+      await tokenStorage.clear();
+      throw e;
+    }
   },
 
   signOut: async (reason = null) => {
