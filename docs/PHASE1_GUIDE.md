@@ -129,13 +129,52 @@ git commit -m "chore: init expo project (blank, javascript)"
 
 ### 4.1. expo-router
 
-```bash
-npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
-```
+Đã làm 16/10 (commit `9467c74`), đối chiếu tài liệu Expo Router cho SDK 58.
 
-- `package.json`: đổi `"main"` thành `"expo-router/entry"`.
-- Xoá `App.js` và `index.js` ở gốc (expo-router thay thế).
-- `app.json`: thêm `"scheme": "rehome"` trong `"expo"`. Đổi `"name": "ReHome"`. Sau này build APK cần `"android": { "package": "com.rehome.mobile" }` **[GIẢ ĐỊNH]**, hỏi lead tên package.
+1. Cài thư viện (tắt `npx expo start` trước):
+
+   ```bash
+   npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar
+   ```
+
+   Lệnh này **tự thêm** `"plugins": ["expo-router", "expo-status-bar"]` vào `app.json`, không cần thêm tay.
+
+2. `package.json`: đổi `"main": "index.js"` thành `"main": "expo-router/entry"`.
+3. `app.json`: thêm `"scheme": "rehome"` trong `"expo"` (deep link, đăng nhập Google sau này). `"name": "ReHome"`, `"slug": "rehome-mobile"` đã đổi ở mục 3.
+   - Sau này build APK cần `"android": { "package": "com.rehome.mobile" }` **[GIẢ ĐỊNH]**, hỏi lead tên package.
+   - Tài liệu Expo có bật `experiments.typedRoutes`: **bỏ qua**, chỉ dùng cho TypeScript.
+   - Không cần `babel.config.js` (template SDK 58 không có, preset mặc định là `babel-preset-expo`).
+4. Xoá `App.js` và `index.js` ở gốc (expo-router thay thế): `git rm App.js index.js`.
+5. Tạo 2 route tạm để kiểm tra (sẽ thay ở mục 8):
+
+   ```js
+   // src/app/_layout.js — layout gốc, tạm chỉ có Stack
+   import { Stack } from "expo-router";
+
+   export default function RootLayout() {
+     return <Stack />;
+   }
+   ```
+
+   ```js
+   // src/app/index.js — route "/"
+   import { Text, View } from "react-native";
+
+   export default function Index() {
+     return (
+       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+         <Text>ReHome — expo-router OK</Text>
+       </View>
+     );
+   }
+   ```
+
+6. Chạy với xoá cache (vì điểm bắt đầu app vừa đổi): `npx expo start --clear`. Đúng khi thấy header "index" và dòng "ReHome — expo-router OK".
+
+```bash
+git add .
+git commit -m "chore: setup expo-router (src/app, scheme rehome)"
+```
 
 ### 4.2. Các thư viện Phase 1
 
