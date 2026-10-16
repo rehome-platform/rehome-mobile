@@ -1,6 +1,5 @@
 import { Text, View } from "react-native";
-import { colors } from "@/theme/colors";
-import { ENV } from "@/config/env";
+import { colors, textStyles } from "@/theme";
 
 export default function Index() {
   return (
@@ -12,9 +11,11 @@ export default function Index() {
         backgroundColor: colors.background,
       }}
     >
-      <Text style={{ color: colors.primary }}>ReHome — alias @/ OK</Text>
-      <Text>
-        {ENV.API_BASE_URL} · mock: {String(ENV.USE_MOCK)}
+      <Text style={[textStyles.title, { color: colors.primary }]}>
+        ReHome — Be Vietnam Pro
+      </Text>
+      <Text style={[textStyles.body, { color: colors.textSecondary }]}>
+        Tiếng Việt có dấu: Ký gửi · Mua sắm · Quyên góp
       </Text>
     </View>
   );
