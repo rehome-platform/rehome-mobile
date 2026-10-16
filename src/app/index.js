@@ -2,13 +2,18 @@ import { useState } from "react";
 import { View } from "react-native";
 import { colors, spacing } from "@/theme";
 import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 
 export default function Index() {
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
 
-  const fakeSubmit = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 2000); // giả lập gọi API 2 giây
+  const onSubmit = () => {
+    const next = {};
+    if (!email.trim()) next.email = "Vui lòng nhập email";
+    if (!password) next.password = "Vui lòng nhập mật khẩu";
+    setErrors(next);
   };
 
   return (
@@ -17,14 +22,30 @@ export default function Index() {
         flex: 1,
         justifyContent: "center",
         padding: spacing.lg,
-        gap: spacing.md,
+        gap: spacing.lg,
         backgroundColor: colors.background,
       }}
     >
-      <Button title="Đăng nhập" onPress={fakeSubmit} loading={loading} />
-      <Button title="Tạo tài khoản" variant="secondary" onPress={() => {}} />
-      <Button title="Quên mật khẩu?" variant="text" onPress={() => {}} />
-      <Button title="Đang khoá" disabled onPress={() => {}} />
+      <TextField
+        label="Email"
+        required
+        placeholder="ban@example.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
+        error={errors.email}
+      />
+      <TextField
+        label="Mật khẩu"
+        required
+        secure
+        helper="Ít nhất 8 ký tự, có chữ và số"
+        value={password}
+        onChangeText={setPassword}
+        error={errors.password}
+      />
+      <Button title="Đăng nhập" onPress={onSubmit} />
     </View>
   );
 }
