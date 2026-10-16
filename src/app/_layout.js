@@ -17,5 +17,5 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null; // chưa tải xong font thì chưa vẽ gì
 
-  return <Stack />;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

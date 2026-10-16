@@ -1,0 +1,54 @@
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { colors, spacing } from "@/theme";
+
+export function Screen({
+  children,
+  scroll = false, // true: nội dung cuộn được (form dài)
+  padded = true, // true: cách mép 16
+  edges = ["top", "bottom"], // cạnh nào cần tránh tai thỏ / thanh điều hướng
+  style,
+  contentStyle,
+}) {
+  const content = scroll ? (
+    <ScrollView
+      contentContainerStyle={[
+        styles.grow,
+        padded && styles.padded,
+        contentStyle,
+      ]}
+      keyboardShouldPersistTaps="handled" // bấm nút khi bàn phím đang mở vẫn ăn ngay
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    <View style={[styles.fill, padded && styles.padded, contentStyle]}>
+      {children}
+    </View>
+  );
+
+  return (
+    <SafeAreaView edges={edges} style={[styles.fill, styles.bg, style]}>
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        {content}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+  grow: { flexGrow: 1 },
+  bg: { backgroundColor: colors.background },
+  padded: { padding: spacing.lg },
+});
