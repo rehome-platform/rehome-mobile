@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { colors } from "@/theme/colors";
+import { ENV } from "@/config/env";
 
 export default function Index() {
   return (
@@ -12,6 +13,9 @@ export default function Index() {
       }}
     >
       <Text style={{ color: colors.primary }}>ReHome — alias @/ OK</Text>
+      <Text>
+        {ENV.API_BASE_URL} · mock: {String(ENV.USE_MOCK)}
+      </Text>
     </View>
   );
 }
