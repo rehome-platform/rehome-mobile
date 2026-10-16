@@ -9,6 +9,7 @@ export function TextField({
   helper,
   error,
   secure = false, // true: ô mật khẩu, có nút ẩn/hiện
+  multiline = false, // true: ô nhiều dòng (mô tả…)
   style,
   onFocus,
   onBlur,
@@ -33,9 +34,16 @@ export function TextField({
         </Text>
       ) : null}
 
-      <View style={[styles.inputBox, { borderColor }]}>
+      <View
+        style={[
+          styles.inputBox,
+          multiline && styles.inputBoxMultiline,
+          { borderColor },
+        ]}
+      >
         <TextInput
-          style={styles.input}
+          style={[styles.input, multiline && styles.inputMultiline]}
+          multiline={multiline}
           placeholderTextColor={colors.textSecondary}
           secureTextEntry={hidden}
           accessibilityLabel={label}
@@ -88,6 +96,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
   },
+  inputBoxMultiline: { alignItems: "flex-start" },
   input: {
     flex: 1,
     ...textStyles.body,
@@ -95,6 +104,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingVertical: spacing.sm,
   },
+  inputMultiline: { minHeight: 96, textAlignVertical: "top" }, // Android: chữ bắt đầu từ trên, không nằm giữa ô
   helper: { ...textStyles.caption, color: colors.textSecondary },
   error: {
     ...textStyles.caption,
