@@ -1,43 +1,58 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { colors, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { Button } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/TextField";
+import { api, unwrap } from "@/lib/api/client";
 
 export default function Index() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [result, setResult] = useState("Chưa gọi");
+  const [loading, setLoading] = useState(false);
+
+  const run = async (name, fn) => {
+    setLoading(true);
+    setResult(`${name}: đang gọi… (server Render có thể ngủ, chờ tới 30 giây)`);
+    try {
+      const data = await fn();
+      setResult(`${name}: OK\n${JSON.stringify(data, null, 2)}`);
+    } catch (e) {
+      // e là ApiError do client.js chuẩn hoá
+      setResult(
+        `${name}: LỖI\nstatus: ${e.status}\ncode: ${e.code}\nmessage: ${e.message}`,
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Screen
-      scroll
-      contentStyle={{ justifyContent: "flex-end", gap: spacing.lg }}
-    >
-      <View style={{ flex: 1, justifyContent: "center" }}>
-        <Text style={[textStyles.title, { color: colors.primary }]}>
-          Thử Screen
-        </Text>
-        <Text style={[textStyles.body, { color: colors.textSecondary }]}>
-          Form nằm ở đáy để kiểm tra bàn phím
-        </Text>
-      </View>
-      <TextField
-        label="Email"
-        required
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
+    <Screen scroll contentStyle={{ gap: spacing.md }}>
+      <Text style={[textStyles.title, { color: colors.primary }]}>
+        Thử lớp API
+      </Text>
+      <Button
+        title="1. Login sai mật khẩu"
+        loading={loading}
+        onPress={() =>
+          run("login sai", async () =>
+            unwrap(
+              await api.post("/api/auth/login", {
+                email: "khongtontai@rehome.vn",
+                password: "sai123456",
+              }),
+            ),
+          )
+        }
       />
-      <TextField
-        label="Mật khẩu"
-        required
-        secure
-        value={password}
-        onChangeText={setPassword}
+      <Button
+        title="2. GET /members/me (chưa đăng nhập)"
+        variant="secondary"
+        loading={loading}
+        onPress={() =>
+          run("members/me", async () => unwrap(await api.get("/members/me")))
+        }
       />
-      <Button title="Đăng nhập" onPress={() => {}} />
+      <Text style={[textStyles.body, { color: colors.text }]}>{result}</Text>
     </Screen>
   );
 }
