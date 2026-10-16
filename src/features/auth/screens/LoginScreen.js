@@ -114,6 +114,11 @@ export default function LoginScreen() {
           Xác thực email thành công, mời bạn đăng nhập.
         </Text>
       ) : null}
+      {params.passwordChanged === "1" ? (
+        <Text style={styles.success}>
+          Đổi mật khẩu thành công, mời bạn đăng nhập lại.
+        </Text>
+      ) : null}
 
       <Controller
         control={control}

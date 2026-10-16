@@ -46,3 +46,21 @@ export const registerSchema = z
     path: ["confirmPassword"],
     error: "Hai mật khẩu chưa khớp",
   });
+// AU-07: đổi mật khẩu
+export const changePasswordSchema = z
+  .object({
+    oldPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
+    newPassword: z
+      .string()
+      .min(1, "Vui lòng nhập mật khẩu mới")
+      .regex(PASSWORD_REGEX, "Mật khẩu ít nhất 8 ký tự, có cả chữ và số"),
+    newPasswordRepeat: z.string().min(1, "Vui lòng nhập lại mật khẩu mới"),
+  })
+  .refine((d) => d.newPassword !== d.oldPassword, {
+    path: ["newPassword"],
+    error: "Mật khẩu mới phải khác mật khẩu hiện tại",
+  })
+  .refine((d) => d.newPassword === d.newPasswordRepeat, {
+    path: ["newPasswordRepeat"],
+    error: "Hai mật khẩu chưa khớp",
+  });

@@ -20,6 +20,12 @@ export default function MemberHome() {
           <Text style={[textStyles.body, { color: colors.textSecondary }]}>
             {user?.email} · {user?.role} · {user?.memberCode}
           </Text>
+          {/* [TẠM] lối vào AU-07 — sẽ chuyển sang mục "Đổi mật khẩu" ở PR-01 Tab Cá nhân */}
+          <Button
+            title="Đổi mật khẩu"
+            variant="secondary"
+            onPress={() => router.push("/profile/change-password")}
+          />
           <Button
             title="Đăng xuất"
             variant="secondary"
