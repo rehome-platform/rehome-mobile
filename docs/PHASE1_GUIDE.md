@@ -6,6 +6,9 @@
 > Ký hiệu: **[GIẢ ĐỊNH]** = mình tạm đặt vì chưa có quyết định, phải sửa khi có thông tin thật. **[CHỜ BE]** / **[CHỜ LEAD]** = đã hỏi, đang chờ trả lời (danh sách ở `CLAUDE.md`).
 > API: **code theo thứ đang chạy thật** (Swagger + code `../rehome-backend` nhánh develop), không theo `docs/API_CONTRACT.md` khi lệch. URL, field, cách bóc response chỉ nằm trong `features/*/api/*.real.js` và `src/lib/api`.
 
+> **Trạng thái 16/10 (cuối ngày):** đã xong mục 1 → 8 (nền, API, store, điều hướng) và **AU-02, AU-03, AU-04 chạy với BE thật** (đăng ký → OTP qua mail → đăng nhập). Code trong repo là bản chuẩn; các đoạn code mẫu bên dưới đã được cập nhật theo code thật. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
+> **Thay đổi lớn so với bản đầu:** không mock auth nữa (gọi thật, test bằng tài khoản thật); `authStore.signIn(tokens)` tự gọi `getMe()`; BE đã có `code` lỗi (`ACCOUNT_BANNED`, `EMAIL_NOT_VERIFIED`, `WRONG_PASSWORD`…) và gửi được mail OTP.
+
 ---
 
 ## 0. Phase 1 gồm những gì và thế nào là "xong"
@@ -30,19 +33,31 @@
 | OA-06         | Tổ chức: chờ xác minh / bị từ chối                | `(org-status)/verification`                                 | P1      |
 | —             | Khung tab của Organization đã duyệt (màn giữ chỗ) | `(org)/(tabs)/*`                                            | P2      |
 
-**Thứ tự gợi ý (còn 4 ngày):**
+**Thứ tự (cập nhật cuối 16/10):**
 
-- 16/10: tạo project, theme, component, lớp API, store, khung điều hướng.
-- 17/10: AU-02 → AU-06.
-- 18/10: PR-01 → PR-04, AU-07, OA-01 → OA-04.
-- 19/10: OA-05, OA-06, khung tab tổ chức, tự test, mở PR.
+- 16/10 ✅: tạo project, theme, component, lớp API, store, khung điều hướng, **AU-02, AU-03, AU-04** (thật).
+- 17/10: AU-07 (thật), AU-05/06 (mock), AU-01 splash, thanh tab Member, PR-01 → PR-04.
+- 18/10: OA-01 → OA-06 (mock phần BE chưa có), khung tab tổ chức.
+- 19/10: Google (nếu có OAuth client + dev build), tự test checklist mục 10, mở PR.
 
 Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đổi ảnh đại diện thật, đổi email.
 
 ### 0.2. Định nghĩa "xong"
 
+- **4 tiêu chí của kế hoạch:** Guest đăng ký được Member/Organization · Đăng nhập (kể cả Google) · Đổi/quên mật khẩu · Member xem/sửa hồ sơ.
+
+| Tiêu chí                 | Màn         | Gọi thật / mock                         | Trạng thái 16/10             |
+| ------------------------ | ----------- | --------------------------------------- | ---------------------------- |
+| Guest đăng ký Member     | AU-03, AU-04 | Thật                                   | ✅ chạy với BE thật           |
+| Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ⏳                        |
+| Đăng nhập email          | AU-02       | Thật                                    | ✅                            |
+| Đăng nhập Google         | AU-02       | Mock tới khi có OAuth client + dev build | ⏳ [CHỜ BE/LEAD]             |
+| Đổi mật khẩu             | AU-07       | Thật                                    | ⏳                            |
+| Quên mật khẩu            | AU-05, 06   | Mock (BE gửi link, chưa gửi OTP)        | ⏳ [CHỜ BE]                   |
+| Member xem/sửa hồ sơ     | PR-01 → 04  | Thật (ảnh đại diện mock)                | ⏳                            |
+
 - Chạy được trên Android thật qua Expo Go, không màn đỏ, không warning nghiêm trọng.
-- Mọi luồng trong mục 10 (checklist) chạy được với **dữ liệu giả**. API nào backend đã có thì gọi thật.
+- Mọi luồng trong mục 10 (checklist) chạy được: API BE đã có thì **gọi thật**, chưa có thì mock.
 - Tắt app mở lại vẫn giữ đăng nhập; đăng xuất thì về chế độ Guest.
 - Không có mã màu viết trực tiếp trong màn hình, không có secret trong code.
 - Đã push nhánh và mở Pull Request cho lead, kèm hướng dẫn test.
@@ -61,6 +76,12 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | 8   | Đăng nhập sai: "còn 3 lần thử trước khi khoá 15 phút" (AU-02) không có trong bảng tham số mục 11                                                           | Chỉ hiển thị thông báo backend trả về, không tự đếm                                                                              |
 | 9   | AU-04 ghi chú ③: chưa xác thực email vẫn đăng nhập được. **Đã chốt ngược lại** theo L-01 + BE: chưa xác thực thì **không đăng nhập được**                  | Chỉ có Guest và Member đã xác thực. Bỏ nút "Xác thực email" ở PR-02. Lỗi đăng nhập xử lý theo AU-02 [CHỜ LEAD xoá ghi chú ③]    |
 | 10  | Thử đồ có Đầm (Áo + Quần **hoặc** Đầm)                                                                                                                     | Không thuộc Phase 1, ghi nhận cho Phase 6                                                                                        |
+| 11  | Wireframe viết label **hoa toàn bộ** ("EMAIL \*")                                                                                                          | Dùng **kiểu câu** ("Email \*") theo Material/HIG; chữ hoa khó đọc, tiếng Việt in hoa chật dấu                                   |
+| 12  | Nút chính ở đáy màn (AU-03 → AU-07); nút mờ khi form chưa đủ                                                                                               | Nút **cố định ở đáy** (`Screen footer`), AU-02 để nút trong nội dung. **Chỉ khoá nút ở màn OTP**; form khác nút luôn bấm được, bấm thì báo lỗi dưới từng ô |
+| 13  | AU-02: label "Email hoặc số điện thoại"; khung ghi chú "tổ chức đăng nhập bằng SĐT"                                                                        | Label "Email" (login chỉ nhận email); **ẩn khung tổ chức** [CHỜ LEAD/BE]; lỗi 401 hiện dưới ô Mật khẩu như wireframe            |
+| 14  | AU-04: "Mã có hiệu lực 10 phút"; lỗi riêng "mã đã hết hạn"                                                                                                 | **5 phút** theo BE; hiện nguyên message BE (BE không phân biệt sai/hết hạn)                                                      |
+| 15  | AU-05/06 vẽ luồng **link**, có màn "Liên kết không còn dùng được"                                                                                          | OTP: AU-05 "Gửi mã"; AU-06 thêm `OtpInput`, bỏ màn liên kết hỏng                                                                |
+| 16  | AU-07 ghi "thiết bị này giữ nguyên" sau khi đổi mật khẩu                                                                                                   | BE thu hồi token mọi thiết bị → mobile **chủ động đăng xuất** [CHỜ BE xác nhận]                                                 |
 
 ---
 
@@ -375,23 +396,23 @@ export const textStyles = {
 
 ### 6.3. Component cần cho Phase 1 (`src/components/ui/`)
 
-| Component                                 | Yêu cầu                                                                                          |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `Screen`                                  | SafeArea + nền `background` + `KeyboardAvoidingView` + tuỳ chọn cuộn                             |
-| `AppHeader`                               | Nút ← (có `accessibilityLabel="Quay lại"`) + tiêu đề + chỗ cho nút phải                          |
-| `Button`                                  | `variant`: primary / secondary / text; `loading` (spinner, chặn bấm 2 lần); `disabled`; cao ≥ 48 |
-| `TextField`                               | label (có `*` nếu bắt buộc), helper, error (đỏ, đậm), ẩn/hiện mật khẩu, `keyboardType`           |
-| `OtpInput`                                | 6 ô, tự nhảy ô, dán được cả mã, chỉ nhận số; dùng chung AU-04, AU-06                             |
-| `PasswordChecklist`                       | Các dòng ✓: ≥ 8 ký tự, có chữ và số (thêm "khác mật khẩu hiện tại" ở AU-07)                      |
-| `Checkbox`, `RadioCard`                   | Điều khoản (AU-03), chọn Cá nhân / Tổ chức (AU-03), loại hình tổ chức (OA-01)                    |
-| `ChipGroup`                               | Chọn ngày T2 … CN (OA-04)                                                                        |
-| `Stepper`                                 | 4 bước: Tổ chức · Đại diện · Giấy tờ · Nhận đồ (✓ cho bước đã xong)                              |
-| `FileItem`                                | Tên file, nút Xoá, các ô khai báo giấy tờ (OA-03)                                                |
-| `NoteBox`                                 | Ô ghi chú viền đứt (wireframe dùng nhiều)                                                        |
-| `EmptyState`, `ErrorState`, `LoadingView` | Dùng chung cho mọi màn có dữ liệu                                                                |
-| `ConfirmDialog`                           | Xác nhận đăng xuất                                                                               |
+| Component                                 | Yêu cầu                                                                                          | 16/10 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------ | ----- |
+| `Screen`                                  | SafeArea + nền + `KeyboardAvoidingView` + `scroll`; `header` (đứng yên), `footer` (nút cố định đáy, nằm trên bàn phím) | ✅ |
+| `AppHeader`                               | Nút ← trong ô vuông (`onBack` tuỳ chọn, không truyền = không có ←) + tiêu đề + `right`           | ✅    |
+| `Button`                                  | `variant`: primary / secondary / text; `loading` (chặn bấm 2 lần, vẫn giữ màu); `disabled` (mờ); cao ≥ 48 | ✅ |
+| `TextField`                               | label kiểu câu (có `*`), helper, error (đỏ), ẩn/hiện mật khẩu (Ionicons), truyền thẳng prop cho `TextInput` | ✅ |
+| `OtpInput`                                | 6 ô vẽ + **một** `TextInput` trong suốt phủ lên (gõ liên tục, xoá lùi, dán cả mã), chỉ nhận số   | ✅    |
+| `RadioCard`, `Checkbox`                   | Chọn Cá nhân / Tổ chức (AU-03), loại hình (OA-01); điều khoản có link lồng (AU-03)               | ✅    |
+| `NoteBox`, `Divider`, `ErrorBox`          | Ghi chú viền đứt; "── hoặc ──"; khung lỗi server của form                                        | ✅    |
+| `PasswordChecklist`                       | Các dòng ✓: ≥ 8 ký tự, có chữ và số (thêm "khác mật khẩu hiện tại" ở AU-07)                      | ⏳    |
+| `ChipGroup`                               | Chọn ngày T2 … CN (OA-04)                                                                        | ⏳    |
+| `Stepper`                                 | 4 bước: Tổ chức · Đại diện · Giấy tờ · Nhận đồ (✓ cho bước đã xong)                              | ⏳    |
+| `FileItem`                                | Tên file, nút Xoá, các ô khai báo giấy tờ (OA-03)                                                | ⏳    |
+| `EmptyState`, `ErrorState`, `LoadingView` | Dùng chung cho mọi màn có dữ liệu                                                                | ⏳    |
+| `ConfirmDialog`                           | Xác nhận đăng xuất                                                                               | ⏳    |
 
-Làm `Button` và `TextField` trước, test kỹ, rồi mới làm màn hình.
+Icon dùng `@expo/vector-icons` (Ionicons) — phải cài (mục 4.2).
 
 ---
 
@@ -422,22 +443,23 @@ Nhóm nào BE chưa có thì để `true` cứng: dù `.env` đặt `USE_MOCK=fa
 
 Màn hình chỉ làm việc với **một kiểu lỗi**, dù lỗi đến từ mock hay axios.
 
-BE hiện trả **2 dạng lỗi**, cả hai đều có `message`, **chưa có `code`** [CHỜ BE]:
+BE trả **2 dạng lỗi**, cả hai đều có `message` (chi tiết ở `CLAUDE.md` → "API backend đang chạy thật"):
 
-- Dạng A: `{ timestamp, status, error, message, path }`
-- Dạng B: `{ result: null, isSuccess: false, statusCode, message }`
+- Dạng A: `{ timestamp, status, error, message, path }` — không có `code` (401 sai mật khẩu, OTP, 409, 503…).
+- Dạng B: `{ result: null, isSuccess: false, statusCode, code?, message }` — lỗi qua `AppException` **có `code`** (từ 16/10: `ACCOUNT_BANNED`, `EMAIL_NOT_VERIFIED`, `WRONG_PASSWORD`…).
 - 403 do thiếu/hết hạn token: body **rỗng**.
 
-`toApiError` đọc `data.code` nếu có, không có thì dùng `HTTP_<status>`. Khi BE thêm `code`, file này không phải sửa.
+`toApiError` đọc `data.code` nếu có, không có thì dùng `HTTP_<status>`. BE thêm `code` mới thì file này không phải sửa.
 
 ```js
 // src/constants/errorCodes.js — mã lỗi màn hình được phép so sánh
 export const ERROR_CODES = {
   NETWORK: "NETWORK",
-  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED", // [CHỜ BE] hiện BE trả HTTP_403
-  ACCOUNT_BANNED: "ACCOUNT_BANNED", // [CHỜ BE] hiện BE trả HTTP_403
+  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED", // BE đã có (16/10)
+  ACCOUNT_BANNED: "ACCOUNT_BANNED", // BE đã có (16/10)
 };
 ```
+Thêm `WRONG_PASSWORD` khi làm AU-07.
 
 ```js
 // src/lib/api/errors.js
@@ -510,6 +532,7 @@ import axios from "axios";
 import { ENV } from "@/config/env";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { toApiError } from "./errors";
+import { ERROR_CODES } from "@/constants/errorCodes";
 
 // Server Render ngủ khi không dùng: request đầu tiên có thể mất vài chục giây
 export const api = axios.create({ baseURL: ENV.API_BASE_URL, timeout: 30000 });
@@ -549,8 +572,18 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // Bị khoá khi ĐANG dùng app (BE chặn ở JwtAuthenticationFilter / refresh) → đăng xuất ngay, giữ lý do.
+    // Bỏ qua API đăng nhập: lúc đó chưa đăng nhập, LoginScreen tự hiện lỗi bị khoá.
+    const apiError = toApiError(error);
+    const isLoginCall = /\/api\/auth\/(login|google)/.test(original?.url ?? "");
+    if (apiError.code === ERROR_CODES.ACCOUNT_BANNED && !isLoginCall) {
+      onSessionExpired(apiError);
+      return Promise.reject(apiError);
+    }
+    // Lỗi khác, đã thử lại rồi, hoặc chính API auth → trả lỗi luôn
     if (!isTokenExpired(error) || original?._retry || original?.url?.includes("/api/auth/")) {
-      return Promise.reject(toApiError(error));
+      return Promise.reject(apiError);
     }
     original._retry = true;
     try {
@@ -564,7 +597,7 @@ api.interceptors.response.use(
       if (!refreshError?.response && refreshError?.message !== "NO_REFRESH_TOKEN") {
         return Promise.reject(toApiError(refreshError));
       }
-      // Refresh bị BE từ chối (hết hạn, ACCOUNT_BANNED [CHỜ BE]) hoặc không có refresh token → đăng xuất
+      // Refresh bị BE từ chối (hết hạn, ACCOUNT_BANNED) hoặc không có refresh token → đăng xuất
       const reason = refreshError.response ? toApiError(refreshError) : toApiError(error);
       onSessionExpired(reason);
       return Promise.reject(reason);
@@ -575,28 +608,29 @@ api.interceptors.response.use(
 
 Bản trước (16/10 sáng) dùng `toApiError(refreshError)` cho mọi trường hợp → không có refresh token hoặc mất mạng lúc refresh đều thành `NETWORK`, và mất mạng còn bị đăng xuất. Đã sửa như trên (commit `6627f29`).
 
-**Đã kiểm tra với server thật (16/10):** `POST /api/auth/login` sai email/mật khẩu → `401 / HTTP_401 / "Sai email hoặc password"`; `GET /members/me` không token → `403 / HTTP_403` body rỗng → thử refresh → không có refresh token → trả lỗi gốc.
+**Đã kiểm tra với server thật (16/10):** `POST /api/auth/login` sai email/mật khẩu → `401 / HTTP_401 / "Sai email hoặc password"`; `GET /members/me` không token → `403 / HTTP_403` body rỗng → thử refresh → không có refresh token → trả lỗi gốc. Thêm khối `ACCOUNT_BANNED` ở commit `9f40599`.
 
-### 7.5. Mẫu một nhóm API có mock: `features/auth/api/`
+### 7.5. Nhóm API auth: `features/auth/api/` (gọi thật + mock riêng phần mật khẩu)
 
-Trong cùng nhóm auth, có hàm BE đã có (đăng nhập, OTP, đổi mật khẩu…) và hàm chưa dùng được (quên / đặt lại mật khẩu). `authApi.js` chọn mock/real **theo từng nhóm hàm**:
+**Không mock auth** (đã bỏ từ 16/10): đăng ký, OTP, đăng nhập, đổi mật khẩu đều gọi thật. Chỉ quên / đặt lại mật khẩu dùng mock vì BE còn gửi link web. `authApi.js` = toàn bộ hàm thật, ghi đè 3 hàm nhóm mật khẩu:
 
 ```js
-// authApi.js — màn hình chỉ import file này
+// authApi.js — màn hình CHỈ import file này
 import { MOCK } from "@/config/env";
 import * as real from "./authApi.real";
 import * as mock from "./authApi.mock";
 
-const base = MOCK.auth ? mock : real; // gồm cả changePassword (BE đã có, F008)
 const password = MOCK.password ? mock : real; // quên / đặt lại mật khẩu [CHỜ BE bản OTP]
 
 export const authApi = {
-  ...base,
+  ...real, // đăng ký, OTP, đăng nhập, logout, getMe, đổi mật khẩu → API thật
   forgotPassword: password.forgotPassword,
   verifyResetOtp: password.verifyResetOtp,
   resetPassword: password.resetPassword,
 };
 ```
+
+`src/config/env.js` → `MOCK = { password: true, upload: true, organization: true }` (đã bỏ `auth`, `profile`). `.env` đặt `EXPO_PUBLIC_USE_MOCK=false`.
 
 Login của BE **chỉ trả token**, không có user/role. `getMe()` ở bản real tự ghép `user` từ JWT + `/members/me`, để `authStore` (mục 8.2) không phải biết chuyện này. Hằng số `OTP_PURPOSE` ở `src/constants/auth.js` (`REGISTER`, `FORGOT_PASSWORD`).
 
@@ -659,55 +693,41 @@ export const resetPassword = async ({ email, resetToken, newPassword, confirmPas
   unwrap(await api.post("/api/auth/password/reset", { email, resetToken, newPassword, confirmPassword })); // { message }
 ```
 
-Sau khi đăng nhập thành công: lưu token → gọi `getMe()` → `signIn({ accessToken, refreshToken, user })`.
+Đăng nhập thành công: màn hình gọi `signIn(await authApi.login(values))`; `authStore.signIn` tự lưu token → `getMe()` → cập nhật store (mục 8.2).
 
 ```js
-// authApi.mock.js — trả về ĐÚNG hình dạng như real, có độ trễ và có lỗi
+// authApi.mock.js — CHỈ mock phần BE chưa dùng được: quên / đặt lại mật khẩu [CHỜ BE]
+// Cùng tên hàm + hình dạng dữ liệu với authApi.real.js
 import { ApiError } from "@/lib/api/errors";
-import { ERROR_CODES } from "@/constants/errorCodes";
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
-export async function login({ email, password }) {
+const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
+const OTP_INVALID = "Mã xác thực không hợp lệ, hết hạn hoặc đã sử dụng."; // giống message BE
+
+export async function forgotPassword() {
+  await delay(); // BE trả 204, không có dữ liệu
+}
+
+// OTP giả: 123456 đúng; mã khác → lỗi giống BE
+export async function verifyResetOtp({ otp }) {
   await delay();
-  const user = MOCK_USERS.find((u) => u.email === email);
-  if (!user || password !== "Rehome123") {
-    throw new ApiError({ status: 401, code: "HTTP_401", message: "Sai email hoặc password" });
-  }
-  // Cùng thứ tự với BE: kiểm bị khoá trước, rồi mới tới chưa xác thực
-  if (user.status === "BANNED") {
-    throw new ApiError({
-      status: 403,
-      code: ERROR_CODES.ACCOUNT_BANNED,
-      message: "Tài khoản đã bị khoá.",
-      reason: user.banReason,
-    });
-  }
-  if (!user.emailVerified) {
-    throw new ApiError({
-      status: 403,
-      code: ERROR_CODES.EMAIL_NOT_VERIFIED,
-      message: "Tài khoản chưa xác minh email.",
-    });
-  }
-  return { accessToken: "mock-access", refreshToken: "mock-refresh", tokenType: "Bearer" };
+  if (otp !== "123456") throw new ApiError({ status: 400, code: "HTTP_400", message: OTP_INVALID });
+  return { message: "OTP hợp lệ.", resetToken: "mock-reset-token" };
+}
+
+export async function resetPassword() {
+  await delay();
+  return { message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập." };
 }
 ```
 
-**Tài khoản giả** (`MOCK_USERS`), mật khẩu chung `Rehome123`:
+**Test bằng tài khoản thật** trên server Render (không còn tài khoản mock). Tạo nhiều email nhận chung một hộp thư bằng mẹo Gmail: `tenban+test1@gmail.com`, `tenban+test2@gmail.com`…
 
-| Email                     | Dùng để test                                                                 |
-| ------------------------- | ---------------------------------------------------------------------------- |
-| `member@rehome.vn`        | Member đã xác thực email                                                     |
-| `unverified@rehome.vn`    | Đăng nhập → `EMAIL_NOT_VERIFIED` → tự gửi lại OTP, sang AU-04                |
-| `banned@rehome.vn`        | Đăng nhập → `ACCOUNT_BANNED`, `reason: "Đăng bán hàng giả nhiều lần."`       |
-| `org-pending@rehome.vn`   | Tổ chức PENDING → OA-06 chờ xác minh                                         |
-| `org-rejected@rehome.vn`  | Tổ chức REJECTED → OA-06 bị từ chối, có lý do                                |
-| `org-verified@rehome.vn`  | Tổ chức VERIFIED → khung tab tổ chức                                         |
-| `taken@rehome.vn`         | Đăng ký bị trùng email                                                       |
-
-Tài khoản tổ chức mock đăng nhập bằng email vì API login chỉ nhận email. Tổ chức đăng nhập bằng gì: [CHỜ BE] [CHỜ LEAD].
-
-OTP giả: `123456` đúng, `000000` hết hạn, mã khác thì sai.
+| Cần                         | Cách tạo                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| Member đã xác thực          | Đăng ký trong app (AU-03) → nhập OTP (AU-04)                                 |
+| Member **chưa** xác thực    | Đăng ký nhưng không nhập OTP → đăng nhập sẽ ra `EMAIL_NOT_VERIFIED`          |
+| Tài khoản bị khoá           | Nhờ BE đặt `status = BANNED` cho một tài khoản test                          |
+| Tổ chức PENDING/REJECTED/VERIFIED | Chưa có (tổ chức chưa đăng nhập được) → mock khi làm OA [CHỜ BE/LEAD]   |
 
 ### 7.6. API cho Phase 1 — theo API đang chạy thật (Swagger + code BE develop, 16/10)
 
@@ -717,13 +737,13 @@ OTP giả: `123456` đúng, `000000` hết hạn, mã khác thì sai.
 
 | Việc                | Method + path                    | Body gửi đi                                    | Kết quả (sau `unwrap`)                                       |
 | ------------------- | -------------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
-| Đăng ký Member      | `POST /api/auth/register`        | `email, password, fullName, phone`             | 201 `{ message }`, BE gửi OTP. Trùng email 409; trùng SĐT hiện ra 500 |
+| Đăng ký Member      | `POST /api/auth/register`        | `email, password, fullName, phone`             | 201 `{ message }`, BE gửi OTP (Brevo, có thể chậm). Trùng email 409; trùng SĐT hiện ra 500; gửi mail lỗi 503 (không tạo tài khoản) |
 | Xác thực email      | `POST /api/auth/verify-otp`      | `email, otp, purpose: 'REGISTER'`              | `{ message }`, **không trả token** → về Đăng nhập            |
 | Gửi lại OTP         | `POST /api/auth/resend-otp`      | `email, purpose: 'REGISTER'`                   | `{ message }`, luôn như nhau. Gửi sớm hơn 60 giây → 429       |
-| Đăng nhập           | `POST /api/auth/login`           | `email, password`                              | `{ accessToken, refreshToken, tokenType }`, **không có user** |
+| Đăng nhập           | `POST /api/auth/login`           | `email, password`                              | `{ accessToken, refreshToken, tokenType }`, **không có user**. Lỗi: 401 sai mật khẩu; 403 `ACCOUNT_BANNED` / `EMAIL_NOT_VERIFIED` (chỉ khi đúng mật khẩu) |
 | Làm mới token       | `POST /api/auth/refresh`         | `refreshToken`                                 | `{ accessToken, refreshToken }`; token cũ hết dùng (xoay vòng) |
 | Đăng xuất           | `POST /api/auth/logout`          | — (cần header `Authorization`)                 | 204. Access token đã hết hạn → 500, bỏ qua lỗi này           |
-| Đổi mật khẩu (AU-07) | `POST /api/auth/password/change` | `oldPassword, newPassword, newPasswordRepeat` | Chuỗi "Đổi mật khẩu thành công"; thu hồi token mọi thiết bị → mobile đăng xuất. Token hết hạn → 500 (không tự refresh) |
+| Đổi mật khẩu (AU-07) | `POST /api/auth/password/change` | `oldPassword, newPassword, newPasswordRepeat` | Chuỗi "Đổi mật khẩu thành công"; thu hồi token mọi thiết bị → mobile đăng xuất. Lỗi 400 có `code`: `WRONG_PASSWORD`, `NEW_PASSWORD_SAME_AS_OLD`, `PASSWORD_CONFIRM_MISMATCH`, `PASSWORD_NOT_SET`. Token hết hạn → 500 (không tự refresh) |
 | Thông tin Member    | `GET /members/me`                | —                                              | `{ accountId, email, phone, fullName, avatarUrl, memberCode, emailVerified }` |
 | Sửa hồ sơ Member    | `PATCH /members/me`              | `fullName, phone, avatarUrl` (ô trống = giữ nguyên) | `{ accountId, fullName, phone, avatarUrl }` → gọi lại `GET /members/me` |
 | Mã Member           | `GET /members/me/code`           | —                                              | `{ memberCode }`                                             |
@@ -754,10 +774,12 @@ AU-06 gộp OTP + mật khẩu mới trên một màn: bấm "Đặt lại" thì
   "phone": "…",
   "fullName": "Ngô Hải F",
   "avatarUrl": null,
-  "memberCode": "MB-004821",
+  "memberCode": "MB000001",
   "emailVerified": true
 }
 ```
+
+- `memberCode` dạng `MB000001` (6 chữ số, không gạch) — hiện đúng chuỗi BE trả, không tự định dạng. Wireframe vẽ `MB-004821` chỉ là ví dụ.
 
 - `role` đọc từ JWT (claim `roles`) cho tới khi login trả `account { id, role, verificationStatus }` [CHỜ BE].
 - Chưa có `createdAt` (PR-01 "tham gia 08/2026"), ngày sinh, giới tính [CHỜ BE].
@@ -806,9 +828,16 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  signIn: async ({ accessToken, refreshToken, user }) => {
+  // Nhận token từ login → lưu → lấy thông tin user. Lỗi thì xoá token và ném lỗi ra cho màn hình
+  signIn: async ({ accessToken, refreshToken }) => {
     await tokenStorage.save({ accessToken, refreshToken });
-    set({ status: "authenticated", user, sessionError: null });
+    try {
+      const user = await authApi.getMe();
+      set({ status: "authenticated", user, sessionError: null });
+    } catch (e) {
+      await tokenStorage.clear();
+      throw e;
+    }
   },
 
   signOut: async (reason = null) => {
@@ -824,11 +853,12 @@ export const useAuthStore = create((set, get) => ({
   setUser: (user) => set({ user }),
 }));
 
-// Refresh thất bại (refresh token hết hạn, hoặc ACCOUNT_BANNED [CHỜ BE]) → đăng xuất, giữ lý do
+// Refresh thất bại (refresh token hết hạn, bị khoá…) hoặc API trả ACCOUNT_BANNED → client.js gọi hàm này → đăng xuất, giữ lý do
 setOnSessionExpired((reason) => useAuthStore.getState().signOut(reason));
 ```
 
-Khi `sessionError.code === ERROR_CODES.ACCOUNT_BANNED`: điều hướng về AU-02 và hiện thông báo bị khoá (xem AU-02).
+- `signIn` nhận **chỉ token** (bản đầu nhận cả `user`); gom "lưu token → `getMe` → cập nhật store" vào store để Google login dùng lại, và không để lại token "nửa đăng nhập" khi `getMe` lỗi.
+- Đăng xuất → `status` thành `guest` → `Stack.Protected` tự mở nhóm `(auth)`. Khi `sessionError.code === ACCOUNT_BANNED`, AU-02 hiện khung "Tài khoản của bạn đã bị khoá."
 
 ### 8.3. `src/app/_layout.js`: chặn route bằng `Stack.Protected`
 
@@ -898,9 +928,11 @@ export default function RootLayout() {
 }
 ```
 
+**Đang có trong code (16/10):** chỉ 2 nhóm `(member)` và `(auth)`; `(org-status)`, `(org)` thêm khi làm phần tổ chức. Mỗi nhóm có `_layout.js` riêng (`<Stack screenOptions={{ headerShown: false }} />`). Route: `(auth)/login.js`, `(auth)/register.js`, `(auth)/verify-email.js` (mỗi file 1 dòng `export { default } from "@/features/auth/screens/…"`), `(member)/index.js` (màn tạm "Xin chào…" + Đăng xuất).
+
 **Kết quả:**
 
-- **Guest:** vào thẳng tab Mua sắm. Bấm thao tác cần đăng nhập → mở `/(auth)/login`.
+- **Guest:** vào thẳng tab Mua sắm. Bấm thao tác cần đăng nhập → mở `/login` (tên nhóm `(auth)` không nằm trong đường dẫn).
 - **Member:** đăng nhập xong, nhóm `(auth)` bị khoá, tự quay về tab.
 - **Tổ chức chưa duyệt:** chỉ thấy màn OA-06. **Tổ chức đã duyệt:** chỉ thấy tab tổ chức.
 
@@ -985,9 +1017,12 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
   - "Email \*" → field `email` (API login chỉ nhận email), kiểm định dạng email.
   - "Mật khẩu \*", có nút ẩn/hiện, chỉ kiểm không rỗng.
 - **Hành động:** "Quên mật khẩu?" → AU-05 · "Đăng nhập" · "Đăng nhập bằng Google" · "Chưa có tài khoản? Đăng ký" → AU-03.
-- **Thành công:** `login` → lưu token → `getMe()` → `signIn(...)`. Điều hướng tự xử lý theo `role`.
-- Tổ chức: wireframe ghi đăng nhập bằng SĐT người đại diện, nhưng BE hiện chưa cho tổ chức đăng nhập [CHỜ BE] [CHỜ LEAD]. Phase 1 test tổ chức bằng tài khoản mock.
-- **Lỗi:** chỉ 3 `code` được xử lý riêng; **mọi lỗi còn lại hiện `message` của BE** trong khung lỗi trên nút Đăng nhập. Không so chữ trong message, không tự đếm số lần thử.
+> **✅ Đã làm 16/10** (`features/auth/screens/LoginScreen.js`, commit `cfc0677` + sửa sau), chạy với BE thật. Bố cục theo wireframe: header không có ←, logo `assets/logo/logoIcon.png` + "ReHome" + 2 dòng mô tả, "Quên mật khẩu?" căn phải, nút Đăng nhập trong nội dung, `Divider` "hoặc", nút Google (tạm `Alert` "đang phát triển"), đáy cố định "Chưa có tài khoản? **Đăng ký**" (một `Text` lồng `Text onPress`). Khung ghi chú tổ chức **ẩn**.
+
+- **Thành công:** `signIn(await authApi.login(values))` (store tự `getMe`). `Stack.Protected` tự chuyển sang `(member)`, không cần `router.push`.
+- **Quay về từ AU-04:** params `email`, `verified: "1"` → `useEffect` + `setValue("email", …)` điền sẵn email (màn đã mở sẵn nên `defaultValues` không chạy lại) + dòng xanh "Xác thực email thành công, mời bạn đăng nhập."
+- Tổ chức: wireframe ghi đăng nhập bằng SĐT người đại diện, nhưng BE hiện chưa cho tổ chức đăng nhập [CHỜ BE] [CHỜ LEAD].
+- **Lỗi:** 401 → `setError("password")` (message BE **dưới ô Mật khẩu**, như wireframe); các `code` dưới đây xử lý riêng; **mọi lỗi còn lại hiện `message` của BE** trong khung lỗi trên nút Đăng nhập. Không so chữ trong message, không tự đếm số lần thử.
 
 | `code`               | Xử lý                                                                                                                                                                                                                                                                       |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -996,49 +1031,38 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 | `NETWORK`            | "Không kết nối được máy chủ…". Render ngủ: lần đầu có thể chậm, nút vẫn ở trạng thái loading.                                                                                                                                                                               |
 | Còn lại              | Hiện `message` của BE (`toApiError` đã lo cả 2 dạng lỗi và body rỗng).                                                                                                                                                                                                      |
 
-- **Link tạm "Chưa xác thực email? Gửi lại mã"** [CHỜ BE thêm `code`]: hiện dưới khung lỗi khi `status === 403` và chưa có `code` riêng (`HTTP_403`). Bấm → gọi resend-otp (REGISTER) với email đang nhập rồi sang AU-04. **Chỉ dùng nếu curl bên dưới xác nhận sai mật khẩu KHÔNG trả 403**; nếu sai mật khẩu cũng 403 thì không hiện link (sẽ gây hiểu nhầm). Bỏ link khi BE thêm `code`.
-- Theo code BE hiện tại (develop `4a42a5d`, F008, chưa curl): sai mật khẩu → **401** (đã kiểm thật trước F008); **đúng mật khẩu** + bị khoá → 403 "Tài khoản đã bị khoá!!"; **đúng mật khẩu** + chưa xác thực → 403 "Tài khoản chưa được xác thực…". Hai trường hợp 403 có message khác nhau nhưng vẫn **chưa có `code`** → mobile vẫn hiện message BE + link tạm, không so chữ. Sai mật khẩu giờ không còn lộ trạng thái tài khoản. Chi tiết ở `CLAUDE.md`.
+- **Link tạm "Chưa xác thực email? Gửi lại mã"**: chỉ hiện khi 403 **không có** `code` (`HTTP_403`). BE đã có `code` (16/10) nên link **tự ẩn**; giữ code phòng khi BE trả 403 không `code`. Có thể xoá khi dọn code.
+- **Đã kiểm tra thật trên server (16/10, gọi từ app):**
 
-**Việc cần kiểm — gọi thử login thật, ghi kết quả vào bảng dưới.** Chạy trong Git Bash (lần đầu có thể chờ vài chục giây vì server Render đang ngủ). Dùng tài khoản test do bạn tự tạo, **không** dán mật khẩu thật vào tài liệu.
+| Trường hợp                         | Kết quả                                                        |
+| ---------------------------------- | -------------------------------------------------------------- |
+| Sai email / mật khẩu               | 401 dạng A "Sai email hoặc password" → dưới ô Mật khẩu          |
+| Để trống (gửi thẳng lên BE)        | 400 "password: password không được để trống; email: …" (app đã chặn bằng zod nên không còn gửi) |
+| Đúng mật khẩu, chưa xác thực       | 403 `EMAIL_NOT_VERIFIED` → app gửi lại mã (mail mới tới) → AU-04 |
+| Đúng mật khẩu, tài khoản thật      | Vào "Xin chào {tên}", `MEMBER`, `MB00000x`                       |
+| Bị khoá                            | Chưa test (cần BE khoá một tài khoản test)                      |
 
-```bash
-BASE=https://re-backend-9a98.onrender.com
-
-# 1. Sai mật khẩu (tài khoản đã xác thực)
-curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
-  -d '{"email":"<email-da-xac-thuc>","password":"saimatkhau123"}'
-
-# 2. Tài khoản chưa xác thực (đăng ký nhưng chưa nhập OTP) — thử cả đúng và sai mật khẩu
-curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
-  -d '{"email":"<email-chua-xac-thuc>","password":"<mat-khau-dung>"}'
-
-# 3. Tài khoản bị khoá (nhờ BE/admin khoá một tài khoản test)
-curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
-  -d '{"email":"<email-bi-khoa>","password":"<mat-khau-dung>"}'
-```
-
-| Trường hợp                       | Status | Body (rút gọn) | Ngày kiểm |
-| -------------------------------- | ------ | -------------- | --------- |
-| Sai mật khẩu                     |        |                |           |
-| Chưa xác thực, đúng mật khẩu     |        |                |           |
-| Chưa xác thực, sai mật khẩu      |        |                |           |
-| Bị khoá                          |        |                |           |
-
-- **Bị khoá giữa chừng:** đang dùng app mà refresh trả `ACCOUNT_BANNED` → `signOut(reason)` (mục 8.2) → về AU-02, hiện cùng khung lỗi bị khoá từ `sessionError`, đóng thông báo thì gọi `clearSessionError()`.
+- **Bị khoá giữa chừng:** API bất kỳ (filter) hoặc refresh trả `ACCOUNT_BANNED` → `client.js` gọi `signOut(reason)` (mục 7.4, 8.2) → về AU-02, hiện khung lỗi bị khoá từ `sessionError`; bấm Đăng nhập lại thì `clearSessionError()`.
 - **Google:** Phase 1 chỉ có nút và gọi mock. Bản thật cần dev build và OAuth client Android (mục 12.3).
 
 ### AU-03 · Đăng ký
 
-- **Chọn vai:** 2 thẻ "Cá nhân — Mua, ký gửi, quyên góp" / "Tổ chức — Cần giấy tờ pháp lý".
-  - Chọn **Tổ chức** → chuyển sang `org-register/info`, không hiện form bên dưới.
+> **✅ Đã làm 16/10** (`features/auth/screens/RegisterScreen.js`, route `(auth)/register.js`), chạy với BE thật (đăng ký → mail OTP về).
+
+- **Chọn vai:** 2 `RadioCard` cạnh nhau "Cá nhân — Mua, ký gửi, quyên góp" (đang chọn) / "Tổ chức — Cần giấy tờ pháp lý".
+  - Bấm **Tổ chức** → `router.push("/org-register/info")` (OA-01, chưa làm → "Unmatched Route").
 - **Form Cá nhân:**
-  - Họ và tên _ · Email _ · Số điện thoại _ · Mật khẩu _ (gợi ý: "Ít nhất 8 ký tự, có chữ và số") · Nhập lại mật khẩu \*.
-  - ☐ "Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật": bắt buộc tích.
-- **Zod:** `confirmPassword` phải khớp `password` (dùng `.refine`), `agree` phải `true`.
-- **Lỗi:** email trùng → dưới ô Email: "Email này đã có tài khoản. Đăng nhập hoặc dùng email khác."
-- **Thành công:** chuyển sang AU-04, truyền `email` qua params (`router.push({ pathname: '/verify-email', params: { email } })`).
+  - Họ và tên \* · Email \* · Số điện thoại \* (`phone-pad`, cho gõ dấu cách) · Mật khẩu \* (helper "Ít nhất 8 ký tự, có chữ và số", `autoComplete="new-password"`) · Nhập lại mật khẩu \*.
+  - `Checkbox` "Tôi đồng ý với **Điều khoản sử dụng** và **Chính sách bảo mật**" (link lồng, tạm `Alert` "Sắp có" [GIẢ ĐỊNH]): bắt buộc tích.
+  - Nút "Tạo tài khoản" ở `footer` (cố định đáy), **luôn bấm được**.
+- **Zod** (`registerSchema` trong `features/auth/schemas.js`, regex ở `utils/validators.js`): SĐT bỏ dấu cách rồi kiểm `/^0\d{9}$/`; mật khẩu `/^(?=.*[A-Za-z])(?=.*\d).{8,}$/`; `.refine` 2 mật khẩu khớp (lỗi gắn `confirmPassword`); `agree` phải `true`. Chỉ gửi 4 field BE cần.
+- **Lỗi:** 409 → dưới ô Email "Email này đã có tài khoản. Đăng nhập hoặc dùng email khác."; 500 (trùng SĐT, BE chưa kiểm) → `ErrorBox` "Không tạo được tài khoản. Nếu số điện thoại đã dùng…"; 503 / mạng / khác → `ErrorBox` message BE.
+- **Thành công:** `router.push({ pathname: "/verify-email", params: { email } })` (push để "Quay lại sửa" được).
+- Request đăng ký chờ BE gửi mail xong mới trả → có thể chậm; nếu quá 30 giây (timeout) app báo "Không kết nối được máy chủ" dù server có thể đã tạo tài khoản (bấm lại sẽ ra 409).
 
 ### AU-04 · Xác thực email (OTP)
+
+> **✅ Đã làm 16/10** (`features/auth/screens/VerifyEmailScreen.js`, route `(auth)/verify-email.js`), chạy với BE thật (cả 2 đường vào). Ghi chú ③ của wireframe **ẩn**.
 
 - **Mở từ:** AU-03 (vừa đăng ký) hoặc AU-02 (đăng nhập gặp `EMAIL_NOT_VERIFIED`). Params: `email`, `reason` (`'unverified'` khi mở từ AU-02).
 - Chữ:
@@ -1046,10 +1070,11 @@ curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
   - Từ AU-02: "Tài khoản chưa xác thực email. Mình đã gửi mã mới tới **{email}**."
 - `OtpInput` 6 ô. Nút "Xác nhận" chỉ bật khi đủ 6 số. API: `verify-otp { email, otp, purpose: 'REGISTER' }`.
 - "Mã có hiệu lực 5 phút" (theo BE; wireframe ghi 10 phút).
-- "Gửi lại mã sau 0:SS": đếm ngược **60 giây** (theo BE), hết giờ hiện link "Gửi lại mã" (gọi `resend-otp`, rồi đếm lại). BE trả 429 nếu gửi sớm.
-- "Nhập sai email? Quay lại sửa" → `router.back()`.
-- **Trạng thái lỗi:** BE trả **cùng một lỗi 400** cho mã sai, mã hết hạn, đã dùng hoặc sai quá 5 lần ("Mã xác thực không hợp lệ, hết hạn hoặc đã sử dụng."). Hiện message đó + gợi ý "Gửi lại mã"; không tự phân biệt.
-- **Thành công:** BE **không trả token** → về Đăng nhập, điền sẵn email, hiện "Xác thực thành công, mời bạn đăng nhập."
+- "Gửi lại mã sau 0:SS": đếm ngược **60 giây** (hook `useCountdown`, theo BE), hết giờ hiện nút text "Gửi lại mã" (gọi `resend-otp` → xoá mã đang nhập, báo "Đã gửi mã mới. Mã cũ không dùng được nữa.", đếm lại). BE trả 429 nếu gửi sớm → `ErrorBox`.
+- "Nhập sai email? Quay lại sửa" → `router.back()` (an toàn: không có lịch sử thì về `/login`).
+- **Trạng thái lỗi:** BE trả **cùng một lỗi 400** cho mã sai, mã hết hạn, đã dùng hoặc sai quá 5 lần ("Mã xác thực không hợp lệ, hết hạn hoặc đã sử dụng."). Hiện message đó **dưới 6 ô** + 6 ô viền đỏ; gõ lại thì lỗi mất. Lỗi khác → `ErrorBox`.
+- **Thành công:** BE **không trả token** → `router.dismissTo({ pathname: "/login", params: { email, verified: "1" } })` (bỏ AU-03/AU-04 khỏi lịch sử) → AU-02 điền sẵn email + dòng xanh "Xác thực email thành công, mời bạn đăng nhập."
+- Chỉ **mã mới nhất** dùng được (gửi mã mới thì BE huỷ mã cũ). Mail có thể tới chậm; Gmail gộp các mail OTP vào cùng cuộc hội thoại.
 
 ### AU-05 · Quên mật khẩu (bản OTP — khác wireframe)
 
@@ -1201,24 +1226,24 @@ curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
 
 ## 10. Tự kiểm tra trước khi push
 
-Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=true`:
+Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=false` (auth gọi thật; nhóm `password`, `upload`, `organization` vẫn mock theo `MOCK`). Dùng tài khoản thật (mẹo Gmail `+testN`). ✅ = đã test 16/10.
 
-- [ ] Mở app lần đầu: splash → tab Mua sắm (Guest). Tab Cá nhân hiện bản Guest.
-- [ ] Đăng ký Member: bỏ trống / email sai / SĐT 9 số / mật khẩu yếu / không khớp / chưa tích điều khoản → đều báo lỗi đúng ô.
-- [ ] Đăng ký với `taken@rehome.vn` → lỗi "Email này đã có tài khoản…".
-- [ ] OTP: mã sai, mã `000000` (hết hạn), đếm ngược rồi Gửi lại mã, mã `123456` thành công.
-- [ ] Đăng nhập Member bằng email; sai mật khẩu báo lỗi dưới ô mật khẩu; nút không bấm được 2 lần khi đang tải.
-- [ ] Đăng nhập `unverified@rehome.vn` → tự gửi mã, sang AU-04 với câu "Tài khoản chưa xác thực email…"; xác thực xong về Đăng nhập, email điền sẵn.
-- [ ] Đăng nhập `banned@rehome.vn` → ở lại AU-02, khung lỗi bị khoá có lý do, không chuyển màn.
-- [ ] (API thật, `USE_MOCK=false`) Đăng nhập tài khoản chưa xác thực → 403 hiện message BE + link "Chưa xác thực email? Gửi lại mã" hoạt động.
-- [ ] (API thật) Để access token hết hạn (> 15 phút) rồi mở PR-02 → app tự refresh (BE trả 403 body rỗng), không bị đăng xuất.
-- [ ] **Tắt hẳn app rồi mở lại → vẫn đăng nhập.** Đăng xuất → về Guest; mở lại app → vẫn là Guest.
-- [ ] Quên mật khẩu: nhập email → OTP + mật khẩu mới → về Đăng nhập.
+- [ ] Mở app lần đầu: splash → tab Mua sắm (Guest). Tab Cá nhân hiện bản Guest. _(hiện là màn tạm "Bạn đang xem với tư cách khách")_
+- [x] ✅ Đăng ký Member: bỏ trống / mật khẩu yếu / không khớp / chưa tích điều khoản → đều báo lỗi đúng ô.
+- [ ] Đăng ký với email đã có tài khoản → lỗi dưới ô Email "Email này đã có tài khoản…".
+- [x] ✅ Đăng ký thật trong app → AU-04 → mail OTP về → nhập mã → về Đăng nhập (email điền sẵn) → đăng nhập được.
+- [ ] OTP: mã sai → 6 ô đỏ + message BE; hết 60 giây → "Gửi lại mã" → có mail mới, mã cũ không dùng được; dán mã 6 số được.
+- [x] ✅ Đăng nhập Member bằng email; sai mật khẩu báo lỗi dưới ô mật khẩu; nút không bấm được 2 lần khi đang tải.
+- [x] ✅ Đăng nhập tài khoản chưa xác thực → `EMAIL_NOT_VERIFIED` → tự gửi mã (mail mới), sang AU-04 với câu "Tài khoản chưa xác thực email…" → nhập mã → đăng nhập được.
+- [ ] Đăng nhập tài khoản bị khoá (nhờ BE khoá) → ở lại AU-02, khung "Tài khoản của bạn đã bị khoá."; đang dùng app mà bị khoá → tự đăng xuất, về AU-02 với khung đó.
+- [ ] Để access token hết hạn (> 15 phút) rồi tắt app mở lại → app tự refresh (BE trả 403 body rỗng), vẫn vào "Xin chào…".
+- [x] ✅ **Tắt hẳn app rồi mở lại → vẫn đăng nhập.** Đăng xuất → về Guest; mở lại app → vẫn là Guest. Đã đăng nhập thì vuốt Back không quay lại màn Đăng nhập (thoát app).
+- [ ] Quên mật khẩu (mock): nhập email → OTP `123456` + mật khẩu mới → về Đăng nhập.
 - [ ] Đổi mật khẩu (API thật): sai mật khẩu hiện tại → hiện message BE; mật khẩu mới trùng mật khẩu cũ → bị chặn; thành công → đăng xuất, về AU-02 với thông báo "mời đăng nhập lại", đăng nhập lại bằng mật khẩu mới được.
 - [ ] Hồ sơ: xem, sửa, lưu → PR-02 cập nhật ngay; không có nút "Xác thực email".
 - [ ] Mã Member: mã text đúng, QR hiện, Sao chép mã hoạt động.
 - [ ] Đăng ký tổ chức đủ 4 bước + Xem lại; back giữ dữ liệu; file > 5 MB bị chặn; thiếu CCCD mặt sau bị chặn; gửi xong → OA-06 Chờ xác minh.
-- [ ] Đăng nhập `org-rejected@rehome.vn` → OA-06 Bị từ chối có lý do; `org-verified@rehome.vn` → tab tổ chức; tổ chức **không** vào được màn Member.
+- [ ] Tổ chức (mock, khi làm OA): trạng thái REJECTED → OA-06 Bị từ chối có lý do; VERIFIED → tab tổ chức; tổ chức **không** vào được màn Member.
 - [ ] Tắt Wi-Fi rồi thao tác → báo lỗi mạng, app không crash.
 - [ ] Không còn `console.log` thừa; không có mã màu viết trực tiếp trong màn hình.
 
