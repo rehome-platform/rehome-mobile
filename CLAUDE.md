@@ -78,8 +78,9 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - Đặt lại mật khẩu bằng **OTP 6 số qua email** (wireframe AU-05/06 đang vẽ link → chờ sửa).
 - Mã Member hiển thị **mã text + QR** (ghi chú wireframe 11/10 đã bỏ QR → chờ lead chốt; QR để trong component riêng).
 - API nào backend có thì gọi thật, chưa có thì mock.
-  - **Phase 1 gọi thật:** đăng ký, verify-otp (REGISTER), resend-otp, đăng nhập email, refresh, logout, `GET/PATCH /members/me`, `GET /members/me/code`.
-  - **Phase 1 mock:** quên mật khẩu, đổi mật khẩu, upload ảnh, toàn bộ đăng ký và trạng thái tổ chức.
+  - **Phase 1 gọi thật:** đăng ký, verify-otp (REGISTER), resend-otp, đăng nhập email, refresh, logout, đổi mật khẩu (AU-07), `GET/PATCH /members/me`, `GET /members/me/code`.
+  - **Phase 1 mock:** quên / đặt lại mật khẩu, upload ảnh, toàn bộ đăng ký và trạng thái tổ chức.
+- Đổi mật khẩu xong: **chủ động đăng xuất**, hiện "Đổi mật khẩu thành công, mời đăng nhập lại" (BE thu hồi refresh token của mọi thiết bị, kể cả máy đang dùng).
 - Bỏ nút "Xác thực email" ở PR-02 (không còn Member chưa xác thực trong app).
 - Lỗi đăng nhập xử lý theo `code` (`EMAIL_NOT_VERIFIED`, `ACCOUNT_BANNED`), **không so khớp chữ trong message**. Chi tiết: `docs/PHASE1_GUIDE.md` mục AU-02.
 - Role: lấy từ `account` trong response login khi BE thêm; tạm thời giải mã JWT (claim `roles`) bằng `jwt-decode`.
@@ -103,6 +104,7 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - `POST /api/auth/google` `{idToken}` → như login.
   - `POST /api/auth/password/forgot` `{email}` → 204 nhưng **gửi link web (`localhost:5500`), không gửi OTP** → mobile chưa dùng được.
   - `POST /api/auth/password/reset` `{email, resetToken, newPassword, confirmPassword}`.
+  - `POST /api/auth/password/change` `{oldPassword, newPassword, newPasswordRepeat}` → 200, body là **chuỗi** "Đổi mật khẩu thành công" (mới, F008). Lỗi 400 dạng B: "Mật khẩu xác nhận không khớp." · "WRONG_PASSWORD: mật khẩu cũ không đúng." (mã lỗi nằm trong message) · "Mật khẩu mới phải khác mật khẩu cũ." · "Tài khoản chưa có mật khẩu" (tài khoản Google). Thu hồi refresh token **mọi thiết bị**. Nằm dưới `/api/auth/**` (public) → token hết hạn thì 500 và `client.js` không tự refresh. DTO không có `@NotBlank` (thiếu field → 500).
 - **Member:**
   - `GET /members/me` → `result: {accountId, email, phone, fullName, avatarUrl, memberCode, emailVerified}`. Không có `createdAt`.
   - `PATCH /members/me` `{fullName, phone, avatarUrl}`: ô trống = giữ nguyên. Response thiếu `email`, `memberCode` → lưu xong gọi lại `GET /members/me`.
@@ -112,14 +114,17 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - **JWT:** `sub` = email; claim `roles` là **chuỗi** `"ROLE_MEMBER"` | `"ROLE_ORGANIZATION"` | `"ROLE_MODERATOR"` | `"ROLE_ADMIN"`. Access token 15 phút, refresh token 7 ngày.
 - **OTP:** 6 số, hết hạn **5 phút**, sai tối đa 5 lần, phải chờ **60 giây** mới gửi lại (sớm hơn → 429).
 - **Hành vi cần biết:**
-  - Đăng nhập: BE đã tách `AccountBannedException` và `AccountNotVerifiedException` (kiểm bị khoá trước, 2 message khác nhau); chưa xác nhận response có field `code` [CHỜ BE].
-    - **Đọc code (develop, 16/10):** hai exception này nằm **sau** `authenticationManager.authenticate()`. `DaoAuthenticationProvider` kiểm `isAccountNonLocked()` (status ACTIVE) và `isEnabled()` (ACTIVE + emailVerified) **trước cả khi kiểm mật khẩu** → ném `LockedException`/`DisabledException` → 403 dạng A, cùng message "Tài khoản chưa xác minh email hoặc đã bị vô hiệu hóa." Nên hai exception riêng hiện **không bao giờ chạy tới**, và tài khoản chưa xác thực/bị khoá nhận 403 **dù sai mật khẩu**. Cần curl xác nhận (PHASE1_GUIDE, AU-02) [CHỜ BE].
-    - Sai mật khẩu / email không tồn tại → `BadCredentialsException` → 401 "Sai email hoặc password". **Đã kiểm tra thật 16/10** (gọi từ app, server Render).
+  - Đăng nhập (code develop `4a42a5d`, F008, đọc 16/10): BE đã **xoá** `isEnabled()`/`isAccountNonLocked()` khỏi `Account` (mặc định của Spring = `true`), nên `authenticate()` chỉ còn kiểm mật khẩu. Thứ tự hiện tại:
+    - Sai mật khẩu / email không tồn tại → 401 "Sai email hoặc password". **Đã kiểm tra thật 16/10** (trước F008; theo code vẫn vậy).
+    - Đúng mật khẩu, bị khoá → 403 dạng A "Tài khoản đã bị khoá!!".
+    - Đúng mật khẩu, chưa xác thực → 403 dạng A "Tài khoản chưa được xác thực. Vui lòng thử lại sau!!".
+    - **Vẫn chưa có field `code`** → mobile không phân biệt được 2 trường hợp 403 (không so chữ trong message) [CHỜ BE]. Chưa curl kiểm tra trên server.
+  - **Lỗi bảo mật do F008** [CHỜ BE, đã báo 16/10]: `isEnabled()` giờ luôn `true` nhưng còn dùng ở `JwtAuthenticationFilter`, `refreshToken()`, `OtpServiceImpl` → tài khoản **bị khoá vẫn dùng token và refresh được mãi**; quên mật khẩu không chặn tài khoản bị khoá/chưa xác thực.
   - Thiếu hoặc hết hạn access token trên API cần đăng nhập: trả **403 body rỗng**, không phải 401. **Đã kiểm tra thật 16/10** với `GET /members/me` không có token. Refresh token sai/hết hạn: 403 (theo code).
   - Logout khi access token đã hết hạn → 500.
   - Đăng ký trùng email → 409; trùng SĐT → 500 (BE chưa kiểm tra).
   - BE chỉ kiểm mật khẩu ≥ 6 ký tự; mobile vẫn dùng ≥ 8, có chữ và số.
-- **Chưa có:** API `/me` chung (role, trạng thái tổ chức), đổi mật khẩu, upload file, trạng thái/nộp lại hồ sơ tổ chức.
+- **Chưa có:** API `/me` chung (role, trạng thái tổ chức), upload file, trạng thái/nộp lại hồ sơ tổ chức.
 
 ## Đang chờ xác nhận
 
@@ -128,7 +133,9 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - [CHỜ BE] Mọi lỗi theo một dạng envelope, có field `code`.
 - [CHỜ BE] Quên mật khẩu bằng OTP: forgot gửi OTP → verify-otp (FORGOT_PASSWORD) trả `resetToken` → reset.
 - [CHỜ BE] `POST /uploads`; đăng ký tổ chức có mật khẩu; token hết hạn trả 401; logout không lỗi 500 khi token hết hạn.
-- [CHỜ BE] Thống nhất base path, tên field OTP (`otp` hay `otpCode`), body reset password; API 4 (nộp lại hồ sơ tổ chức), API 10 (đổi mật khẩu).
+- [CHỜ BE] Thống nhất base path, tên field OTP (`otp` hay `otpCode`), body reset password; API 4 (nộp lại hồ sơ tổ chức).
+- [CHỜ BE] (báo 16/10, sau F008) Thay các chỗ dùng `isEnabled()` bằng kiểm `status == ACTIVE` (+ `emailVerified` nơi cần); `/refresh` khi bị khoá → 403 `ACCOUNT_BANNED`.
+- [CHỜ BE] (báo 16/10) Đổi mật khẩu: lỗi sai mật khẩu cũ có `code: WRONG_PASSWORD` riêng; chuyển khỏi `/api/auth/**` (hoặc trả 401 khi thiếu token); DTO có `@NotBlank`; xác nhận việc thu hồi token cả thiết bị đang dùng có chủ ý không.
 - [CHỜ BE] Ngày sinh/giới tính (DB chưa có cột); `createdAt` cho "tham gia MM/YYYY" ở PR-01.
 - [CHỜ LEAD] Xoá ghi chú ③ ở wireframe AU-04 (chưa xác thực vẫn đăng nhập được).
 - [CHỜ LEAD] Địa chỉ email hỗ trợ ReHome (thông báo tài khoản bị khoá).

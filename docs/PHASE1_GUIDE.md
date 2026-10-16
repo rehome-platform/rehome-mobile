@@ -410,7 +410,7 @@ export const ENV = {
 export const MOCK = {
   auth: ENV.USE_MOCK, // đăng ký, OTP, đăng nhập, refresh, logout — BE đã có
   profile: ENV.USE_MOCK, // /members/me, /members/me/code — BE đã có
-  password: true, // quên / đặt lại / đổi mật khẩu — [CHỜ BE] bản OTP, API đổi mật khẩu
+  password: true, // quên / đặt lại mật khẩu — [CHỜ BE] bản OTP (đổi mật khẩu thuộc nhóm auth, BE đã có)
   upload: true, // [CHỜ BE] POST /uploads
   organization: true, // [CHỜ BE] đăng ký có mật khẩu, trạng thái hồ sơ
 };
@@ -579,7 +579,7 @@ Bản trước (16/10 sáng) dùng `toApiError(refreshError)` cho mọi trườn
 
 ### 7.5. Mẫu một nhóm API có mock: `features/auth/api/`
 
-Trong cùng nhóm auth, có hàm BE đã có (đăng nhập, OTP…) và hàm chưa có (mật khẩu). `authApi.js` chọn mock/real **theo từng nhóm hàm**:
+Trong cùng nhóm auth, có hàm BE đã có (đăng nhập, OTP, đổi mật khẩu…) và hàm chưa dùng được (quên / đặt lại mật khẩu). `authApi.js` chọn mock/real **theo từng nhóm hàm**:
 
 ```js
 // authApi.js — màn hình chỉ import file này
@@ -587,42 +587,76 @@ import { MOCK } from "@/config/env";
 import * as real from "./authApi.real";
 import * as mock from "./authApi.mock";
 
-const base = MOCK.auth ? mock : real;
-const password = MOCK.password ? mock : real;
+const base = MOCK.auth ? mock : real; // gồm cả changePassword (BE đã có, F008)
+const password = MOCK.password ? mock : real; // quên / đặt lại mật khẩu [CHỜ BE bản OTP]
 
 export const authApi = {
   ...base,
   forgotPassword: password.forgotPassword,
+  verifyResetOtp: password.verifyResetOtp,
   resetPassword: password.resetPassword,
-  changePassword: password.changePassword,
 };
 ```
 
-Login của BE **chỉ trả token**, không có user/role. `getMe()` ở bản real tự ghép `user` từ JWT + `/members/me`, để `authStore` (mục 8.2) không phải biết chuyện này:
+Login của BE **chỉ trả token**, không có user/role. `getMe()` ở bản real tự ghép `user` từ JWT + `/members/me`, để `authStore` (mục 8.2) không phải biết chuyện này. Hằng số `OTP_PURPOSE` ở `src/constants/auth.js` (`REGISTER`, `FORGOT_PASSWORD`).
 
 ```js
-// authApi.real.js
+// authApi.real.js — chỉ file này biết URL và tên field của BE
 import { jwtDecode } from "jwt-decode";
 import { api, unwrap } from "@/lib/api/client";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { ROLES } from "@/constants/roles";
+import { OTP_PURPOSE } from "@/constants/auth";
 
+// ===== Đăng ký + OTP =====
+export const register = async ({ fullName, email, phone, password }) =>
+  unwrap(await api.post("/api/auth/register", { fullName, email, phone, password })); // { message }
+
+export const verifyRegisterOtp = async ({ email, otp }) =>
+  unwrap(await api.post("/api/auth/verify-otp", { email, otp, purpose: OTP_PURPOSE.REGISTER })); // { message }, không trả token
+
+export const resendOtp = async ({ email, purpose }) =>
+  unwrap(await api.post("/api/auth/resend-otp", { email, purpose })); // { message }; gửi lại < 60 giây → 429
+
+// ===== Đăng nhập / phiên =====
 export const login = async ({ email, password }) =>
-  unwrap(await api.post("/api/auth/login", { email, password })); // { accessToken, refreshToken, tokenType }
+  unwrap(await api.post("/api/auth/login", { email, password })); // { accessToken, refreshToken, tokenType } — KHÔNG có user
+
+export const logout = async () => {
+  await api.post("/api/auth/logout"); // cần header Authorization; token hết hạn → BE trả 500, nơi gọi bỏ qua lỗi
+};
 
 // [TẠM] đọc role từ claim "roles" ("ROLE_MEMBER"); bỏ khi login trả account.role [CHỜ BE]
 export function roleFromToken(accessToken) {
+  if (!accessToken) return null;
   const { roles = "" } = jwtDecode(accessToken);
   return roles.split(",")[0]?.replace("ROLE_", "") || null;
 }
 
+// BE chưa có /me chung → tự ghép user từ JWT + /members/me
 export async function getMe() {
   const role = roleFromToken(await tokenStorage.getAccessToken());
   if (role !== ROLES.MEMBER) return { role }; // tổ chức: chưa có API thông tin [CHỜ BE]
   const profile = unwrap(await api.get("/members/me")); // không có tiền tố /api
   return { role, ...profile };
 }
-// … các hàm còn lại theo bảng 7.6
+
+// ===== Mật khẩu =====
+// Đổi mật khẩu (AU-07) — BE đã có (F008). Thành công trả CHUỖI "Đổi mật khẩu thành công".
+// Lưu ý: nằm dưới /api/auth nên client.js KHÔNG tự refresh; token hết hạn → BE trả 500 [CHỜ BE]
+export const changePassword = async ({ oldPassword, newPassword, newPasswordRepeat }) =>
+  unwrap(await api.post("/api/auth/password/change", { oldPassword, newPassword, newPasswordRepeat }));
+
+// Quên mật khẩu — BE hiện gửi LINK web, chưa gửi OTP [CHỜ BE]. Viết sẵn theo luồng đã thống nhất, đang dùng mock.
+export const forgotPassword = async ({ email }) => {
+  await api.post("/api/auth/password/forgot", { email }); // 204
+};
+
+export const verifyResetOtp = async ({ email, otp }) =>
+  unwrap(await api.post("/api/auth/verify-otp", { email, otp, purpose: OTP_PURPOSE.FORGOT_PASSWORD })); // { message, resetToken }
+
+export const resetPassword = async ({ email, resetToken, newPassword, confirmPassword }) =>
+  unwrap(await api.post("/api/auth/password/reset", { email, resetToken, newPassword, confirmPassword })); // { message }
 ```
 
 Sau khi đăng nhập thành công: lưu token → gọi `getMe()` → `signIn({ accessToken, refreshToken, user })`.
@@ -689,6 +723,7 @@ OTP giả: `123456` đúng, `000000` hết hạn, mã khác thì sai.
 | Đăng nhập           | `POST /api/auth/login`           | `email, password`                              | `{ accessToken, refreshToken, tokenType }`, **không có user** |
 | Làm mới token       | `POST /api/auth/refresh`         | `refreshToken`                                 | `{ accessToken, refreshToken }`; token cũ hết dùng (xoay vòng) |
 | Đăng xuất           | `POST /api/auth/logout`          | — (cần header `Authorization`)                 | 204. Access token đã hết hạn → 500, bỏ qua lỗi này           |
+| Đổi mật khẩu (AU-07) | `POST /api/auth/password/change` | `oldPassword, newPassword, newPasswordRepeat` | Chuỗi "Đổi mật khẩu thành công"; thu hồi token mọi thiết bị → mobile đăng xuất. Token hết hạn → 500 (không tự refresh) |
 | Thông tin Member    | `GET /members/me`                | —                                              | `{ accountId, email, phone, fullName, avatarUrl, memberCode, emailVerified }` |
 | Sửa hồ sơ Member    | `PATCH /members/me`              | `fullName, phone, avatarUrl` (ô trống = giữ nguyên) | `{ accountId, fullName, phone, avatarUrl }` → gọi lại `GET /members/me` |
 | Mã Member           | `GET /members/me/code`           | —                                              | `{ memberCode }`                                             |
@@ -700,7 +735,6 @@ OTP giả: `123456` đúng, `000000` hết hạn, mã khác thì sai.
 | Quên mật khẩu (AU-05)      | `POST /api/auth/password/forgot { email }`: hiện gửi **link web**, không gửi OTP [CHỜ BE] | 204                                          |
 | Xác nhận OTP quên mật khẩu | `POST /api/auth/verify-otp { email, otp, purpose: 'FORGOT_PASSWORD' }`                    | `{ message, resetToken }`                    |
 | Đặt lại mật khẩu (AU-06)   | `POST /api/auth/password/reset { email, resetToken, newPassword, confirmPassword }`       | `{ message }`                                |
-| Đổi mật khẩu (AU-07)       | Chưa có (API 10) [CHỜ BE]                                                                 | 204                                          |
 | Upload ảnh/tệp             | Chưa có (`POST /uploads`) [CHỜ BE]                                                        | `{ url }`                                    |
 | Đăng ký tổ chức            | `POST /api/organizations/register/organization` (JSON, giấy tờ là URL, **không có mật khẩu**) [CHỜ BE] | `{ accountId, verificationStatus: 'PENDING' }` |
 | Trạng thái / nộp lại hồ sơ | Chưa có (API 4) [CHỜ BE]                                                                  | `{ verificationStatus, rejectionReason, documents[] }` |
@@ -963,7 +997,7 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 | Còn lại              | Hiện `message` của BE (`toApiError` đã lo cả 2 dạng lỗi và body rỗng).                                                                                                                                                                                                      |
 
 - **Link tạm "Chưa xác thực email? Gửi lại mã"** [CHỜ BE thêm `code`]: hiện dưới khung lỗi khi `status === 403` và chưa có `code` riêng (`HTTP_403`). Bấm → gọi resend-otp (REGISTER) với email đang nhập rồi sang AU-04. **Chỉ dùng nếu curl bên dưới xác nhận sai mật khẩu KHÔNG trả 403**; nếu sai mật khẩu cũng 403 thì không hiện link (sẽ gây hiểu nhầm). Bỏ link khi BE thêm `code`.
-- Theo code BE hiện tại (chưa curl): sai mật khẩu → **401**; chưa xác thực và bị khoá → **403 cùng message**, và trả 403 **ngay cả khi sai mật khẩu** (Spring kiểm trạng thái tài khoản trước mật khẩu). Chi tiết ở `CLAUDE.md`.
+- Theo code BE hiện tại (develop `4a42a5d`, F008, chưa curl): sai mật khẩu → **401** (đã kiểm thật trước F008); **đúng mật khẩu** + bị khoá → 403 "Tài khoản đã bị khoá!!"; **đúng mật khẩu** + chưa xác thực → 403 "Tài khoản chưa được xác thực…". Hai trường hợp 403 có message khác nhau nhưng vẫn **chưa có `code`** → mobile vẫn hiện message BE + link tạm, không so chữ. Sai mật khẩu giờ không còn lộ trạng thái tài khoản. Chi tiết ở `CLAUDE.md`.
 
 **Việc cần kiểm — gọi thử login thật, ghi kết quả vào bảng dưới.** Chạy trong Git Bash (lần đầu có thể chờ vài chục giây vì server Render đang ngủ). Dùng tài khoản test do bạn tự tạo, **không** dán mật khẩu thật vào tài liệu.
 
@@ -1035,8 +1069,10 @@ curl -s -i -X POST "$BASE/api/auth/login" -H "Content-Type: application/json" \
 ### AU-07 · Đổi mật khẩu
 
 - **Trường:** Mật khẩu hiện tại _ · Mật khẩu mới _ · checklist (≥ 8, có chữ và số, **khác mật khẩu hiện tại**) · Nhập lại \*.
-- **Lỗi:** "Mật khẩu hiện tại không đúng" dưới ô đầu.
-- **Ghi chú:** đổi xong, thiết bị khác phải đăng nhập lại, thiết bị này giữ nguyên. Nếu backend trả token mới → lưu đè.
+- **API (gọi thật, F008):** `authApi.changePassword({ oldPassword, newPassword, newPasswordRepeat })` → `POST /api/auth/password/change`.
+  - Đường dẫn nằm dưới `/api/auth` nên `client.js` **không tự refresh**; access token hết hạn → BE trả 500 [CHỜ BE]. Trước khi gửi, gọi `authApi.getMe()` (đi qua `/members/me`, có refresh) để chắc token còn hạn.
+- **Lỗi** (BE trả 400 dạng B, chưa có `code` [CHỜ BE `WRONG_PASSWORD`]): hiện `message` của BE trong khung lỗi trên nút Lưu; không so chữ trong message. Các message hiện có: "Mật khẩu xác nhận không khớp." · "WRONG_PASSWORD: mật khẩu cũ không đúng." · "Mật khẩu mới phải khác mật khẩu cũ." · "Tài khoản chưa có mật khẩu" (tài khoản Google). Mobile validate trước 3 lỗi đầu bằng zod nên thường chỉ còn gặp lỗi sai mật khẩu cũ. Khi BE có `code: WRONG_PASSWORD` → hiện dưới ô "Mật khẩu hiện tại".
+- **Thành công:** BE thu hồi refresh token **mọi thiết bị, kể cả máy đang dùng** (khác ghi chú wireframe "thiết bị này giữ nguyên" — đã hỏi BE). Mobile **chủ động `signOut()`**, về AU-02, hiện "Đổi mật khẩu thành công, mời đăng nhập lại".
 - Dùng chung cho Member (từ PR-01) và Tổ chức (từ tab Hồ sơ).
 
 ### PR-01 · Tab Cá nhân
@@ -1178,7 +1214,7 @@ Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=true`:
 - [ ] (API thật) Để access token hết hạn (> 15 phút) rồi mở PR-02 → app tự refresh (BE trả 403 body rỗng), không bị đăng xuất.
 - [ ] **Tắt hẳn app rồi mở lại → vẫn đăng nhập.** Đăng xuất → về Guest; mở lại app → vẫn là Guest.
 - [ ] Quên mật khẩu: nhập email → OTP + mật khẩu mới → về Đăng nhập.
-- [ ] Đổi mật khẩu: sai mật khẩu hiện tại; mật khẩu mới trùng mật khẩu cũ; thành công.
+- [ ] Đổi mật khẩu (API thật): sai mật khẩu hiện tại → hiện message BE; mật khẩu mới trùng mật khẩu cũ → bị chặn; thành công → đăng xuất, về AU-02 với thông báo "mời đăng nhập lại", đăng nhập lại bằng mật khẩu mới được.
 - [ ] Hồ sơ: xem, sửa, lưu → PR-02 cập nhật ngay; không có nút "Xác thực email".
 - [ ] Mã Member: mã text đúng, QR hiện, Sao chép mã hoạt động.
 - [ ] Đăng ký tổ chức đủ 4 bước + Xem lại; back giữ dữ liệu; file > 5 MB bị chặn; thiếu CCCD mặt sau bị chặn; gửi xong → OA-06 Chờ xác minh.
