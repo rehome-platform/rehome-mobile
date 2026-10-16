@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
@@ -10,25 +10,13 @@ import { OtpInput } from "@/components/ui/OtpInput";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { authApi } from "@/features/auth/api/authApi";
 import { OTP_PURPOSE } from "@/constants/auth";
+import { formatCountdown, useCountdown } from "@/hooks/useCountdown";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 60; // BE: phải cách 60 giây giữa 2 lần gửi mã
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/login");
-const formatTime = (s) =>
-  `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; // 42 → "0:42"
-
-// Đếm ngược từng giây về 0. restart() để đếm lại từ đầu
-function useCountdown(seconds) {
-  const [left, setLeft] = useState(seconds);
-  useEffect(() => {
-    if (left <= 0) return;
-    const t = setTimeout(() => setLeft((s) => s - 1), 1000);
-    return () => clearTimeout(t); // rời màn / đếm lại → huỷ hẹn giờ cũ
-  }, [left]);
-  return { left, restart: () => setLeft(seconds) };
-}
 
 export default function VerifyEmailScreen() {
   // email: bắt buộc; reason = "unverified" khi mở từ AU-02 (đăng nhập tài khoản chưa xác thực)
@@ -125,7 +113,7 @@ export default function VerifyEmailScreen() {
         {countdown.left > 0 ? (
           <Text style={styles.caption}>
             Gửi lại mã sau{" "}
-            <Text style={styles.bold}>{formatTime(countdown.left)}</Text>
+            <Text style={styles.bold}>{formatCountdown(countdown.left)}</Text>
           </Text>
         ) : (
           <Button

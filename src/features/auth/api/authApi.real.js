@@ -61,10 +61,11 @@ export const changePassword = async ({
     }),
   );
 
-// Quên mật khẩu — BE hiện gửi LINK web, chưa gửi OTP [CHỜ BE]. Viết sẵn theo luồng đã thống nhất, đang dùng mock.
-export const forgotPassword = async ({ email }) => {
-  await api.post("/api/auth/password/forgot", { email }); // 204
-};
+// Quên mật khẩu (AU-05) — gửi OTP "đặt lại mật khẩu" qua resend-otp (purpose FORGOT_PASSWORD).
+// KHÔNG dùng /api/auth/password/forgot vì API đó gửi LINK web (localhost), điện thoại không mở được.
+// Luôn trả như nhau dù email có tồn tại hay không. Gửi lại < 60 giây → 429. [Báo BE xác nhận cách dùng này]
+export const forgotPassword = ({ email }) =>
+  resendOtp({ email, purpose: OTP_PURPOSE.FORGOT_PASSWORD });
 
 export const verifyResetOtp = async ({ email, otp }) =>
   unwrap(

@@ -64,3 +64,7 @@ export const changePasswordSchema = z
     path: ["newPasswordRepeat"],
     error: "Hai mật khẩu chưa khớp",
   });
+// AU-05: quên mật khẩu — chỉ cần email
+export const forgotPasswordSchema = z.object({
+  email: emailField,
+});
