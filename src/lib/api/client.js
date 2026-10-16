@@ -2,6 +2,7 @@ import axios from "axios";
 import { ENV } from "@/config/env";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { toApiError } from "./errors";
+import { ERROR_CODES } from "@/constants/errorCodes";
 
 // Server Render ngủ khi không dùng: request đầu tiên có thể mất vài chục giây
 export const api = axios.create({ baseURL: ENV.API_BASE_URL, timeout: 30000 });
@@ -47,13 +48,22 @@ api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // Bị khoá khi ĐANG dùng app (BE chặn ở JwtAuthenticationFilter / refresh) → đăng xuất ngay, giữ lý do.
+    // Bỏ qua API đăng nhập: lúc đó chưa đăng nhập, LoginScreen tự hiện lỗi bị khoá.
+    const apiError = toApiError(error);
+    const isLoginCall = /\/api\/auth\/(login|google)/.test(original?.url ?? "");
+    if (apiError.code === ERROR_CODES.ACCOUNT_BANNED && !isLoginCall) {
+      onSessionExpired(apiError);
+      return Promise.reject(apiError);
+    }
     // Lỗi khác, đã thử lại rồi, hoặc chính API auth → trả lỗi luôn
     if (
       !isTokenExpired(error) ||
       original?._retry ||
       original?.url?.includes("/api/auth/")
     ) {
-      return Promise.reject(toApiError(error));
+      return Promise.reject(apiError);
     }
     original._retry = true;
     try {
