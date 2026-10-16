@@ -33,21 +33,22 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 ## Stack và quy ước code
 
 - **Nền tảng:** Expo SDK 58, **JavaScript** (không TypeScript), expo-router (thư mục `src/app`).
-- **Thư viện:** axios · @tanstack/react-query · zustand · react-hook-form + zod · expo-secure-store · jwt-decode.
+- **Thư viện:** axios · @tanstack/react-query · zustand · react-hook-form + zod · expo-secure-store · jwt-decode · dayjs · expo-image-picker · expo-document-picker · @react-native-community/datetimepicker (đều chạy trong Expo Go).
 - **Cài thư viện:** có native → `npx expo install`; thuần JS → `npm install`.
 - **Cấu trúc:**
   - `src/app` chỉ khai báo route, file mỏng.
   - Logic và giao diện ở `src/features/<feature>/{api,screens,components,schemas.js}`.
   - Còn lại: `components/ui` dùng chung · `lib/api` (client, errors) · `lib/storage` · `stores` · `config` · `constants` · `theme` · `hooks` (custom hook dùng chung, vd `useCountdown`) · `utils` (`validators.js`, `format.js` — `formatPhone`, `toast.js` — `showToast`).
   - Component chỉ dùng trong một nghiệp vụ: `features/<feature>/components` (vd `profile/components/MemberQr.js`).
-  - Route đang có: `(auth)/login · register · verify-email · forgot-password · reset-password`; `(member)/(tabs)/index (Mua sắm) · community · consign · account`; `(member)/settings`; `(member)/profile/index · edit · member-code · change-password`.
+  - Route đang có: `(auth)/login · register · verify-email · forgot-password · reset-password`; `(auth)/org-register/info · representative · documents · location · review · submitted`; `(member)/(tabs)/index (Mua sắm) · community · consign · account`; `(member)/settings`; `(member)/profile/index · edit · member-code · change-password`.
+  - Nghiệp vụ tổ chức: `features/organization/{api, screens, components, store/orgRegisterStore.js, utils/{files, summary, payload}.js, constants.js, schemas.js}`.
 - **Gọi API:** màn hình không gọi axios trực tiếp, chỉ gọi `features/*/api/*Api.js` qua useQuery/useMutation.
-  - API BE đã có → **gọi thật** (`*.real.js`). Chỉ nhóm BE chưa có/chưa dùng được mới có `*.mock.js` cùng hình dạng dữ liệu, bật bằng `MOCK` trong `src/config/env.js` (hiện: `password: false`, `upload: true`, `organization: true`). `authApi.js` = `...real` + ghi đè các hàm nhóm mock; `profileApi.js` (`updateMe`) chỉ có real.
+  - API BE đã có → **gọi thật** (`*.real.js`). Chỉ nhóm BE chưa có/chưa dùng được mới có `*.mock.js` cùng hình dạng dữ liệu, bật bằng `MOCK` trong `src/config/env.js` (hiện: `password: false`, `upload: true`, `organization: true`). `authApi.js` = `...real` + ghi đè các hàm nhóm mock; `profileApi.js` (`updateMe`) chỉ có real; `organizationApi.js` hiện **chỉ có mock** (`uploadFile`, `registerOrganization`) — BE xong thì thêm `organizationApi.real.js` cùng tên hàm.
   - Đọc dữ liệu: `useQuery` (vd PR-02 `queryKey: ["me"]`, `initialData` từ store + `initialDataUpdatedAt: 0` để vẫn tải lại). Ghi xong thì cập nhật cả store (`setUser`) và cache (`queryClient.setQueryData`).
   - Phiên đăng nhập: `authStore.signIn(tokens)` tự lưu token + gọi `getMe()`; lỗi thì xoá token. Màn hình chỉ gọi `signIn(await authApi.login(values))`.
   - Form: react-hook-form + `Controller` + `zodResolver`; schema ở `features/*/schemas.js`; regex dùng chung ở `utils/validators.js`. Lỗi server: so theo `status`/`code` (`ERROR_CODES` ở `constants/errorCodes.js`), **không so chữ trong message**.
 - **Lỗi:** chuẩn hoá thành `ApiError { status, code, message, fieldErrors, reason }` (`toApiError`): `code` = `data.code` của BE, không có thì `HTTP_<status>`. `status 0` = lỗi mạng/timeout. `reason` = lý do khoá (BE chưa trả).
-- **Component UI có sẵn** (`components/ui`): `Screen` (`header`, `footer` cố định đáy, `scroll`, `edges` — màn trong tab dùng `["top"]`), `AppHeader` (`onBack`, `right` tuỳ chọn), `Button` (primary/secondary/text, `loading`, `disabled`), `TextField` (`secure`, `helper`, `error`), `OtpInput`, `PasswordChecklist` (`currentPassword` tuỳ chọn), `RadioCard`, `Checkbox`, `NoteBox`, `Divider`, `ErrorBox`, `EmptyState`, `Avatar` (chưa có ảnh → chữ cái đầu của tên gọi), `ListItem` (`badge`, `disabled`, `muted` = mờ nhưng bấm được, `danger`) + `ListGroup` (khung bo góc, tự kẻ giữa các dòng). Icon: `@expo/vector-icons` (Ionicons). Xác nhận: `Alert.alert` (nút `destructive`). Thông báo ngắn: `showToast`.
+- **Component UI có sẵn** (`components/ui`): `Screen` (`header`, `footer` cố định đáy, `scroll`, `edges` — màn trong tab dùng `["top"]`), `AppHeader` (`onBack`, `right` tuỳ chọn), `Button` (primary/secondary/text, `loading`, `disabled`), `TextField` (`secure`, `helper`, `error`, `multiline`), `DateField` / `TimeField` (picker hệ thống, giá trị `"YYYY-MM-DD"` / `"HH:mm"`; chỉ làm Android), `OtpInput`, `PasswordChecklist` (`currentPassword` tuỳ chọn), `RadioCard` (mặc định `flex: 1`; trong cột truyền `style={{ flex: 0 }}`), `Checkbox`, `ChipGroup` (`multiple`), `Stepper`, `NoteBox` (chỉ tự bọc `<Text>` khi children là chuỗi thuần; chữ trộn `<Text>` in đậm thì tự bọc cả khối trong một `<Text>`), `Divider`, `ErrorBox`, `EmptyState`, `BootSplash`, `Avatar` (chưa có ảnh → chữ cái đầu; `initialOf="last"` tên người, `"first"` tên tổ chức), `ListItem` (`badge`, `disabled`, `muted` = mờ nhưng bấm được, `danger`) + `ListGroup` (khung bo góc, tự kẻ giữa các dòng). Icon: `@expo/vector-icons` (Ionicons). Xác nhận: `Alert.alert` (nút `destructive`). Thông báo ngắn: `showToast`.
 - **Điều hướng an toàn:** nút ← dùng `router.canGoBack() ? router.back() : router.replace(...)`. Link nằm giữa câu: `Text` lồng `Text onPress` (tránh Android cắt chữ khi dùng `Pressable` trong hàng ngang).
 - **Token:** lưu trong expo-secure-store. Token hết hạn thì refresh một lần, thất bại thì đăng xuất. Tạm thời coi **401 hoặc 403 body rỗng** là token hết hạn [CHỜ BE trả 401]. Bất kỳ API nào (trừ login/google) trả `code: ACCOUNT_BANNED` → đăng xuất ngay, giữ lý do ở `authStore.sessionError` (AU-02 hiện).
 - **Điều hướng:** `Stack.Protected` ở `src/app/_layout.js` theo vai.
@@ -77,7 +78,8 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Phí rút hàng: trừ ví trước, thiếu thì MoMo.
   - Tự hoàn thành sau 3 ngày kể từ khi giao; yêu cầu trả hàng trong 3 ngày.
 - **Thử đồ AI:** mở từ trang sản phẩm; outfit = **Áo + Quần, hoặc Đầm**. Ảnh trả về < 120 giây, xử lý bất đồng bộ.
-- **Tổ chức:** wireframe ghi đăng nhập bằng SĐT người đại diện, nhưng API login chỉ nhận email và BE tạo tài khoản tổ chức không có mật khẩu → hiện tổ chức chưa đăng nhập được [CHỜ BE]; chưa xác minh chỉ thấy màn trạng thái hồ sơ; một địa điểm nhận đồ.
+- **Tổ chức:** đăng nhập bằng **email liên hệ (bước 1)** + mật khẩu đặt ở bước 2 (wireframe ghi SĐT người đại diện, nhưng login chỉ nhận email và BE tạo tài khoản bằng `contactEmail`). **1 email = 1 tài khoản**: email đã là Member thì BE từ chối 409. BE hiện tạo tài khoản tổ chức **không có mật khẩu** → tổ chức chưa đăng nhập được [CHỜ BE]. Chưa xác minh chỉ thấy màn trạng thái hồ sơ; một địa điểm nhận đồ.
+- **Giấy tờ tổ chức:** JPG/PNG/PDF, ≤ 5 MB/tệp; 2 ảnh CCCD + 1–8 giấy tờ pháp lý (tối đa 10, tối thiểu 3 tệp). Gợi ý giấy tờ theo loại hình chỉ là gợi ý, không khoá nút.
 - **Email chưa xác thực:** **không đăng nhập được** (theo L-01 và BE). App chỉ có 2 trạng thái: Guest và Member đã xác thực.
 
 ## Quyết định đã chốt (ngoài tài liệu)
@@ -104,6 +106,15 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - AU-04: "Mã có hiệu lực **5 phút**" (wireframe 10); lỗi mã hiện nguyên message BE (BE không phân biệt sai/hết hạn); **ẩn ghi chú ③**.
   - AU-05/06: dùng **OTP** thay link (đổi chữ "Gửi liên kết" → "Gửi mã", AU-06 thêm `OtpInput`, bỏ màn "Liên kết không còn dùng được").
   - AU-07: lỗi sai mật khẩu cũ (`WRONG_PASSWORD`) hiện dưới ô "Mật khẩu hiện tại"; đổi xong đăng xuất (wireframe ghi "thiết bị này giữ nguyên" — chờ BE chốt).
+- **Đăng ký tổ chức (OA, chốt 17/10, chạy mock):**
+  - 4 bước (`Stepper`): Tổ chức · Đại diện · Giấy tờ · Nhận đồ → **Xem lại** (OA-05, tự thiết kế) → **Đã gửi / chờ xác minh** (OA-06 bản PENDING). Dữ liệu ở `orgRegisterStore` (chỉ trong RAM); bước 2–4 **tự lưu nháp** khi gõ (`watch` subscription) nên vuốt Back không mất; mỗi bước tự `Redirect` về bước 1 nếu thiếu dữ liệu bước trước.
+  - Bước 1: loại hình, phạm vi **không chọn sẵn**; MST không bắt buộc (10 số hoặc 10-3); SĐT liên hệ nhận cả số bàn 11 số. Bấm ← khi đã nhập → hỏi "Thoát đăng ký tổ chức?" (thoát = xoá store).
+  - Bước 2: thêm khối **"Tài khoản đăng nhập"** (email bước 1 chỉ đọc + "Sửa", mật khẩu + nhập lại + `PasswordChecklist`). SĐT người đại diện là số di động 10 số, dùng để xác minh, **không** dùng đăng nhập.
+  - Bước 3: ảnh CCCD chọn **Chụp ảnh / Chọn từ thư viện** (có hướng dẫn chụp), họ tên trên thẻ **điền sẵn** từ bước 2, số CCCD 12 số; giấy tờ pháp lý dạng danh sách (`useFieldArray`, `LegalDocCard`) — chip gợi ý theo loại hình + tự nhập; kiểm định dạng/dung lượng **ngay khi chọn tệp**.
+  - Bước 4: tích sẵn "Nhận đồ tại địa chỉ trụ sở" (lưu cờ `useOfficeAddress`, không copy địa chỉ); thêm **tên điểm nhận** (BE bắt buộc, điền sẵn tên hiển thị) và **SĐT điểm nhận** (điền sẵn SĐT liên hệ); ngày không chọn sẵn; giờ điền sẵn 08:00–17:00. **Bản đồ ghim để sau**, gửi `latitude/longitude: null` [GIẢ ĐỊNH].
+  - Xem lại: 4 khối có "Sửa" (`router.dismissTo` về đúng bước); ô **cam đoan** bắt buộc; Gửi = upload song song mọi tệp → `registerOrganization`. Lỗi 409 (email/MST trùng) hiện `ErrorBox` + gợi ý sửa. Mock: email chứa `used` → trùng email; MST `0000000000` → trùng MST.
+  - Gửi xong: `dismissAll` + `replace` sang `submitted` (Back Android / "Về trang chủ" → `dismissTo("/")`; vào màn là `reset()` store). Bản **Bị từ chối**, làm mới trạng thái, nhóm `(org-status)` / `(org)`: chờ tổ chức đăng nhập được [CHỜ BE].
+  - Body gửi BE ghép ở `utils/payload.js` (`buildRegisterPayload`); field BE chưa nhận đánh dấu [GIẢ ĐỊNH]: `password`, `representative.phone/email/cccdName/cccdIssueDate/cccdIssuePlace`.
 - Luồng AU-03 → AU-04: đăng ký xong `router.push` sang `/verify-email` (để "Quay lại sửa" được); xác thực xong `router.dismissTo("/login", { email, verified: "1" })` → AU-02 điền sẵn email + báo thành công.
 
 ## API backend đang chạy thật (Swagger + code `develop` `c62dca4`, đọc 16/10)
@@ -130,7 +141,11 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - `PATCH /members/me` `{fullName, phone, avatarUrl}`: ô trống = giữ nguyên. Response thiếu `email`, `memberCode` → lưu xong gọi lại `GET /members/me`.
   - `GET /members/me/code` → `result: {memberCode}`.
 - **Địa chỉ giao hàng** (mới, 16/10, Phase sau): `GET /addresses`, `POST /addresses` `{recipientName, phone, addressDetail, isDefault}` → có envelope, không có `/api`.
-- **Tổ chức:** `POST /api/organizations/register/organization` (JSON, giấy tờ là URL; email tài khoản = `contactEmail`; không có mật khẩu) → 201 `{accountId, verificationStatus}`.
+- **Tổ chức:** `POST /api/organizations/register/organization` (JSON, giấy tờ là URL; email tài khoản = `contactEmail`; không có mật khẩu) → 201 `{accountId, verificationStatus}`. Đọc lại 17/10:
+  - Body: `legalName*, displayName*, orgType*, taxCode, operationScope*, address*, contactPhone*, contactEmail*, website, description*, logoUrl, representative* {fullName*, position, cccdNumber*, cccdFrontUrl*, cccdBackUrl*}, documents* (≥ 1) [{docType*, docNumber, issueDate (LocalDate), issuingAuthority, fileUrl*}], donationPoint* {name*, address*, latitude*, longitude*, receivingHours, contactPhone}`.
+  - Email trùng (không phân biệt hoa thường) → 409 "Email đã được sử dụng!!"; MST trùng → 409 "Mã số thuế đã được sử dụng!!" (dạng A, không có `code`).
+  - Chưa có danh sách mã cho `orgType` / `operationScope` → mobile tạm dùng `SOCIAL_FUND…`, `NATIONAL…` [GIẢ ĐỊNH].
+- **Google:** `GoogleTokenVerifier` kiểm `idToken` với **một** `audience` = `google.client-id` trong `application.yml` → mobile phải xin idToken với **Web client ID** đó (OAuth client Android chỉ để Google cho phép app đăng nhập).
 - **JWT:** `sub` = email; claim `roles` là **chuỗi** `"ROLE_MEMBER"` | `"ROLE_ORGANIZATION"` | `"ROLE_MODERATOR"` | `"ROLE_ADMIN"`. Access token 15 phút, refresh token 7 ngày.
 - **OTP:** 6 số, hết hạn **5 phút**, sai tối đa 5 lần, phải chờ **60 giây** mới gửi lại (sớm hơn → 429).
 - **Hành vi cần biết:**
@@ -155,15 +170,17 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - [CHỜ BE] Định dạng `qrPayload` của API 25 `/counter/lookup` (mobile tạm mã hoá đúng `memberCode`).
 - [CHỜ BE] `OtpServiceImpl` dòng 86/115/131/154 còn dùng `isEnabled()` (luôn `true`) → quên mật khẩu chưa chặn tài khoản bị khoá/chưa xác thực.
 - [CHỜ BE] Đổi mật khẩu: chuyển khỏi `/api/auth/**` hoặc trả 401 khi thiếu token (đang 500); DTO có `@NotBlank`; xác nhận thu hồi token cả thiết bị đang dùng có chủ ý không.
-- [CHỜ BE] `POST /uploads`; đăng ký tổ chức có mật khẩu + API trạng thái/nộp lại hồ sơ (API 4); token hết hạn trả 401; logout không lỗi 500 khi token hết hạn; đăng ký trùng SĐT trả 409 thay vì 500.
+- [CHỜ BE] `POST /uploads`; token hết hạn trả 401; logout không lỗi 500 khi token hết hạn; đăng ký trùng SĐT trả 409 thay vì 500.
+- [CHỜ BE] Đăng ký tổ chức (đã gửi danh sách 17/10): nhận `password` (+ mã hoá, `emailVerified`?); thêm `representative.phone/email`, thông tin CCCD (họ tên, ngày cấp, nơi cấp); danh sách mã `orgType` / `operationScope`; `latitude/longitude` tạm không bắt buộc; API trạng thái hồ sơ (PENDING/REJECTED + lý do + giấy tờ thiếu) và nộp bổ sung; login/`/me` trả role + `verificationStatus`; lỗi 409 có `code` (`EMAIL_EXISTED`, `TAX_CODE_EXISTED`); (tuỳ chọn) API kiểm tra email đã dùng chưa để báo sớm ở bước 1.
+- [CHỜ BE] Google: gửi **Web client ID** (`google.client-id`, không phải secret) + thêm OAuth client **Android** (package `com.rehome.mobile`, SHA-1 bản dev build) vào cùng Google Cloud project.
 - [CHỜ BE] Thống nhất base path, tên field OTP (`otp` hay `otpCode`), body reset password.
 - [CHỜ BE] Ngày sinh/giới tính (DB chưa có cột); `createdAt` cho "tham gia MM/YYYY" ở PR-01.
-- [CHỜ BE/LEAD] Đăng nhập Google: quyền Google Cloud project để tạo OAuth client Android; tên package Android (tạm `com.rehome.mobile`). Cần development build (Expo Go không chạy được).
+- [CHỜ LEAD] Tên package Android (tạm `com.rehome.mobile`) — cần chốt trước khi tạo OAuth client Android. Google cần development build (Expo Go không chạy được).
 - [CHỜ LEAD] Xoá ghi chú ③ ở wireframe AU-04 (chưa xác thực vẫn đăng nhập được).
 - [CHỜ LEAD] Địa chỉ email hỗ trợ ReHome (thông báo tài khoản bị khoá).
 - [CHỜ LEAD] Xác nhận giữ QR ở PR-04 (mobile làm QR + mã chữ; ghi chú wireframe 11/10 bỏ QR).
 - [CHỜ LEAD] Tab dưới Member: 4 tab (BR-01) hay 5 tab (PR-01) — mobile đang dùng 4: Mua sắm · Cộng đồng · Ký gửi · Cá nhân.
-- [CHỜ LEAD] Ô mật khẩu ở form đăng ký tổ chức; màn "Xem lại hồ sơ".
+- [CHỜ LEAD] Đăng ký tổ chức: ô mật khẩu ở bước 2, đăng nhập bằng email (không phải SĐT), màn "Xem lại hồ sơ" + ô cam đoan, thêm tên/SĐT điểm nhận ở bước 4 (chi tiết: guide 0.3 #22–#27).
 - [CHỜ LEAD] Thời điểm tiền vào ví người bán; điều kiện hiện nút trả hàng.
 
 ## Tiến độ
@@ -178,10 +195,10 @@ Tiêu chí xong Phase 1: Guest đăng ký được Member/Organization · Đăng
 | Đăng nhập email        | ✅ AU-02 — API thật                                                            |
 | Đổi / quên mật khẩu    | ✅ AU-07, AU-05, AU-06 — API thật                                              |
 | Member xem/sửa hồ sơ   | ✅ Tab bar, PR-01 (+ Cài đặt), PR-02, PR-03, PR-04 — API thật (ảnh đại diện chờ upload) |
-| Guest đăng ký Tổ chức  | ⏳ OA-01 → OA-06 + khung tab tổ chức (mock phần BE chưa có)                    |
-| Đăng nhập Google       | ⏳ chờ OAuth client + dev build                                                |
+| Guest đăng ký Tổ chức  | ✅ OA-01 → OA-04, Xem lại, OA-06 (bản chờ xác minh) — **mock** (chờ BE); khung tab tổ chức chờ BE cho đăng nhập |
+| Đăng nhập Google       | ⏳ chờ Web client ID + OAuth client Android (BE) + dev build                   |
 
-Còn lại khác: AU-01 Splash (đang làm 17/10) · tự test checklist mục 10 · mở PR `feature/phase1-auth` → `develop`.
+Còn lại khác: AU-01 Splash ✅ (splash native + `BootSplash`, anchor `(member)`) · tự test checklist mục 10 (OA-03 chưa test hết bài) · gửi danh sách cho BE · mở PR `feature/phase1-auth` → `develop`.
 
 ## Design tokens
 

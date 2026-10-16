@@ -6,7 +6,7 @@
 > Ký hiệu: **[GIẢ ĐỊNH]** = mình tạm đặt vì chưa có quyết định, phải sửa khi có thông tin thật. **[CHỜ BE]** / **[CHỜ LEAD]** = đã hỏi, đang chờ trả lời (danh sách ở `CLAUDE.md`).
 > API: **code theo thứ đang chạy thật** (Swagger + code `../rehome-backend` nhánh develop), không theo `docs/API_CONTRACT.md` khi lệch. URL, field, cách bóc response chỉ nằm trong `features/*/api/*.real.js` và `src/lib/api`.
 
-> **Trạng thái 17/10 (trưa):** xong mục 1 → 8 và **AU-02 → AU-07, thanh tab Member, PR-01 → PR-04 chạy với BE thật**. Còn: AU-01 splash, OA (tổ chức), Google. **Code trong repo là bản chuẩn** — các đoạn code mẫu từ mục 9 trở đi chỉ là spec rút gọn; khi lệch thì theo code. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
+> **Trạng thái 17/10 (tối):** xong mục 1 → 8; **AU-01 → AU-07, thanh tab Member, PR-01 → PR-04 chạy với BE thật**; **OA-01 → OA-04 + Xem lại + OA-06 (chờ xác minh) chạy mock**. Còn: Google (chờ BE + dev build), tự test mục 10, PR. **Code trong repo là bản chuẩn** — các đoạn code mẫu từ mục 9 trở đi chỉ là spec rút gọn; khi lệch thì theo code. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
 > **Wireframe là tham khảo** (chốt 17/10): chỗ nào thực tế các app làm tốt hơn thì làm theo thực tế, ghi lại trong bảng 0.3 để lead xem.
 > **Thay đổi lớn so với bản đầu:** không mock auth nữa (gọi thật, test bằng tài khoản thật); `authStore.signIn(tokens)` tự gọi `getMe()`; BE đã có `code` lỗi (`ACCOUNT_BANNED`, `EMAIL_NOT_VERIFIED`, `WRONG_PASSWORD`…) và gửi được mail OTP.
 
@@ -33,14 +33,15 @@
 | PR-04         | Mã Member (QR + mã chữ)                           | `(member)/profile/member-code`                              | P1      |
 | OA-01 → OA-04 | Đăng ký tổ chức 4 bước                            | `(auth)/org-register/*`                                     | P1      |
 | (OA-05)       | Xem lại hồ sơ trước khi gửi (wireframe chưa vẽ)   | `(auth)/org-register/review`                                | P1      |
-| OA-06         | Tổ chức: chờ xác minh / bị từ chối                | `(org-status)/verification`                                 | P1      |
+| OA-06         | Đã gửi — chờ xác minh (ngay sau khi gửi, mock)    | `(auth)/org-register/submitted`                             | P1      |
+| OA-06         | Tổ chức đăng nhập: chờ xác minh / bị từ chối      | `(org-status)/verification` — chờ BE cho tổ chức đăng nhập  | P1      |
 | —             | Khung tab của Organization đã duyệt (màn giữ chỗ) | `(org)/(tabs)/*`                                            | P2      |
 
 **Thứ tự (cập nhật 17/10):**
 
 - 16/10 ✅: tạo project, theme, component, lớp API, store, khung điều hướng, **AU-02, AU-03, AU-04** (thật).
 - 17/10 ✅ (sáng): AU-07, AU-05/06 (**thật**, không cần mock), thanh tab Member, PR-01 + Cài đặt, PR-02 → PR-04. Chiều: AU-01 splash, bắt đầu OA.
-- 18/10: OA-01 → OA-06 (mock phần BE chưa có), khung tab tổ chức.
+- 17/10 ✅ (tối): AU-01, OA-01 → OA-04, Xem lại, OA-06 bản chờ xác minh (mock). Khung tab tổ chức + OA-06 bản bị từ chối: chờ BE cho tổ chức đăng nhập.
 - 19/10: Google (nếu có OAuth client + dev build), tự test checklist mục 10, mở PR `feature/phase1-auth` → `develop`.
 
 Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đổi ảnh đại diện thật, đổi email.
@@ -52,7 +53,7 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | Tiêu chí                 | Màn         | Gọi thật / mock                         | Trạng thái 17/10             |
 | ------------------------ | ----------- | --------------------------------------- | ---------------------------- |
 | Guest đăng ký Member     | AU-03, AU-04 | Thật                                   | ✅ chạy với BE thật           |
-| Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ⏳                        |
+| Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ✅ mock (OA-03 chưa test hết) |
 | Đăng nhập email          | AU-02       | Thật                                    | ✅                            |
 | Đăng nhập Google         | AU-02       | Tạm `Alert` tới khi có OAuth client + dev build | ⏳ [CHỜ BE/LEAD]     |
 | Đổi mật khẩu             | AU-07       | Thật                                    | ✅                            |
@@ -90,6 +91,12 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | 19  | PR-02/03 có Ngày sinh, Giới tính, "Hoạt động trên ReHome", "Đổi email"                                                                                      | **Ẩn** (DB chưa có cột / phase sau / không có UC). Dòng thông tin: nhãn trên, giá trị dưới (email dài không vỡ dòng)            |
 | 20  | PR-03 "Đổi ảnh đại diện"; nút "Lưu thay đổi" mờ                                                                                                            | Ảnh đại diện → Toast "sắp có" (chưa có `/uploads`, không gửi `file://` lên BE). Lưu **mờ khi chưa sửa** (`isDirty`); Huỷ khi đã sửa → hỏi "Bỏ thay đổi?" |
 | 21  | PR-04 chỉ mã chữ (ghi chú 11/10 bỏ QR)                                                                                                                     | **QR + mã chữ** (API 25 `/counter/lookup` có `qrPayload`), tự tăng độ sáng, Sao chép mã [CHỜ LEAD giữ QR] [CHỜ BE định dạng `qrPayload`] |
+| 22  | OA-02: SĐT người đại diện "dùng làm tài khoản đăng nhập"; không có mật khẩu                                                                                | Đăng nhập bằng **email liên hệ bước 1** (BE tạo tài khoản bằng `contactEmail`, login chỉ nhận email). Thêm khối **"Tài khoản đăng nhập"**: email chỉ đọc + "Sửa", mật khẩu + nhập lại + checklist. SĐT người đại diện chỉ để xác minh [CHỜ LEAD] [CHỜ BE nhận `password`] |
+| 23  | OA-01: loại hình, phạm vi                                                                                                                                  | **Không chọn sẵn** (bắt chủ động chọn); 4 chip phạm vi tự xuống dòng; ← khi đã nhập hỏi "Thoát đăng ký tổ chức?"                    |
+| 24  | OA-03: chỉ có nút chụp / chọn tệp                                                                                                                          | CCCD: hỏi **Chụp ảnh / Chọn từ thư viện** + hướng dẫn "rõ 4 góc, không lóa"; họ tên trên thẻ **điền sẵn** từ bước 2; loại giấy tờ = **chip gợi ý theo loại hình + tự nhập**; kiểm JPG/PNG/PDF, ≤ 5 MB **ngay khi chọn** |
+| 25  | OA-04: không có tên điểm nhận; có bản đồ kéo ghim                                                                                                          | Thêm **Tên điểm nhận** (BE bắt buộc) và **SĐT điểm nhận** (BE có field), điền sẵn từ bước 1; tích sẵn "dùng địa chỉ trụ sở"; giờ điền sẵn 08:00–17:00. **Bản đồ để sau**, toạ độ gửi `null` [GIẢ ĐỊNH] [CHỜ BE] |
+| 26  | OA-05 "Xem lại hồ sơ" chưa vẽ                                                                                                                              | Tự thiết kế: 4 khối tóm tắt có "Sửa", **ô cam đoan** bắt buộc trước khi gửi; lỗi email/MST trùng (409) hiện khung lỗi + gợi ý sửa |
+| 27  | OA-06 chờ xác minh (khi tổ chức đăng nhập)                                                                                                                 | Gửi xong hiện **ngay** màn "Hồ sơ đang được xác minh" (timeline 3 mốc), Back/"Về trang chủ" về tab Mua sắm. Bản bị từ chối + làm mới trạng thái: chờ BE cho tổ chức đăng nhập |
 
 ---
 
@@ -255,6 +262,7 @@ npm install axios @tanstack/react-query zustand react-hook-form zod @hookform/re
 | jwt-decode                                                       | Đọc role và hạn (`exp`) trong access token (không kiểm chữ ký) |
 | react-dom                                                        | Chỉ để thoả peer dependency của expo-router (web)          |
 | @expo/vector-icons                                               | Icon (Ionicons…)                                           |
+| @react-native-community/datetimepicker (cài 17/10, `npx expo install`) | `DateField` / `TimeField` (ngày cấp giấy tờ, giờ nhận đồ) — có sẵn trong Expo Go |
 
 Kiểm tra sau khi cài: `npx expo install --check` → "Dependencies are up to date". Lệnh `npx expo install` tự thêm plugin `expo-secure-store`, `expo-splash-screen`, `expo-font` vào `app.json`, giữ nguyên.
 
@@ -309,8 +317,8 @@ rehome-mobile/
    │  │  ├─ _layout.js
    │  │  ├─ login.js · register.js · verify-email.js · forgot-password.js · reset-password.js
    │  │  └─ org-register/
-   │  │     ├─ _layout.js        # header + stepper 4 bước
-   │  │     └─ info.js · representative.js · documents.js · location.js · review.js
+   │  │     ├─ _layout.js        # Stack không header (header + Stepper nằm trong từng màn: OrgRegisterHeader)
+   │  │     └─ info.js · representative.js · documents.js · location.js · review.js · submitted.js
    │  ├─ (member)/               # Guest + Member
    │  │  ├─ _layout.js
    │  │  ├─ (tabs)/
@@ -332,8 +340,9 @@ rehome-mobile/
    │  │  ├─ components/
    │  │  └─ schemas.js           # zod schema của các form auth
    │  ├─ profile/                # api/ screens/ components/ schemas.js
-   │  └─ organization/           # api/ screens/ components/ schemas.js
-   │                             # store/orgRegisterStore.js, constants.js (loại hình, checklist giấy tờ)
+   │  └─ organization/           # api/ (organizationApi.js + .mock.js) · screens/ · components/ · schemas.js
+   │                             # store/orgRegisterStore.js · constants.js (ORG_TYPES + gợi ý giấy tờ, OPERATION_SCOPES, FILE_RULES, WEEKDAYS)
+   │                             # utils/files.js (chụp/chọn tệp + kiểm tra) · summary.js (nhãn, giờ nhận) · payload.js (body gửi BE)
    ├─ components/ui/             # Component dùng chung, không biết gì về nghiệp vụ
    ├─ lib/
    │  ├─ api/                    # client.js (axios + token + refresh) · errors.js (chuẩn hoá lỗi)
@@ -409,17 +418,19 @@ export const textStyles = {
 | `Screen`                                  | SafeArea + nền + `KeyboardAvoidingView` + `scroll`; `header` (đứng yên), `footer` (nút cố định đáy, nằm trên bàn phím) | ✅ |
 | `AppHeader`                               | Nút ← trong ô vuông (`onBack` tuỳ chọn, không truyền = không có ←) + tiêu đề + `right`           | ✅    |
 | `Button`                                  | `variant`: primary / secondary / text; `loading` (chặn bấm 2 lần, vẫn giữ màu); `disabled` (mờ); cao ≥ 48 | ✅ |
-| `TextField`                               | label kiểu câu (có `*`), helper, error (đỏ), ẩn/hiện mật khẩu (Ionicons), truyền thẳng prop cho `TextInput` | ✅ |
+| `TextField`                               | label kiểu câu (có `*`), helper, error (đỏ), ẩn/hiện mật khẩu (Ionicons), `multiline` (cao 96), truyền thẳng prop cho `TextInput` | ✅ |
+| `DateField`, `TimeField`                  | Trông như `TextField`, bấm mở picker hệ thống; giá trị `"YYYY-MM-DD"` / `"HH:mm"` (24h); `DateField` mặc định chặn ngày tương lai. Chỉ làm Android | ✅ |
 | `OtpInput`                                | 6 ô vẽ + **một** `TextInput` trong suốt phủ lên (gõ liên tục, xoá lùi, dán cả mã), chỉ nhận số   | ✅    |
 | `RadioCard`, `Checkbox`                   | Chọn Cá nhân / Tổ chức (AU-03), loại hình (OA-01); điều khoản có link lồng (AU-03)               | ✅    |
 | `NoteBox`, `Divider`, `ErrorBox`          | Ghi chú viền đứt; "── hoặc ──"; khung lỗi server của form                                        | ✅    |
 | `PasswordChecklist`                       | Các dòng ✓ cập nhật theo `watch`: ≥ 8 ký tự, có chữ và số (+ "Khác mật khẩu hiện tại" khi truyền `currentPassword`) | ✅ |
 | `EmptyState`                              | Icon tròn + tiêu đề + mô tả (+ children); dùng cho tab "Sắp có", danh sách trống                 | ✅    |
-| `Avatar`                                  | Ảnh tròn; chưa có ảnh → chữ cái đầu của **tên gọi** (từ cuối) trên nền `primary`                  | ✅    |
+| `Avatar`                                  | Ảnh tròn; chưa có ảnh → chữ cái đầu trên nền `primary`: `initialOf="last"` (mặc định, tên người: từ cuối) / `"first"` (tên tổ chức: từ đầu) | ✅ |
+| `BootSplash`                              | Logo + vòng quay khi `authStore.status === "loading"` (sau khi splash native đã ẩn)               | ✅    |
 | `ListItem`, `ListGroup`                   | Dòng menu (icon, tiêu đề, mô tả, `badge`, `›`; `disabled`, `muted`, `danger`); nhóm bo góc tự kẻ giữa các dòng | ✅ |
-| `ChipGroup`                               | Chọn ngày T2 … CN (OA-04)                                                                        | ⏳    |
-| `Stepper`                                 | 4 bước: Tổ chức · Đại diện · Giấy tờ · Nhận đồ (✓ cho bước đã xong)                              | ⏳    |
-| `FileItem`                                | Tên file, nút Xoá, các ô khai báo giấy tờ (OA-03)                                                | ⏳    |
+| `ChipGroup`                               | Chip bo tròn, chọn 1 (phạm vi OA-01) hoặc `multiple` (ngày T2 … CN OA-04); `error`               | ✅    |
+| `Stepper`                                 | 4 bước: Tổ chức · Đại diện · Giấy tờ · Nhận đồ (✓ cho bước đã xong)                              | ✅    |
+| ~~`FileItem`~~                            | Thay bằng component riêng của tổ chức: `CccdSlot`, `LegalDocCard` (xem OA-03)                    | ✅    |
 | `ErrorState`, `LoadingView`               | Dùng chung cho màn có dữ liệu (khi cần)                                                          | ⏳    |
 | ~~`ConfirmDialog`~~                       | Không cần: dùng `Alert.alert` (nút `destructive`) của hệ điều hành                                | —     |
 
@@ -938,7 +949,15 @@ export default function RootLayout() {
 }
 ```
 
-**Đang có trong code (16/10):** chỉ 2 nhóm `(member)` và `(auth)`; `(org-status)`, `(org)` thêm khi làm phần tổ chức. Mỗi nhóm có `_layout.js` riêng (`<Stack screenOptions={{ headerShown: false }} />`). Route: `(auth)/login.js`, `(auth)/register.js`, `(auth)/verify-email.js` (mỗi file 1 dòng `export { default } from "@/features/auth/screens/…"`), `(member)/index.js` (màn tạm "Xin chào…" + Đăng xuất).
+**Đang có trong code (17/10):** chỉ 2 nhóm `(member)` và `(auth)`; `(org-status)`, `(org)` thêm khi BE cho tổ chức đăng nhập. Khác code mẫu trên: font xong là ẩn splash native ngay, còn lúc `status === "loading"` thì hiện `<BootSplash />` (AU-01); code hiện **chưa** gọi `SplashScreen.preventAutoHideAsync()` — khi build APK (12.3) kiểm lại splash có bị ẩn sớm (lộ màn trắng trước khi có font) không; có thì thêm dòng này ở đầu `_layout.js` như code mẫu.
+
+**Bắt buộc có `anchor`** (lỗi đã gặp 17/10: khách mở lại app bị đưa vào màn Đăng nhập). Không khai báo thì Expo Router chọn nhóm đứng đầu **theo bảng chữ cái** là `(auth)`:
+
+```js
+export const unstable_settings = { anchor: "(member)" }; // đặt ở src/app/_layout.js, ngoài component
+```
+
+Đổi cấu trúc route xong nhớ chạy `npx expo start --clear`. Mỗi nhóm có `_layout.js` riêng (`<Stack screenOptions={{ headerShown: false }} />`). Route: `(auth)/login.js`, `(auth)/register.js`, `(auth)/verify-email.js` (mỗi file 1 dòng `export { default } from "@/features/auth/screens/…"`), `(member)/index.js` (màn tạm "Xin chào…" + Đăng xuất).
 
 **Kết quả:**
 
@@ -1034,8 +1053,11 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 
 ### AU-01 · Splash
 
-- Splash native (`expo-splash-screen`) giữ trên màn cho tới khi tải xong font và chạy xong `bootstrap()`.
-- Ảnh splash và icon đặt ở `app.json`. Đổi ảnh splash chỉ thấy khi build APK, Expo Go không hiện đúng.
+> **✅ Đã làm 17/10.**
+
+- Splash native (`expo-splash-screen`, ảnh `assets/logo/logoIcon.png`, rộng 120, nền `#F6F9F4` khai trong plugin ở `app.json`) giữ tới khi tải xong font; sau đó `bootstrap()` còn chạy thì hiện `BootSplash` (cùng nền + logo + vòng quay).
+- Mở app không kèm đường dẫn → nhóm `(member)` nhờ `anchor` (mục 8.3): Guest vào tab Mua sắm, không bị đẩy vào Đăng nhập.
+- Ảnh splash và icon chỉ thấy đúng khi build APK; Expo Go hiện logo của Expo (xem 12.3).
 
 ### AU-02 · Đăng nhập
 
@@ -1193,41 +1215,48 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 - Mô tả hoạt động \*.
 - Logo (không bắt buộc; chưa có thì hiện chữ cái đầu).
 
+> **✅ Đã làm 17/10 (mock)** — `OrgInfoScreen`, `OrgRepresentativeScreen`, `OrgDocumentsScreen`, `OrgLocationScreen`, `OrgReviewScreen`, `OrgSubmittedScreen`. Code trong repo là chuẩn; dưới đây là spec + các điểm khác wireframe (bảng 0.3 #22–#27).
+>
+> **Chung (as-built):** header `OrgRegisterHeader` (AppHeader + Stepper) nằm trong từng màn; mỗi bước `saveStep(key, values)` khi bấm Tiếp tục; bước 2–4 còn **tự lưu nháp** mỗi lần gõ (`watch((v) => saveStep(...))`) để vuốt Back không mất; bước nào thiếu dữ liệu bước trước → `<Redirect href="/org-register/info" />` (đặt **sau** mọi hook). OA-01 bấm ← khi đã nhập → hỏi "Thoát đăng ký tổ chức?" → `reset()`.
+
 **OA-02 Người đại diện:**
 
-- Ghi chú: "Tên dưới đây phải khớp tên ghi trên giấy phép…".
-- Họ và tên _ · Chức vụ _ · Số điện thoại _ ("Dùng làm tài khoản đăng nhập của tổ chức") · Email _.
-- **[GIẢ ĐỊNH]** thêm Mật khẩu _ + Nhập lại _ (xem 0.3 #5).
+- NoteBox: "Người đại diện theo pháp luật hoặc người được uỷ quyền. **Họ tên phải khớp với CCCD** bạn tải lên ở bước 3."
+- Họ và tên \* · Chức vụ \* · Số điện thoại \* (di động 10 số, "Moderator có thể gọi để xác minh") · Email \*.
+- Khối **"Tài khoản đăng nhập"**: ô xám hiện email liên hệ bước 1 + chữ "Sửa" (`router.back()`), Mật khẩu \* + `PasswordChecklist` + Nhập lại \*. Mật khẩu chỉ nằm trong RAM. [GIẢ ĐỊNH] [CHỜ BE nhận `password`]
+- Schema `orgRepresentativeSchema` (dùng lại `PHONE_REGEX`, `PASSWORD_REGEX`).
 
 **OA-03 Giấy tờ:**
 
-- **Nhóm 1 — CCCD người đại diện:**
-  - Ảnh mặt trước + mặt sau (bắt buộc cả 2).
-  - Họ tên trên thẻ _, Số CCCD _, Ngày cấp _, Nơi cấp _.
-  - Ghi chú: hai ảnh tự xoá sau khi hồ sơ được duyệt.
-- **Nhóm 2 — Giấy tờ pháp lý:**
-  - ≥ 1 tệp. Mỗi tệp: Loại giấy tờ \*, Số giấy tờ, Ngày cấp, Cơ quan cấp; có nút Xoá.
-  - Hai nút: "Chụp giấy tờ" (image-picker, camera) và "Chọn tệp" (document-picker, cho PDF).
-- **Gợi ý giấy tờ theo loại hình** (mục 9 Tài liệu tổng quan, lưu ở `constants.js`): chỉ là gợi ý, **không khoá nút**.
-- **Ràng buộc:**
-  - JPG/PNG/PDF; mỗi tệp ≤ 5 MB (kiểm `size` của asset trước khi thêm).
-  - Tối đa 10 tệp; tối thiểu 3 tệp (2 mặt CCCD + 1 giấy tờ).
+- **CCCD người đại diện** (`CccdSlot` × 2, tỉ lệ thẻ 1.58): bấm ô → `Alert` "Chụp ảnh / Chọn từ thư viện" + hướng dẫn "rõ đủ 4 góc, không lóa"; có ảnh thì xem trước + nút ✕. Họ tên trên thẻ \* (**điền sẵn** họ tên bước 2) · Số CCCD \* (12 số) · Ngày cấp \* (`DateField`) · Nơi cấp \*. NoteBox: ảnh tự xoá sau khi duyệt.
+- **Giấy tờ pháp lý** (`useFieldArray` tên `legalDocs`, mỗi phần tử `LegalDocCard`): dòng tệp (ảnh nhỏ / icon PDF, tên, dung lượng, Xoá) + Loại giấy tờ \* (TextField + **chip gợi ý theo loại hình**) · Số hiệu · Ngày cấp · Cơ quan cấp. Hai nút "Chụp giấy tờ" / "Chọn tệp"; dòng "đã thêm n/8".
+- **Kiểm tra tệp ngay khi chọn** (`utils/files.js`: `takePhoto`, `pickImage`, `pickDocument`, `checkFile`): JPG/PNG/PDF, ≤ 5 MB; sai → `Alert` "Không thêm được tệp". `FILE_RULES` ở `constants.js`: tối đa 8 giấy tờ (+ 2 CCCD = 10), tối thiểu 1 (tổng ≥ 3).
+- Tệp lưu `{ uri, name, mimeType, size }` (chưa upload). Ảnh camera quality 0.7; document-picker `copyToCacheDirectory: true`.
 
 **OA-04 Địa điểm nhận đồ:**
 
-- ☑ "Nhận đồ tại địa chỉ trụ sở đã khai ở bước 1". Bỏ tích thì nhập "Địa chỉ nhận đồ \*".
-- Bản đồ kéo ghim → **để sau**. Toạ độ tạm `null` hoặc giả **[GIẢ ĐỊNH]**.
-- Ngày nhận trong tuần \* (chip T2 … CN, ≥ 1 ngày).
-- Khung giờ \* (từ … đến …, giờ kết thúc sau giờ bắt đầu).
-- Ghi chú: mỗi tổ chức **một** địa điểm; sửa được sau khi xác minh, không cần duyệt lại.
+- Tên điểm nhận \* (điền sẵn tên hiển thị — BE bắt buộc `donationPoint.name`).
+- ☑ "Nhận đồ tại địa chỉ trụ sở" (tích sẵn) → ô xám hiện địa chỉ bước 1; bỏ tích → "Địa chỉ nhận đồ \*". Lưu cờ `useOfficeAddress`, ghép địa chỉ lúc gửi (`pickupAddress`).
+- Ngày nhận trong tuần \* (`ChipGroup multiple`, `WEEKDAYS` T2 … CN, không chọn sẵn) · Khung giờ \* (`TimeField` Từ / Đến, điền sẵn 08:00–17:00, giờ kết thúc phải sau giờ bắt đầu) · SĐT tại điểm nhận (không bắt buộc, điền sẵn SĐT liên hệ).
+- Gửi BE: `receivingHours` = `"T2, T4, T6 · 08:00–17:00"` (`formatReceivingHours`); `latitude/longitude: null` — bản đồ ghim để sau [GIẢ ĐỊNH] [CHỜ BE cho phép null].
+- NoteBox: mỗi tổ chức **một** điểm nhận; sửa được sau khi xác minh, không cần duyệt lại.
 
-**OA-05 Xem lại (tự làm):**
+**OA-05 Xem lại (tự thiết kế):**
 
-- Tóm tắt 4 bước; mỗi khối có nút "Sửa" về đúng bước.
-- Nút "Gửi hồ sơ" → gửi multipart (`FormData`, mỗi file `{ uri, name, type }`).
-- Thành công [GIẢ ĐỊNH]: đăng nhập luôn bằng tài khoản vừa khai → điều hướng tự đưa vào OA-06. Phase 1 chạy bằng mock; BE chưa có mật khẩu cho tổ chức [CHỜ BE].
+- Header "Xem lại hồ sơ" (không Stepper). 4 `ReviewSection` (Tổ chức · Người đại diện · Giấy tờ · Nhận đồ), mỗi khối "Sửa" → `router.dismissTo("/org-register/<bước>")`; `ReviewRow` trống hiện "—"; mật khẩu hiện "Đã đặt".
+- Ô **cam đoan** bắt buộc ("Tôi cam đoan thông tin và giấy tờ trên là đúng sự thật…").
+- "Gửi hồ sơ": `Promise.all` upload logo + 2 CCCD + giấy tờ (`uploadFile`) → `buildRegisterPayload` → `registerOrganization`. Lỗi 409 → `ErrorBox` + "Bấm Sửa ở khối Tổ chức để đổi email hoặc mã số thuế".
+- Mock (`organizationApi.mock.js`): chờ ~1,2 giây; email chứa `used` → 409 "Email đã được sử dụng!!"; MST `0000000000` → 409 "Mã số thuế đã được sử dụng!!" (đúng câu BE).
+- Thành công: `router.dismissAll()` + `router.replace("/org-register/submitted", { displayName, email, submittedAt })`. **Không** đăng nhập luôn (mock không tạo được phiên thật; `getMe` gọi BE thật sẽ lỗi).
 
-### OA-06 · Trạng thái hồ sơ tổ chức (`(org-status)`)
+### OA-06 · Đã gửi hồ sơ (`(auth)/org-register/submitted`, ✅ 17/10)
+
+- Icon đồng hồ cát, "Hồ sơ đang được xác minh", "Cảm ơn {tên} đã đăng ký. Hồ sơ gửi lúc HH:mm, DD/MM/YYYY".
+- `StatusTimeline`: ✓ Đã gửi hồ sơ → ● Moderator đang xác minh ("Phản hồi trong 5 ngày làm việc…") → ○ Có kết quả ("Thông báo qua email …").
+- NoteBox: được duyệt thì đăng nhập bằng email + mật khẩu đã đặt.
+- Vào màn → `reset()` store. Nút "Về trang chủ" và nút Back Android (`BackHandler` trong `useFocusEffect`) → `router.dismissTo("/")`; `gestureEnabled: false`.
+
+### OA-06 · Trạng thái hồ sơ khi tổ chức đăng nhập (`(org-status)`, chờ BE)
 
 - **Chờ xác minh:**
   - Tiêu đề "Hồ sơ đang được xác minh", thời điểm gửi.
@@ -1251,7 +1280,7 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 
 Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=false` (auth gọi thật; nhóm `password`, `upload`, `organization` vẫn mock theo `MOCK`). Dùng tài khoản thật (mẹo Gmail `+testN`). ✅ = đã test 16/10.
 
-- [ ] Mở app lần đầu: splash (AU-01) → tab Mua sắm (Guest). Tab Cá nhân hiện bản Guest.
+- [x] ✅ (17/10) Mở app lần đầu: splash (AU-01) → tab Mua sắm (Guest), không bị đẩy vào Đăng nhập. Tab Cá nhân hiện bản Guest.
 - [x] ✅ Thanh 4 tab: icon đặc/rỗng theo tab đang chọn; 3 tab đầu "Sắp có".
 - [x] ✅ Đăng ký Member: bỏ trống / mật khẩu yếu / không khớp / chưa tích điều khoản → đều báo lỗi đúng ô.
 - [ ] Đăng ký với email đã có tài khoản → lỗi dưới ô Email "Email này đã có tài khoản…".
@@ -1267,8 +1296,11 @@ Chạy trên Android thật (Expo Go), với `EXPO_PUBLIC_USE_MOCK=false` (auth 
 - [x] ✅ Tab Cá nhân: thẻ đầu → PR-02; mục "Sắp có" bấm → Toast; Đăng xuất hỏi xác nhận; ⚙ → Cài đặt → Đổi mật khẩu; bản khách có Đăng nhập / Tạo tài khoản.
 - [x] ✅ Hồ sơ: xem (PR-02), sửa tên/SĐT, lưu → PR-02 và PR-01 cập nhật ngay; nút Lưu mờ khi chưa sửa; Huỷ khi đã sửa hỏi "Bỏ thay đổi?".
 - [x] ✅ Mã Member: QR + mã chữ, Sao chép mã, độ sáng tăng khi mở và trả lại khi rời.
-- [ ] Đăng ký tổ chức đủ 4 bước + Xem lại; back giữ dữ liệu; file > 5 MB bị chặn; thiếu CCCD mặt sau bị chặn; gửi xong → OA-06 Chờ xác minh.
-- [ ] Tổ chức (mock, khi làm OA): trạng thái REJECTED → OA-06 Bị từ chối có lý do; VERIFIED → tab tổ chức; tổ chức **không** vào được màn Member.
+- [x] ✅ (17/10) Đăng ký tổ chức đủ 4 bước + Xem lại + gửi (mock) → màn "Hồ sơ đang được xác minh"; Back từ màn đó về tab Mua sắm; vào lại đăng ký thì form trống.
+- [x] ✅ OA-01, OA-02, OA-04: bỏ trống báo lỗi đúng ô; MST/SĐT sai định dạng; mật khẩu checklist + không khớp; "Sửa" email ở bước 2; vuốt Back giữ dữ liệu; thoát hỏi xác nhận.
+- [ ] OA-03: thiếu ảnh CCCD → viền đỏ + lỗi; số CCCD ≠ 12 số; chưa có giấy tờ pháp lý; loại giấy tờ trống báo đúng thẻ; xoá thẻ giữa không lẫn dữ liệu; tệp `.docx` / > 5 MB bị chặn; ngày cấp không chọn được ngày tương lai.
+- [ ] Xem lại: chưa tích cam đoan → lỗi; email chứa `used` → "Email đã được sử dụng!!"; MST `0000000000` → "Mã số thuế đã được sử dụng!!"; "Sửa" từng khối về đúng bước.
+- [ ] Tổ chức đăng nhập (chờ BE): REJECTED → OA-06 Bị từ chối có lý do; VERIFIED → tab tổ chức; tổ chức **không** vào được màn Member.
 - [ ] Tắt Wi-Fi rồi thao tác → báo lỗi mạng, app không crash.
 - [ ] Không còn `console.log` thừa; không có mã màu viết trực tiếp trong màn hình.
 
@@ -1297,20 +1329,23 @@ Lên GitHub → **Compare & pull request** → **base: `develop`** ← compare: 
 
 ### Đã làm
 
-- AU-01…AU-07, PR-01…PR-04, OA-01…OA-06 (+ màn Xem lại), khung tab Member/Tổ chức
+- AU-01…AU-07, thanh tab Member, PR-01…PR-04 + Cài đặt — **gọi API thật**
+- OA-01…OA-04 + Xem lại + OA-06 (bản chờ xác minh) — **mock**
 
 ### Đang dùng mock (chờ backend)
 
-- Toàn bộ API auth/profile/organization — bật/tắt ở `src/config/env.js`
+- Đăng ký tổ chức, upload tệp (`organizationApi.mock.js`; `MOCK` ở `src/config/env.js`)
+- Chưa làm: đăng nhập Google (chờ Web client ID + OAuth client Android + dev build), tab tổ chức / OA-06 bị từ chối (chờ tổ chức đăng nhập được)
 
 ### Lệch so với wireframe (cần lead chốt)
 
-- Quên mật khẩu dùng OTP thay link · Mã Member có QR · 4 tab Member · thêm ô mật khẩu ở OA-02
+- Bảng đầy đủ: `docs/PHASE1_GUIDE.md` mục 0.3. Chính: quên mật khẩu dùng OTP · Mã Member có QR · 4 tab Member · tổ chức đăng nhập bằng email + mật khẩu (OA-02) · màn Xem lại hồ sơ
 
 ### Cách test
 
-1. `npm install` → tạo `.env` từ `.env.example` (USE_MOCK=true) → `npx expo start` → quét QR bằng Expo Go
-2. Tài khoản mock: member@rehome.vn / Rehome123 … (bảng ở PHASE1_GUIDE mục 7.5)
+1. `npm install` → tạo `.env` từ `.env.example` (`EXPO_PUBLIC_API_BASE_URL` = server Render) → `npx expo start` → quét QR bằng Expo Go (SDK 58)
+2. Member: tự đăng ký bằng email thật (mẹo Gmail `ten+test1@gmail.com`), mã OTP gửi về mail
+3. Tổ chức (mock): điền đủ 4 bước → Gửi. Thử lỗi: email chứa `used`, MST `0000000000`
 
 ### Ảnh chụp
 
@@ -1346,6 +1381,12 @@ eas update --branch preview --message "Phase 1 auth"
 
 - `eas build --profile development --platform android` → tải APK, cài lên điện thoại một lần.
 - Google Sign-In cần **OAuth client Android** trong Google Cloud project của backend, gắn với package name + SHA-1 của bản build. Hỏi người làm backend.
+  - BE kiểm `idToken` với **một** audience (`google.client-id`) → app phải xin token bằng **Web client ID** đó (đưa vào `.env` dạng `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`; client ID không phải secret). SHA-1 lấy bằng `eas credentials` sau khi build.
+- **Trước khi build APK lần đầu**, kiểm `app.json`:
+  - `icon` và `android.adaptiveIcon` vẫn là ảnh mặc định của template (`assets/icon.png`, `android-icon-*.png`, nền `#E6F4FE`) → thay bằng logo ReHome (foreground nên chừa lề ~ 1/3 vì Android cắt tròn/vuông), nền `#F6F9F4`.
+  - Thêm `android.package` (tạm `com.rehome.mobile`, chờ lead chốt — **đổi sau khi tạo OAuth client là phải tạo lại client**).
+  - Splash (AU-01) chỉ thấy đúng trên APK: kiểm logo không bị cắt, không lộ màn trắng (xem ghi chú `preventAutoHideAsync` ở 8.3).
+  - `expo-image-picker` cần câu xin quyền camera/thư viện khi build: thêm plugin `["expo-image-picker", { "cameraPermission": "…", "photosPermission": "…" }]` (tiếng Việt).
 
 ---
 
@@ -1362,5 +1403,6 @@ eas update --branch preview --message "Phase 1 auth"
 
 **Backend:** đã gửi, đang chờ; danh sách đầy đủ ở mục "Đang chờ xác nhận" trong `CLAUDE.md` (nhãn [CHỜ BE]). Còn hỏi thêm:
 
-1. Upload ảnh/tệp: giới hạn dung lượng, định dạng.
-2. Google Cloud project để tạo OAuth client Android.
+1. Upload ảnh/tệp: giới hạn dung lượng, định dạng (mobile đang chặn JPG/PNG/PDF ≤ 5 MB).
+2. Google: Web client ID (`google.client-id`) + tạo OAuth client Android (package + SHA-1).
+3. Đăng ký tổ chức: danh sách gửi BE ngày 17/10 (mật khẩu, thông tin người đại diện/CCCD, mã `orgType`/`operationScope`, toạ độ, API trạng thái, `code` lỗi 409) — chi tiết ở `CLAUDE.md` "Đang chờ xác nhận".
