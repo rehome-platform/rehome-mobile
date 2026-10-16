@@ -96,19 +96,39 @@ Commit nhỏ, mỗi commit một việc. Hỏi lead PR merge vào `develop` hay 
 
 ## 3. Tạo project Expo bên trong repo có sẵn
 
-`create-expo-app` không tạo vào thư mục đã có file, nên tạo ở thư mục tạm rồi chép sang.
+`create-expo-app` không tạo vào thư mục đã có file, nên tạo ở thư mục tạm rồi chép sang. Đã làm 16/10 (commit `65d2adf`).
+
+**Trước tiên, Expo Go phải khớp SDK 58:** Expo Go → Settings → App Info → "Supported SDKs". CH Play có thể còn bản 57; khi đó tải APK Expo Go cho SDK 58 ở https://expo.dev/go (chọn SDK 58 → Android) và cài đè.
 
 ```bash
 # đứng ở thư mục CHA của rehome-mobile
-npx create-expo-app@latest rehome-mobile-tmp --template blank
+npx create-expo-app@latest rehome-mobile-tmp --template blank@sdk-58
 ```
 
+- **Phải ghi `blank@sdk-58`**: menu chọn SDK của `create-expo-app` (16/10) chỉ đưa tới SDK 57, dù template SDK 58 đã có trên npm.
 - Template `blank` là JavaScript, chưa có expo-router (mục 4 sẽ cài).
-- Chép **toàn bộ** nội dung `rehome-mobile-tmp` sang `rehome-mobile`, **trừ** thư mục `.git` (nếu có) và `node_modules`.
-- File `.gitignore`: dùng bản của Expo, rồi thêm dòng `.env` nếu chưa có.
-- Xoá thư mục `rehome-mobile-tmp`.
+- Template SDK 58 có thêm vài file **không chép sang**:
+
+| Không chép             | Lý do                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| `.git/`                | Repo git riêng của template, chép sẽ đè git thật của `rehome-mobile`                                   |
+| `node_modules/`        | Nặng, `npm install` lại                                                                                |
+| `AGENTS.md`            | Hướng dẫn AI viết cho TypeScript, bắt "luôn `npx expo install`" — mâu thuẫn với `CLAUDE.md`           |
+| `.claude/settings.json`| Chỉ bật plugin Expo cho Claude Code                                                                    |
+| `LICENSE`              | Giấy phép MIT của Expo, không phải của dự án                                                           |
 
 ```bash
+# đứng ở thư mục CHA; chép đúng danh sách file, không chép cả thư mục
+cp rehome-mobile-tmp/{package.json,package-lock.json,app.json,App.js,index.js,.gitignore} rehome-mobile/
+cp -r rehome-mobile-tmp/assets/. rehome-mobile/assets/   # gộp, giữ assets/logo/
+```
+
+- `.gitignore`: lấy bản của Expo (có `.expo/`, `*.jks`, `/android`…), thêm ở cuối: `.env`, `.env.*`, `!.env.example`.
+- `package.json`: `"name": "rehome-mobile"`. `app.json`: `"name": "ReHome"`, `"slug": "rehome-mobile"`.
+- Kiểm tra xong mới xoá thư mục tạm.
+
+```bash
+rm -rf rehome-mobile-tmp
 cd rehome-mobile
 npm install
 npx expo start
@@ -118,8 +138,10 @@ Quét QR bằng Expo Go → thấy màn trắng "Open up App.js…" là đúng.
 
 ```bash
 git add .
-git commit -m "chore: init expo project (blank, javascript)"
+git commit -m "chore: init expo project (sdk 58, blank, javascript)"
 ```
+
+`git add` trên Windows báo "LF will be replaced by CRLF": chỉ là cảnh báo đổi kiểu xuống dòng, không phải lỗi.
 
 ---
 
@@ -178,7 +200,11 @@ git commit -m "chore: setup expo-router (src/app, scheme rehome)"
 
 ### 4.2. Các thư viện Phase 1
 
+Đã làm 16/10 (commit `dc1845c`). **Cài `react-dom` trước**, nếu không lệnh `npx expo install` thứ hai sẽ lỗi `ERESOLVE`: `expo-router` kèm `@radix-ui/react-tabs` (cho web) cần `react-dom`; npm tự lấy `react-dom@19.3.1` (đòi `react@^19.3.1`) trong khi SDK 58 khoá `react@19.3.0`. Không dùng `--force` / `--legacy-peer-deps`.
+
 ```bash
+npx expo install react-dom   # SDK 58 → react-dom 19.3.0, khớp react 19.3.0
+npx expo install @expo/vector-icons   # icon (con mắt ở TextField, tab) — template SDK 58 KHÔNG có sẵn
 npx expo install expo-secure-store expo-splash-screen expo-font @expo-google-fonts/be-vietnam-pro expo-image-picker expo-document-picker react-native-svg expo-clipboard expo-brightness
 npm install axios @tanstack/react-query zustand react-hook-form zod @hookform/resolvers react-native-qrcode-svg dayjs jwt-decode
 ```
@@ -198,6 +224,10 @@ npm install axios @tanstack/react-query zustand react-hook-form zod @hookform/re
 | react-hook-form + zod + @hookform/resolvers                      | Form và validate                                           |
 | dayjs                                                            | Định dạng ngày                                             |
 | jwt-decode                                                       | Đọc role và hạn (`exp`) trong access token (không kiểm chữ ký) |
+| react-dom                                                        | Chỉ để thoả peer dependency của expo-router (web)          |
+| @expo/vector-icons                                               | Icon (Ionicons…)                                           |
+
+Kiểm tra sau khi cài: `npx expo install --check` → "Dependencies are up to date". Lệnh `npx expo install` tự thêm plugin `expo-secure-store`, `expo-splash-screen`, `expo-font` vào `app.json`, giữ nguyên.
 
 Bản đồ (OA-04) và đăng nhập Google **chưa cài**:
 
@@ -530,14 +560,22 @@ api.interceptors.response.use(
       await refreshing;
       return api(original);
     } catch (refreshError) {
-      // Lỗi của chính lần refresh: ACCOUNT_BANNED [CHỜ BE] hoặc refresh token hết hạn
-      const reason = toApiError(refreshError);
+      // Mất mạng lúc refresh: KHÔNG đăng xuất, chỉ báo lỗi mạng
+      if (!refreshError?.response && refreshError?.message !== "NO_REFRESH_TOKEN") {
+        return Promise.reject(toApiError(refreshError));
+      }
+      // Refresh bị BE từ chối (hết hạn, ACCOUNT_BANNED [CHỜ BE]) hoặc không có refresh token → đăng xuất
+      const reason = refreshError.response ? toApiError(refreshError) : toApiError(error);
       onSessionExpired(reason);
       return Promise.reject(reason);
     }
   },
 );
 ```
+
+Bản trước (16/10 sáng) dùng `toApiError(refreshError)` cho mọi trường hợp → không có refresh token hoặc mất mạng lúc refresh đều thành `NETWORK`, và mất mạng còn bị đăng xuất. Đã sửa như trên (commit `6627f29`).
+
+**Đã kiểm tra với server thật (16/10):** `POST /api/auth/login` sai email/mật khẩu → `401 / HTTP_401 / "Sai email hoặc password"`; `GET /members/me` không token → `403 / HTTP_403` body rỗng → thử refresh → không có refresh token → trả lỗi gốc.
 
 ### 7.5. Mẫu một nhóm API có mock: `features/auth/api/`
 
@@ -865,7 +903,7 @@ export default function MemberTabs() {
 }
 ```
 
-Icon: dùng `@expo/vector-icons` (có sẵn trong Expo). Tab Mua sắm, Cộng đồng, Ký gửi ở Phase 1 là màn giữ chỗ "Sắp có".
+Icon: dùng `@expo/vector-icons`. Template SDK 58 **không có sẵn**, phải `npx expo install @expo/vector-icons` (mục 4.2). Tab Mua sắm, Cộng đồng, Ký gửi ở Phase 1 là màn giữ chỗ "Sắp có".
 
 ---
 

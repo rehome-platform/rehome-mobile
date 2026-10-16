@@ -114,8 +114,8 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - **Hành vi cần biết:**
   - Đăng nhập: BE đã tách `AccountBannedException` và `AccountNotVerifiedException` (kiểm bị khoá trước, 2 message khác nhau); chưa xác nhận response có field `code` [CHỜ BE].
     - **Đọc code (develop, 16/10):** hai exception này nằm **sau** `authenticationManager.authenticate()`. `DaoAuthenticationProvider` kiểm `isAccountNonLocked()` (status ACTIVE) và `isEnabled()` (ACTIVE + emailVerified) **trước cả khi kiểm mật khẩu** → ném `LockedException`/`DisabledException` → 403 dạng A, cùng message "Tài khoản chưa xác minh email hoặc đã bị vô hiệu hóa." Nên hai exception riêng hiện **không bao giờ chạy tới**, và tài khoản chưa xác thực/bị khoá nhận 403 **dù sai mật khẩu**. Cần curl xác nhận (PHASE1_GUIDE, AU-02) [CHỜ BE].
-    - Sai mật khẩu / email không tồn tại → `BadCredentialsException` → 401 "Sai email hoặc password" (theo code, cần curl xác nhận).
-  - Thiếu hoặc hết hạn access token trên API cần đăng nhập: hiện trả **403** (body rỗng), không phải 401. Refresh token sai/hết hạn: 403.
+    - Sai mật khẩu / email không tồn tại → `BadCredentialsException` → 401 "Sai email hoặc password". **Đã kiểm tra thật 16/10** (gọi từ app, server Render).
+  - Thiếu hoặc hết hạn access token trên API cần đăng nhập: trả **403 body rỗng**, không phải 401. **Đã kiểm tra thật 16/10** với `GET /members/me` không có token. Refresh token sai/hết hạn: 403 (theo code).
   - Logout khi access token đã hết hạn → 500.
   - Đăng ký trùng email → 409; trùng SĐT → 500 (BE chưa kiểm tra).
   - BE chỉ kiểm mật khẩu ≥ 6 ký tự; mobile vẫn dùng ≥ 8, có chữ và số.
