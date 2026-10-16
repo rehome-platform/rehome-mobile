@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.sm },
   cell: {
     flex: 1,
-    aspectRatio: 0.85, // ô hơi cao hơn rộng, giống wireframe
+    height: 56,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,

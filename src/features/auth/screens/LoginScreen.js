@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -29,6 +29,7 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     setError,
+    setValue,
     getValues,
     formState: { errors },
   } = useForm({
@@ -38,6 +39,12 @@ export default function LoginScreen() {
       password: "",
     },
   });
+
+  // Quay về từ AU-04 (router.dismissTo) → màn này đã mở sẵn nên defaultValues không chạy lại
+  // → tự điền email vừa xác thực khi params.email thay đổi
+  useEffect(() => {
+    if (typeof params.email === "string") setValue("email", params.email);
+  }, [params.email, setValue]);
 
   // Gửi lại OTP rồi sang AU-04. Resend lỗi (vd 429 vừa gửi) vẫn chuyển màn
   const goVerify = async (email) => {
@@ -101,6 +108,12 @@ export default function LoginScreen() {
           Ký gửi, mua đồ cũ có kiểm định{"\n"}và quyên góp cho tổ chức từ thiện
         </Text>
       </View>
+
+      {params.verified === "1" ? (
+        <Text style={styles.success}>
+          Xác thực email thành công, mời bạn đăng nhập.
+        </Text>
+      ) : null}
 
       <Controller
         control={control}
@@ -217,6 +230,13 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   errorText: { ...textStyles.body, color: colors.text },
+  success: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.success,
+    textAlign: "center",
+  },
+
   footerText: {
     ...textStyles.body,
     color: colors.textSecondary,
