@@ -128,3 +128,30 @@ export const orgDocumentsSchema = z.object({
       `Tối đa ${FILE_RULES.maxLegalDocs} giấy tờ pháp lý`,
     ),
 });
+
+// OA-04: địa điểm nhận đồ. Toạ độ để sau (bản đồ ghim) [GIẢ ĐỊNH]
+export const orgLocationSchema = z
+  .object({
+    useOfficeAddress: z.boolean(),
+    address: z.string().trim(), // chỉ bắt buộc khi bỏ tích "dùng địa chỉ trụ sở"
+    name: required("Vui lòng nhập tên điểm nhận"),
+    days: z.array(z.string()).min(1, "Chọn ít nhất 1 ngày nhận đồ"),
+    openTime: z.string().min(1, "Chọn giờ bắt đầu"), // "HH:mm"
+    closeTime: z.string().min(1, "Chọn giờ kết thúc"),
+    contactPhone: z
+      .string()
+      .transform((v) => v.replace(/\s/g, ""))
+      .refine(
+        (v) => v === "" || CONTACT_PHONE_REGEX.test(v),
+        "Số điện thoại gồm 10–11 chữ số, bắt đầu bằng 0",
+      ),
+  })
+  .refine((d) => d.useOfficeAddress || d.address.length > 0, {
+    path: ["address"],
+    error: "Vui lòng nhập địa chỉ nhận đồ",
+  })
+  // "HH:mm" so sánh chuỗi được luôn: "17:00" > "08:00"
+  .refine((d) => d.closeTime > d.openTime, {
+    path: ["closeTime"],
+    error: "Giờ kết thúc phải sau giờ bắt đầu",
+  });

@@ -59,3 +59,14 @@ export const FILE_RULES = {
   maxLegalDocs: 8,
   mimeTypes: ["image/jpeg", "image/png", "application/pdf"],
 };
+
+// OA-04: ngày nhận đồ. value gửi BE [GIẢ ĐỊNH] — BE lưu receivingHours dạng chuỗi
+export const WEEKDAYS = [
+  { value: "MON", label: "T2" },
+  { value: "TUE", label: "T3" },
+  { value: "WED", label: "T4" },
+  { value: "THU", label: "T5" },
+  { value: "FRI", label: "T6" },
+  { value: "SAT", label: "T7" },
+  { value: "SUN", label: "CN" },
+];
