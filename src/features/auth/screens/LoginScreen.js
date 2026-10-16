@@ -17,9 +17,17 @@ import { ERROR_CODES } from "@/constants/errorCodes";
 import { OTP_PURPOSE } from "@/constants/auth";
 
 const logo = require("../../../../assets/logo/logoIcon.png"); // assets nằm ngoài src nên không dùng @/
+// Thông báo xanh khi quay về từ màn khác (param = "1")
+const NOTICES = {
+  verified: "Xác thực email thành công, mời bạn đăng nhập.",
+  passwordChanged: "Đổi mật khẩu thành công, mời bạn đăng nhập lại.",
+  passwordReset:
+    "Đặt lại mật khẩu thành công, mời bạn đăng nhập bằng mật khẩu mới.",
+};
 
 export default function LoginScreen() {
   const params = useLocalSearchParams(); // { email } khi quay về từ AU-04 (điền sẵn)
+  const noticeKey = Object.keys(NOTICES).find((key) => params[key] === "1");
   const signIn = useAuthStore((s) => s.signIn);
   const sessionError = useAuthStore((s) => s.sessionError); // bị đăng xuất vì khoá khi đang dùng app
   const clearSessionError = useAuthStore((s) => s.clearSessionError);
@@ -109,15 +117,8 @@ export default function LoginScreen() {
         </Text>
       </View>
 
-      {params.verified === "1" ? (
-        <Text style={styles.success}>
-          Xác thực email thành công, mời bạn đăng nhập.
-        </Text>
-      ) : null}
-      {params.passwordChanged === "1" ? (
-        <Text style={styles.success}>
-          Đổi mật khẩu thành công, mời bạn đăng nhập lại.
-        </Text>
+      {noticeKey ? (
+        <Text style={styles.success}>{NOTICES[noticeKey]}</Text>
       ) : null}
 
       <Controller

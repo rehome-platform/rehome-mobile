@@ -68,3 +68,17 @@ export const changePasswordSchema = z
 export const forgotPasswordSchema = z.object({
   email: emailField,
 });
+// AU-06: đặt mật khẩu mới (mã OTP + mật khẩu mới)
+export const resetPasswordSchema = z
+  .object({
+    otp: z.string().regex(/^\d{6}$/, "Vui lòng nhập đủ 6 số"),
+    newPassword: z
+      .string()
+      .min(1, "Vui lòng nhập mật khẩu mới")
+      .regex(PASSWORD_REGEX, "Mật khẩu ít nhất 8 ký tự, có cả chữ và số"),
+    confirmPassword: z.string().min(1, "Vui lòng nhập lại mật khẩu mới"),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    path: ["confirmPassword"],
+    error: "Hai mật khẩu chưa khớp",
+  });
