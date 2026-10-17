@@ -4,4 +4,3 @@ export const consignKeys = {
   pendingCount: () => ["consign", "forms", "PENDING_COUNT"],
   form: (id) => ["consign", "form", id],
 };
-s
