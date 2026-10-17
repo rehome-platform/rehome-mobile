@@ -9,4 +9,5 @@ export const MOCK = {
   password: false, // quên / đặt lại mật khẩu — gọi thật qua resend-otp + verify-otp + password/reset
   upload: true, // [CHỜ BE] POST /uploads
   organization: true, // [CHỜ BE] đăng ký có mật khẩu, trạng thái hồ sơ
+  consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2
 };

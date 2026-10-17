@@ -24,14 +24,14 @@ import {
   scopeLabel,
 } from "@/features/organization/utils/summary";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { uploadFile } from "@/lib/api/upload";
 
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
 // Upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → có url → gửi hồ sơ
 async function submitApplication(data) {
   const { info, documents } = data;
-  const upload = (file) =>
-    organizationApi.uploadFile(file).then((res) => res.url);
+  const upload = (file) => uploadFile(file).then((res) => res.url);
 
   const [logo, cccdFront, cccdBack, legalDocs] = await Promise.all([
     info.logoUri
