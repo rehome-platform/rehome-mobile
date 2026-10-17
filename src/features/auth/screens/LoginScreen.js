@@ -15,6 +15,7 @@ import { loginSchema } from "@/features/auth/schemas";
 import { useAuthStore } from "@/stores/authStore";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { OTP_PURPOSE } from "@/constants/auth";
+import { GOOGLE_AVAILABLE, getGoogleIdToken } from "@/features/auth/google";
 
 const logo = require("../../../../assets/logo/logoIcon.png"); // assets nằm ngoài src nên không dùng @/
 // Thông báo xanh khi quay về từ màn khác (param = "1")
@@ -75,6 +76,27 @@ export default function LoginScreen() {
       setFormError(e); // 403, mất mạng, lỗi khác → khung lỗi
     },
   });
+  // Google: chọn tài khoản → idToken → BE → signIn (giống login). Huỷ chọn → không làm gì
+  const google = useMutation({
+    mutationFn: async () => {
+      const idToken = await getGoogleIdToken();
+      if (!idToken) return;
+      await signIn(await authApi.loginWithGoogle({ idToken }));
+    },
+    onError: (e) => setFormError(e), // ACCOUNT_BANNED, GOOGLE_ACCOUNT_CONFLICT, mất mạng… → khung lỗi
+  });
+
+  const onGoogle = () => {
+    if (!GOOGLE_AVAILABLE) {
+      return Alert.alert(
+        "Đăng nhập bằng Google",
+        "Cần bản cài đặt ReHome (dev build). Expo Go không hỗ trợ đăng nhập Google.",
+      );
+    }
+    setFormError(null);
+    clearSessionError();
+    google.mutate();
+  };
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
@@ -201,12 +223,8 @@ export default function LoginScreen() {
       <Button
         title="Đăng nhập bằng Google"
         variant="secondary"
-        onPress={() =>
-          Alert.alert(
-            "Đăng nhập bằng Google",
-            "Tính năng đang được phát triển.",
-          )
-        }
+        onPress={onGoogle}
+        loading={google.isPending}
       />
     </Screen>
   );

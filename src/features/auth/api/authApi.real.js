@@ -26,6 +26,10 @@ export const resendOtp = async ({ email, purpose }) =>
 export const login = async ({ email, password }) =>
   unwrap(await api.post("/api/auth/login", { email, password })); // { accessToken, refreshToken, tokenType } — KHÔNG có user
 
+// Google: gửi idToken lấy từ Google Sign-In → token như login. Email mới → BE tự tạo Member
+export const loginWithGoogle = async ({ idToken }) =>
+  unwrap(await api.post("/api/auth/google", { idToken })); // { accessToken, refreshToken, tokenType }
+
 export const logout = async () => {
   await api.post("/api/auth/logout"); // cần header Authorization; token hết hạn → BE trả 500, nơi gọi bỏ qua lỗi
 };
