@@ -8,4 +8,6 @@ export const ERROR_CODES = {
   GOOGLE_ACCOUNT_CONFLICT: "GOOGLE_ACCOUNT_CONFLICT", // email đã gắn với tài khoản Google khác
   TOO_MANY_PENDING_FORMS: "TOO_MANY_PENDING_FORMS", // ký gửi: đã có 5 form chờ duyệt (API 15, 409)
   FORM_NOT_EDITABLE: "FORM_NOT_EDITABLE", // ký gửi: form không còn Chờ duyệt (API 18, 409)
+  BELOW_FLOOR_PRICE: "BELOW_FLOOR_PRICE", // giảm giá: thấp hơn giá sàn (API 23, 409)
+  PRICE_CHANGE_LIMIT_REACHED: "PRICE_CHANGE_LIMIT_REACHED", // giảm giá: hôm nay đã đổi rồi (API 23, 409)
 };

@@ -45,3 +45,26 @@ export const CONSIGN_LIMITS = {
   MIN_PHOTOS: 1, // [GIẢ ĐỊNH]
   MAX_PHOTOS: 6, // theo KG-02 "2 / 6"
 };
+// Nhãn theo trạng thái hiển thị (PRODUCT_VIEW). ENDED dùng nhãn chi tiết theo PRODUCT_STATUS
+export const PRODUCT_VIEW_LABEL = {
+  SELLING: "Đang bán",
+  HAS_ORDER: "Đã có đơn",
+  AWAITING_DECISION: "Chờ cuối kỳ",
+  REPRICING: "Chờ chốt giá",
+};
+
+export const PRODUCT_ENDED_LABEL = {
+  SOLD: "Đã bán",
+  WITHDRAWN: "Đã nhận lại",
+  UNCLAIMED: "Vô thừa nhận",
+  DONATED: "Đã quyên góp",
+  DESTROYED: "Đã huỷ",
+};
+
+// Theo enum OrderStatus của BE — tiến trình đơn ở KG-09 "Đã có đơn"
+export const ORDER_STEPS = [
+  { value: "PAID", label: "Đã thanh toán" },
+  { value: "PACKING", label: "Đã đóng gói" },
+  { value: "SHIPPING", label: "Đang giao" },
+  { value: "COMPLETED", label: "Hoàn thành" },
+];

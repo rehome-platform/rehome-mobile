@@ -1,14 +1,17 @@
 // Mock nhóm ký gửi (API 14–24) [CHỜ BE]. Cùng tên hàm + hình dạng dữ liệu với bản thật sau này.
 // Dữ liệu "sống" trong RAM: tạo/sửa thấy ngay; reload app thì về dữ liệu mẫu.
+import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
 import { CONSIGN_LIMITS, FORM_STATUS } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { BRANDS, CATEGORIES } from "@/features/catalog/api/catalogApi.mock";
-import { seedForms, seedReceipts, WAREHOUSES } from "./mockData";
+import { seedForms, seedProducts, seedReceipts, WAREHOUSES } from "./mockData";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 let forms = seedForms();
 let receipts = seedReceipts();
+let products = seedProducts();
+
 const SAMPLE_PDF =
   "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; // PDF công khai để thử mở
 
@@ -195,4 +198,78 @@ export async function confirmReceipt(id) {
     f.receiptId === id ? { ...f, receiptConfirmed: true } : f,
   );
   return { id, confirmedAt, pdfUrl: SAMPLE_PDF };
+}
+// API 21 — GET /products/mine?page&size. Mock trả đủ field; lọc theo trạng thái làm ở app
+// (BE chưa chốt cách lọc "chờ cuối kỳ") [CHỜ BE]
+export async function getMyProducts({ page = 0, size = 20 } = {}) {
+  await delay();
+  return paginate(
+    products.map((p) => ({ ...p })),
+    page,
+    size,
+  );
+}
+
+// API 22 — GET /products/{id}
+export async function getProduct(id) {
+  await delay();
+  const product = products.find((p) => p.id === id);
+  if (!product) {
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy sản phẩm.",
+    });
+  }
+  return { ...product };
+}
+// API 23 — POST /products/{id}/price-reduction {newPrice}. Kiểm như BE: chỉ giảm, ≥ giá sàn, 1 lần/ngày
+export async function reducePrice(id, newPrice) {
+  await delay(800);
+  const p = products.find((x) => x.id === id);
+  if (!p)
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy sản phẩm.",
+    });
+  if (newPrice >= p.currentPrice) {
+    throw new ApiError({
+      status: 400,
+      code: "HTTP_400",
+      message: "Giá mới phải thấp hơn giá hiện tại.",
+    });
+  }
+  if (newPrice < p.floorPrice) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.BELOW_FLOOR_PRICE,
+      message: "Giá mới thấp hơn giá sàn.",
+    });
+  }
+  if (
+    p.lastPriceChangedAt &&
+    dayjs(p.lastPriceChangedAt).isSame(dayjs(), "day")
+  ) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.PRICE_CHANGE_LIMIT_REACHED,
+      message: "Hôm nay bạn đã đổi giá rồi.",
+    });
+  }
+  const now = new Date().toISOString();
+  products = products.map((x) =>
+    x.id === id
+      ? {
+          ...x,
+          currentPrice: newPrice,
+          lastPriceChangedAt: now,
+          priceChanges: [
+            { changedAt: now, oldPrice: x.currentPrice, newPrice },
+            ...(x.priceChanges ?? []),
+          ],
+        }
+      : x,
+  );
+  return { currentPrice: newPrice };
 }

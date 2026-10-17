@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
 import { FormListSection } from "@/features/consignment/components/FormListSection";
+import { ProductListSection } from "@/features/consignment/components/ProductListSection";
 import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
 
 const SECTIONS = [
@@ -57,15 +58,7 @@ function MemberConsign() {
       <View style={styles.segment}>
         <ChipGroup options={SECTIONS} value={section} onChange={setSection} />
       </View>
-      {section === "forms" ? (
-        <FormListSection />
-      ) : (
-        <EmptyState
-          icon="pricetags-outline"
-          title="Sản phẩm ký gửi"
-          description="Sắp có (KG-08)."
-        />
-      )}
+      {section === "forms" ? <FormListSection /> : <ProductListSection />}
     </Screen>
   );
 }

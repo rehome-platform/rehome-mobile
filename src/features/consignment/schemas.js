@@ -45,3 +45,12 @@ export const formToValues = (form, { keepWarehouse = false } = {}) => ({
   description: form.description ?? "",
   warehouseId: keepWarehouse ? (form.warehouse?.id ?? "") : "",
 });
+// KG-10: giá mới phải < giá hiện tại và ≥ giá sàn. Số lấy từ sản phẩm → schema tạo theo từng sản phẩm
+export const makeReducePriceSchema = ({ currentPrice, floorPrice }) =>
+  z.object({
+    newPrice: z
+      .number({ error: "Nhập giá mới" })
+      .int()
+      .lt(currentPrice, "Giá mới phải thấp hơn giá hiện tại")
+      .gte(floorPrice, "Thấp hơn giá sàn"),
+  });

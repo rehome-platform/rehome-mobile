@@ -5,4 +5,6 @@ export const consignKeys = {
   form: (id) => ["consign", "form", id],
   warehouses: (lat, lng) => ["consign", "warehouses", lat ?? null, lng ?? null],
   receipt: (id) => ["consign", "receipt", id],
+  products: () => ["consign", "products"],
+  product: (id) => ["consign", "product", id],
 };
