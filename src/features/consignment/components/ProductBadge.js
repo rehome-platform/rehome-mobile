@@ -13,6 +13,7 @@ const TONE = {
   [PRODUCT_VIEW.SELLING]: { bg: colors.primary, fg: colors.onPrimary },
   [PRODUCT_VIEW.HAS_ORDER]: { bg: colors.accent, fg: colors.onPrimary },
   [PRODUCT_VIEW.ENDED]: { bg: colors.neutral, fg: colors.textSecondary },
+  [PRODUCT_VIEW.PICKUP]: { bg: colors.accent, fg: colors.onPrimary },
 };
 
 export function ProductBadge({ product }) {

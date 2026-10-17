@@ -31,6 +31,8 @@ export function getProductView(p) {
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
   if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
   const decision = p.endOfTermDecision;
+  if (decision?.decision === END_OF_TERM_DECISION.TAKE_BACK)
+    return PRODUCT_VIEW.PICKUP;
   if (decision?.decision === END_OF_TERM_DECISION.RE_CONSIGN)
     return PRODUCT_VIEW.REPRICING;
   if (decision && decision.decision == null)
@@ -42,6 +44,7 @@ export function getProductView(p) {
 export const PRODUCT_VIEW_ORDER = [
   PRODUCT_VIEW.AWAITING_DECISION,
   PRODUCT_VIEW.REPRICING,
+  PRODUCT_VIEW.PICKUP,
   PRODUCT_VIEW.SELLING,
   PRODUCT_VIEW.HAS_ORDER,
   PRODUCT_VIEW.ENDED,

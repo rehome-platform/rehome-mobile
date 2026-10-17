@@ -305,6 +305,14 @@ function PendingReceipt({ receipt, header }) {
           </Text>
         </View>
         <ReceiptHeading receipt={receipt} />
+        {receipt.previousPrice ? (
+          <NoteBox>
+            {`Ký gửi lại: kho đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
+              receipt.previousPrice,
+            )}).${receipt.moderatorNote ? ` Ghi chú kho: ${receipt.moderatorNote}` : ""}`}
+          </NoteBox>
+        ) : null}
+
         <ReceiptClauses receipt={receipt} />
         <OtherClauses receipt={receipt} title="ĐIỀU 4 – 7, 9, 10" />
       </ScrollView>

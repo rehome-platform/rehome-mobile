@@ -37,6 +37,7 @@ export const PRODUCT_VIEW = {
   HAS_ORDER: "HAS_ORDER", // RESERVED
   AWAITING_DECISION: "AWAITING_DECISION", // hết kỳ cuối, chưa chọn cách xử lý
   REPRICING: "REPRICING", // đã chọn RE_CONSIGN, chờ Moderator chốt giá
+  PICKUP: "PICKUP", // đã chọn nhận lại, chờ Member đến kho lấy
   ENDED: "ENDED", // SOLD / WITHDRAWN / UNCLAIMED / DONATED / DESTROYED
 };
 
@@ -51,6 +52,7 @@ export const PRODUCT_VIEW_LABEL = {
   HAS_ORDER: "Đã có đơn",
   AWAITING_DECISION: "Chờ cuối kỳ",
   REPRICING: "Chờ chốt giá",
+  PICKUP: "Chờ nhận lại",
 };
 
 export const PRODUCT_ENDED_LABEL = {
