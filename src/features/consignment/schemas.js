@@ -35,3 +35,13 @@ export const STEP1_FIELDS = [
   "desiredPrice",
   "description",
 ];
+// Form từ API 17 → giá trị cho useForm. Dùng cho Sửa form (giữ kho) và Tạo lại từ form cũ (chọn kho lại)
+export const formToValues = (form, { keepWarehouse = false } = {}) => ({
+  photos: form.photoUrls ?? [],
+  productName: form.productName ?? "",
+  categoryId: form.categoryId ?? "",
+  brandId: form.brandId ?? "",
+  desiredPrice: form.desiredPrice,
+  description: form.description ?? "",
+  warehouseId: keepWarehouse ? (form.warehouse?.id ?? "") : "",
+});

@@ -1,36 +1,36 @@
 import { useCallback, useRef, useState } from "react";
 import { Alert, BackHandler, StyleSheet, Text, View } from "react-native";
-import { Redirect, router, useFocusEffect } from "expo-router";
+import {
+  Redirect,
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { colors, fonts, spacing, textStyles } from "@/theme";
+import { colors, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/TextField";
-import { MoneyField } from "@/components/ui/MoneyField";
-import { SelectField } from "@/components/ui/SelectField";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
-import { uploadFile } from "@/lib/api/upload";
 import { showToast } from "@/utils/toast";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
+import { consignKeys } from "@/features/consignment/api/queryKeys";
 import {
   consignFormSchema,
+  formToValues,
   STEP1_FIELDS,
 } from "@/features/consignment/schemas";
-import { PhotoPicker } from "@/features/consignment/components/PhotoPicker";
+import { uploadPhotos } from "@/features/consignment/utils/photos";
+import { ConsignFormFields } from "@/features/consignment/components/ConsignFormFields";
 import { WarehouseStep } from "@/features/consignment/components/WarehouseStep";
 import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
-import {
-  useBrandOptions,
-  useCategoryOptions,
-} from "@/features/catalog/hooks/useCatalogOptions";
 
 const EMPTY_FORM = {
   photos: [],
@@ -45,31 +45,27 @@ const EMPTY_FORM = {
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
 
-// Upload ảnh (mock: trả lại uri) → gửi form (API 15)
+// Upload ảnh mới → gửi form (API 15)
 async function sendForm(values) {
-  const photoUrls = await Promise.all(
-    values.photos.map((uri, i) =>
-      uploadFile({
-        uri,
-        name: `photo-${i + 1}.jpg`,
-        mimeType: "image/jpeg",
-      }).then((res) => res.url),
-    ),
-  );
   const { photos, ...rest } = values;
+  const photoUrls = await uploadPhotos(photos);
   return consignmentApi.createForm({ ...rest, photoUrls });
 }
 
-// KG-02 + KG-03: một màn, một form, 2 bước
+// KG-02 + KG-03: một màn, một form, 2 bước. ?fromFormId=… → điền sẵn từ form cũ (bị từ chối / hết hạn)
 export default function CreateFormScreen() {
   const status = useAuthStore((s) => s.status);
+  const { fromFormId } = useLocalSearchParams();
   const queryClient = useQueryClient();
   const scrollRef = useRef(null);
   const [step, setStep] = useState(1);
   const [formError, setFormError] = useState(null);
   const pending = usePendingFormCount();
-  const categories = useCategoryOptions();
-  const brands = useBrandOptions();
+
+  // Form cũ đã có trong cache (vừa xem ở màn chi tiết). Kho để chọn lại ở bước 2
+  const source = fromFormId
+    ? queryClient.getQueryData(consignKeys.form(fromFormId))
+    : undefined;
 
   const {
     control,
@@ -77,7 +73,7 @@ export default function CreateFormScreen() {
     formState: { errors, isDirty, isSubmitted },
   } = useForm({
     resolver: zodResolver(consignFormSchema),
-    defaultValues: EMPTY_FORM,
+    defaultValues: source ? formToValues(source) : EMPTY_FORM,
   });
 
   const submit = useMutation({
@@ -205,109 +201,13 @@ export default function CreateFormScreen() {
               <Text style={styles.summary}>{step1Errors.join(" · ")}</Text>
             </ErrorBox>
           ) : null}
-
-          <Controller
-            control={control}
-            name="photos"
-            render={({ field }) => (
-              <PhotoPicker
-                value={field.value}
-                onChange={field.onChange}
-                max={CONSIGN_LIMITS.MAX_PHOTOS}
-                error={errors.photos?.message}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="productName"
-            render={({ field }) => (
-              <TextField
-                label="Tên sản phẩm"
-                required
-                placeholder="VD: Áo khoác dạ nữ"
-                maxLength={100}
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.productName?.message}
-              />
-            )}
-          />
-
-          <View style={styles.row}>
-            <Controller
-              control={control}
-              name="categoryId"
-              render={({ field }) => (
-                <SelectField
-                  label="Danh mục"
-                  required
-                  options={categories.data ?? []}
-                  loading={categories.isPending}
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.categoryId?.message}
-                  style={styles.half}
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="brandId"
-              render={({ field }) => (
-                <SelectField
-                  label="Thương hiệu"
-                  required
-                  searchable
-                  options={brands.data ?? []}
-                  loading={brands.isPending}
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.brandId?.message}
-                  style={styles.half}
-                />
-              )}
-            />
-          </View>
-
-          <Controller
-            control={control}
-            name="desiredPrice"
-            render={({ field }) => (
-              <MoneyField
-                label="Giá mong muốn"
-                required
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.desiredPrice?.message}
-              />
-            )}
-          />
-          <NoteBox>
-            Đây chỉ là giá bạn đề xuất. Moderator sẽ kiểm định và chốt giá bán
-            cuối cùng với bạn tại kho. Bạn có quyền từ chối nếu không đồng ý.
-          </NoteBox>
-
-          <Controller
-            control={control}
-            name="description"
-            render={({ field }) => (
-              <TextField
-                label="Mô tả"
-                required
-                multiline
-                maxLength={1000}
-                placeholder="Size, tình trạng, lỗi nếu có (VD: size M, mặc 2 lần, không lỗi)"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.description?.message}
-              />
-            )}
-          />
+          {source ? (
+            <NoteBox>
+              Đã điền sẵn từ form cũ. Kiểm tra lại ảnh và thông tin (nhất là
+              phần kho đã nhắc khi từ chối).
+            </NoteBox>
+          ) : null}
+          <ConsignFormFields control={control} errors={errors} />
         </>
       ) : (
         <>
@@ -330,7 +230,5 @@ const styles = StyleSheet.create({
   stepText: { ...textStyles.body, color: colors.textSecondary },
   progress: { height: 3, backgroundColor: colors.neutral },
   progressFill: { height: 3, backgroundColor: colors.primary },
-  row: { flexDirection: "row", gap: spacing.md },
-  half: { flex: 1 },
   summary: { ...textStyles.body, color: colors.text },
 });

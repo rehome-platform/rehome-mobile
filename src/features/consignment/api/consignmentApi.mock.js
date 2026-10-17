@@ -119,3 +119,36 @@ export async function createForm(payload) {
     createdAt: form.createdAt,
   };
 }
+// API 18 — PUT /consignment-forms/{id}. Chỉ sửa khi PENDING, không đổi kho → khác thì 409 FORM_NOT_EDITABLE
+export async function updateForm(id, payload) {
+  await delay(800);
+  const current = forms.find((f) => f.id === id);
+  if (!current) {
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy form ký gửi.",
+    });
+  }
+  if (current.status !== FORM_STATUS.PENDING) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.FORM_NOT_EDITABLE,
+      message: "Form đã được kho xử lý, không sửa được nữa.",
+    });
+  }
+  const updated = {
+    ...current,
+    productName: payload.productName,
+    categoryId: payload.categoryId,
+    categoryName:
+      CATEGORIES.find((c) => c.id === payload.categoryId)?.name ?? null,
+    brandId: payload.brandId,
+    brandName: BRANDS.find((b) => b.id === payload.brandId)?.name ?? null,
+    description: payload.description,
+    desiredPrice: payload.desiredPrice,
+    photoUrls: payload.photoUrls,
+  };
+  forms = forms.map((f) => (f.id === id ? updated : f));
+  return { ...updated };
+}
