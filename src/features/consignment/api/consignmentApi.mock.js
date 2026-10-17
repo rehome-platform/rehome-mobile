@@ -2,7 +2,11 @@
 // Dữ liệu "sống" trong RAM: tạo/sửa thấy ngay; reload app thì về dữ liệu mẫu.
 import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
-import { CONSIGN_LIMITS, FORM_STATUS } from "@/constants/consignment";
+import {
+  CONSIGN_LIMITS,
+  END_OF_TERM_DECISION,
+  FORM_STATUS,
+} from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { BRANDS, CATEGORIES } from "@/features/catalog/api/catalogApi.mock";
 import { seedForms, seedProducts, seedReceipts, WAREHOUSES } from "./mockData";
@@ -197,6 +201,35 @@ export async function confirmReceipt(id) {
   forms = forms.map((f) =>
     f.receiptId === id ? { ...f, receiptConfirmed: true } : f,
   );
+  // Biên nhận KÝ GỬI LẠI (có productId) → sản phẩm lên sàn lại: kỳ 1, giá mới, chu kỳ tính lại từ đầu
+  if (receipt.productId) {
+    const start = dayjs();
+    products = products.map((p) =>
+      p.id === receipt.productId
+        ? {
+            ...p,
+            agreedPrice: receipt.agreedPrice,
+            floorPrice: receipt.floorPrice,
+            currentPrice: receipt.agreedPrice,
+            currentTerm: 1,
+            termStartedAt: start.toISOString(),
+            endOfTermDeadline: start
+              .add(receipt.termLengthDays, "day")
+              .toISOString(),
+            lastPriceChangedAt: null,
+            priceChanges: [
+              {
+                changedAt: confirmedAt,
+                oldPrice: null,
+                newPrice: receipt.agreedPrice,
+              },
+            ],
+            endOfTermDecision: null,
+            termHistory: undefined,
+          }
+        : p,
+    );
+  }
   return { id, confirmedAt, pdfUrl: SAMPLE_PDF };
 }
 // API 21 — GET /products/mine?page&size. Mock trả đủ field; lọc theo trạng thái làm ở app
@@ -272,4 +305,95 @@ export async function reducePrice(id, newPrice) {
       : x,
   );
   return { currentPrice: newPrice };
+}
+// API 24 — POST /end-of-term-decisions/{id}/decide {decision}. Quá hạn → 409 DECISION_EXPIRED
+export async function decideEndOfTerm(decisionId, decision) {
+  await delay(800);
+  const p = products.find((x) => x.endOfTermDecision?.id === decisionId);
+  if (!p)
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy yêu cầu xử lý cuối kỳ.",
+    });
+  const d = p.endOfTermDecision;
+  if (dayjs().isAfter(d.deadline)) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.DECISION_EXPIRED,
+      message:
+        "Đã quá hạn chọn cách xử lý, hàng chuyển sang xử lý vô thừa nhận.",
+    });
+  }
+  if (d.decision) {
+    throw new ApiError({
+      status: 409,
+      code: "HTTP_409",
+      message: "Bạn đã chọn cách xử lý cho sản phẩm này rồi.",
+    });
+  }
+  const now = dayjs();
+  const updated = {
+    ...d,
+    decision,
+    decidedAt: now.toISOString(),
+    // [GIẢ ĐỊNH] hạn đến kho lấy hàng = 7 ngày kể từ khi chọn (theo KG-11)
+    pickupDeadline:
+      decision === END_OF_TERM_DECISION.TAKE_BACK
+        ? now.add(7, "day").toISOString()
+        : null,
+  };
+  products = products.map((x) =>
+    x.id === p.id ? { ...x, endOfTermDecision: updated } : x,
+  );
+  return { decision, newReceiptId: null };
+}
+
+// [CHỈ MOCK] Giả lập Moderator đề xuất giá mới cho sản phẩm đã chọn ký gửi lại → tạo biên nhận mới
+export async function mockProposeNewPrice(productId) {
+  await delay(500);
+  const p = products.find((x) => x.id === productId);
+  const price = Math.floor((p.currentPrice * 0.8) / 1000) * 1000;
+  const receiptId = `rc-${Date.now()}`;
+  receipts = [
+    {
+      id: receiptId,
+      formId: null,
+      productId: p.id, // biên nhận ký gửi lại gắn với sản phẩm, không gắn form
+      receiptNo: `KG-2026-${String(Date.now()).slice(-6)}`,
+      productName: p.name,
+      brandName: p.brandName,
+      size: p.size,
+      sku: p.id,
+      conditionNote: "Còn tốt, giữ nguyên tình trạng lúc ký gửi",
+      warehouseName: p.warehouseName,
+      agreedPrice: price,
+      floorPrice: Math.floor(price * 0.5),
+      termLengthDays: 30,
+      maxRenewals: 2,
+      freeWithdrawalWindowDays: 7,
+      commissionRateTerm1: 0.1,
+      commissionRateTerm2: 0.15,
+      commissionRateTerm3: 0.2,
+      withdrawalFee: 30000,
+      degradedCompensationRate: 0.5,
+      previousPrice: p.currentPrice, // [CHỜ BE] giá cũ + ghi chú Moderator (KG-12)
+      moderatorNote: "Hàng còn đẹp, đề xuất hạ giá để dễ bán hơn.",
+      confirmedAt: null,
+      pdfUrl: null,
+      createdAt: new Date().toISOString(),
+    },
+    ...receipts,
+  ];
+  products = products.map((x) =>
+    x.id === productId
+      ? {
+          ...x,
+          endOfTermDecision: {
+            ...x.endOfTermDecision,
+            newReceiptId: receiptId,
+          },
+        }
+      : x,
+  );
 }

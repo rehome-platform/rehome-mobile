@@ -38,6 +38,7 @@ import { consignKeys } from "@/features/consignment/api/queryKeys";
 import { ProductBadge } from "@/features/consignment/components/ProductBadge";
 import { PayoutBreakdown } from "@/features/consignment/components/PayoutBreakdown";
 import { TermProgress } from "@/features/consignment/components/TermProgress";
+import { PickupInfo } from "@/features/consignment/components/PickupInfo";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
@@ -357,7 +358,9 @@ export default function ProductDetailScreen() {
       header={header}
       padded={false}
       footer={
-        view === PRODUCT_VIEW.HAS_ORDER || view === PRODUCT_VIEW.ENDED
+        view === PRODUCT_VIEW.HAS_ORDER ||
+        view === PRODUCT_VIEW.ENDED ||
+        view === PRODUCT_VIEW.PICKUP
           ? null
           : footer
       }
@@ -394,6 +397,7 @@ export default function ProductDetailScreen() {
         {view === PRODUCT_VIEW.AWAITING_DECISION ? (
           <AwaitingBody product={product} />
         ) : null}
+        {view === PRODUCT_VIEW.PICKUP ? <PickupInfo product={product} /> : null}
         {view === PRODUCT_VIEW.REPRICING ? (
           <View style={styles.infoBox}>
             <Text style={styles.boxTitle}>Đang chờ kho đề xuất giá mới</Text>

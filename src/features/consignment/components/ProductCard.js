@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
@@ -27,6 +28,17 @@ function Detail({ product, view }) {
     );
   }
   if (view === PRODUCT_VIEW.REPRICING) {
+    if (view === PRODUCT_VIEW.PICKUP) {
+      const due = product.endOfTermDecision?.pickupDeadline;
+      return (
+        <Text style={styles.sub}>
+          Đến {product.warehouseName} nhận lại hàng
+          {due ? ` trước ${dayjs(due).format("DD/MM")}` : ""} · đọc mã Member
+          tại quầy
+        </Text>
+      );
+    }
+
     return (
       <Text style={styles.sub}>
         Đã chọn ký gửi lại · đang chờ kho đề xuất giá mới

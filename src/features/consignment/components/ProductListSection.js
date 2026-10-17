@@ -28,7 +28,11 @@ const FILTERS = [
   {
     value: "END_OF_TERM",
     label: "Chờ cuối kỳ",
-    views: [PRODUCT_VIEW.AWAITING_DECISION, PRODUCT_VIEW.REPRICING],
+    views: [
+      PRODUCT_VIEW.AWAITING_DECISION,
+      PRODUCT_VIEW.REPRICING,
+      PRODUCT_VIEW.PICKUP,
+    ],
   },
   { value: "ENDED", label: "Kết thúc", views: [PRODUCT_VIEW.ENDED] },
 ];
@@ -66,7 +70,11 @@ export function ProductListSection() {
     {
       value: "END_OF_TERM",
       label: "Chờ cuối kỳ",
-      n: count([PRODUCT_VIEW.AWAITING_DECISION, PRODUCT_VIEW.REPRICING]),
+      n: count([
+        PRODUCT_VIEW.AWAITING_DECISION,
+        PRODUCT_VIEW.REPRICING,
+        PRODUCT_VIEW.PICKUP,
+      ]),
     },
   ];
 
