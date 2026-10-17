@@ -4,4 +4,5 @@ export const consignKeys = {
   pendingCount: () => ["consign", "forms", "PENDING_COUNT"],
   form: (id) => ["consign", "form", id],
   warehouses: (lat, lng) => ["consign", "warehouses", lat ?? null, lng ?? null],
+  receipt: (id) => ["consign", "receipt", id],
 };

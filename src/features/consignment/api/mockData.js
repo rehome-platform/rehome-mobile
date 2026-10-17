@@ -51,6 +51,7 @@ export const seedForms = () => {
       bringInDeadline: ymd(now.add(6, "day")),
       rejectReason: null,
       receiptId: "rc-001", // kho đã lập biên nhận, chờ Member xác nhận (KG-06)
+      receiptConfirmed: false, // [CHỜ BE] API 17 cho biết biên nhận đã xác nhận chưa
       createdAt: iso(now.subtract(2, "day")),
     },
     {
@@ -121,6 +122,37 @@ export const seedForms = () => {
       rejectReason: null,
       receiptId: null,
       createdAt: iso(now.subtract(18, "day")),
+    },
+  ];
+};
+// Biên nhận kho lập tại quầy (API 19). Ngoài field của API_CONTRACT, mobile xin thêm
+// formId, productName, brandName, size, sku, conditionNote, warehouseName [CHỜ BE]
+export const seedReceipts = () => {
+  const now = dayjs();
+  return [
+    {
+      id: "rc-001",
+      formId: "form-001",
+      receiptNo: "KG-2026-000123",
+      productName: "Áo khoác jean Levi's",
+      brandName: "Levi's",
+      size: "M",
+      sku: "Q1-AK-000845",
+      conditionNote: "Chính hãng, như mới, đủ điều kiện đăng bán",
+      warehouseName: "Kho Quận 1",
+      agreedPrice: 420000, // Moderator chốt tại quầy (Member đề xuất 450.000 đ)
+      floorPrice: 210000, // 50% giá chốt
+      termLengthDays: 30,
+      maxRenewals: 2,
+      freeWithdrawalWindowDays: 7,
+      commissionRateTerm1: 0.1,
+      commissionRateTerm2: 0.15,
+      commissionRateTerm3: 0.2,
+      withdrawalFee: 30000,
+      degradedCompensationRate: 0.5,
+      confirmedAt: null,
+      pdfUrl: null,
+      createdAt: iso(now.subtract(1, "hour")),
     },
   ];
 };

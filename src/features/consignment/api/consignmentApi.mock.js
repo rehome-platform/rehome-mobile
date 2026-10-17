@@ -4,10 +4,13 @@ import { ApiError } from "@/lib/api/errors";
 import { CONSIGN_LIMITS, FORM_STATUS } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { BRANDS, CATEGORIES } from "@/features/catalog/api/catalogApi.mock";
-import { seedForms, WAREHOUSES } from "./mockData";
+import { seedForms, seedReceipts, WAREHOUSES } from "./mockData";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 let forms = seedForms();
+let receipts = seedReceipts();
+const SAMPLE_PDF =
+  "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; // PDF công khai để thử mở
 
 // API 16 trả 1 dòng tóm tắt. Ngoài {id, status, productName, desiredPrice} của API_CONTRACT,
 // các field còn lại là bản mobile xin thêm [CHỜ BE] — FormCard phải chịu được khi thiếu
@@ -151,4 +154,45 @@ export async function updateForm(id, payload) {
   };
   forms = forms.map((f) => (f.id === id ? updated : f));
   return { ...updated };
+}
+// API 19 — GET /consignment-receipts/{id}
+export async function getReceipt(id) {
+  await delay();
+  const receipt = receipts.find((r) => r.id === id);
+  if (!receipt) {
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy biên nhận.",
+    });
+  }
+  return { ...receipt };
+}
+
+// API 20 — POST /consignment-receipts/{id}/confirm. Đã xác nhận → 409
+export async function confirmReceipt(id) {
+  await delay(800);
+  const receipt = receipts.find((r) => r.id === id);
+  if (!receipt) {
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy biên nhận.",
+    });
+  }
+  if (receipt.confirmedAt) {
+    throw new ApiError({
+      status: 409,
+      code: "HTTP_409",
+      message: "Biên nhận đã được xác nhận trước đó.",
+    });
+  }
+  const confirmedAt = new Date().toISOString();
+  receipts = receipts.map((r) =>
+    r.id === id ? { ...r, confirmedAt, pdfUrl: SAMPLE_PDF } : r,
+  );
+  forms = forms.map((f) =>
+    f.receiptId === id ? { ...f, receiptConfirmed: true } : f,
+  );
+  return { id, confirmedAt, pdfUrl: SAMPLE_PDF };
 }

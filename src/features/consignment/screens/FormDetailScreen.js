@@ -64,11 +64,17 @@ function buildTimeline(form) {
             desc: `Trước ${fmtDate(form.bringInDeadline)}`,
             state: "active",
           },
-      {
-        title: "Kiểm định & nhập kho",
-        desc: atWarehouse ? "Chờ bạn xác nhận biên nhận" : undefined,
-        state: atWarehouse ? "active" : "todo",
-      },
+      form.receiptConfirmed
+        ? {
+            title: "Kiểm định & nhập kho",
+            desc: "Hàng đã nhập kho và đang đăng bán",
+            state: "done",
+          }
+        : {
+            title: "Kiểm định & nhập kho",
+            desc: atWarehouse ? "Chờ bạn xác nhận biên nhận" : undefined,
+            state: atWarehouse ? "active" : "todo",
+          },
     ];
   }
   return null;
@@ -85,6 +91,18 @@ function Section({ title, children }) {
 
 // Khối "Việc cần làm" đầu màn khi đã duyệt
 function ApprovedTodo({ form }) {
+  if (form.receiptConfirmed) {
+    return (
+      <View style={styles.todo}>
+        <Text style={styles.todoTitle}>Đã xác nhận biên nhận</Text>
+        <Text style={styles.todoText}>
+          Hàng đã nhập kho và đang được đăng bán. Theo dõi ở mục Sản phẩm ký
+          gửi.
+        </Text>
+      </View>
+    );
+  }
+
   if (form.receiptId) {
     return (
       <View style={styles.todo}>
@@ -114,6 +132,17 @@ function ApprovedTodo({ form }) {
 function Footer({ form }) {
   if (form.status === FORM_STATUS.PENDING) {
     // "Huỷ form" ẩn: chưa có API huỷ (guide 0.4 #5)
+    if (form.receiptConfirmed) {
+      // Đã xác nhận: không cần mang đồ / đọc mã Member nữa → chỉ xem lại biên nhận
+      return (
+        <Button
+          title="Xem biên nhận"
+          variant="secondary"
+          onPress={() => router.push(`/receipts/${form.receiptId}`)}
+        />
+      );
+    }
+
     return (
       <Button
         title="Sửa form"
