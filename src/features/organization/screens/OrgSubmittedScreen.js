@@ -1,6 +1,11 @@
 import { useCallback, useEffect } from "react";
 import { BackHandler, StyleSheet, Text, View } from "react-native";
-import { Stack, router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  Stack,
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { colors, fonts, spacing, textStyles } from "@/theme";
@@ -34,7 +39,9 @@ export default function OrgSubmittedScreen() {
     }, []),
   );
 
-  const sentAt = submittedAt ? dayjs(submittedAt).format("HH:mm, DD/MM/YYYY") : "";
+  const sentAt = submittedAt
+    ? dayjs(submittedAt).format("HH:mm, DD/MM/YYYY")
+    : "";
 
   return (
     <Screen
@@ -50,7 +57,8 @@ export default function OrgSubmittedScreen() {
         </View>
         <Text style={styles.title}>Hồ sơ đang được xác minh</Text>
         <Text style={styles.desc}>
-          Cảm ơn <Text style={styles.bold}>{displayName}</Text> đã đăng ký. Hồ sơ gửi lúc {sentAt}.
+          Cảm ơn <Text style={styles.bold}>{displayName}</Text> đã đăng ký. Hồ
+          sơ gửi lúc {sentAt}.
         </Text>
       </View>
 
@@ -62,14 +70,19 @@ export default function OrgSubmittedScreen() {
             desc: "Phản hồi trong 5 ngày làm việc. Có thể gọi SĐT liên hệ để xác minh.",
             state: "active",
           },
-          { title: "Có kết quả", desc: `Thông báo qua email ${email}`, state: "todo" },
+          {
+            title: "Có kết quả",
+            desc: `Thông báo qua email ${email}`,
+            state: "todo",
+          },
         ]}
       />
 
       <NoteBox>
         <Text style={styles.noteText}>
-          Khi hồ sơ được duyệt, đăng nhập bằng <Text style={styles.bold}>{email}</Text> và mật khẩu
-          đã đặt. Trong lúc chờ, tài khoản tổ chức chưa dùng được các chức năng chính.
+          Khi hồ sơ được duyệt, đăng nhập bằng{" "}
+          <Text style={styles.bold}>{email}</Text> và mật khẩu đã đặt. Trong lúc
+          chờ, tài khoản tổ chức chưa dùng được các chức năng chính.
         </Text>
       </NoteBox>
     </Screen>
@@ -88,7 +101,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral,
   },
   title: { ...textStyles.title, color: colors.text, textAlign: "center" },
-  desc: { ...textStyles.body, color: colors.textSecondary, textAlign: "center" },
+  desc: {
+    ...textStyles.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
   bold: { fontFamily: fonts.semibold, color: colors.text },
   noteText: { ...textStyles.body, color: colors.textSecondary },
 });
