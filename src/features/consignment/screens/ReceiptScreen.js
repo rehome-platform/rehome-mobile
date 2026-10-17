@@ -2,12 +2,15 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -322,12 +325,45 @@ function ConfirmedReceipt({ receipt, header }) {
   const memberCode = useAuthStore((s) => s.user?.memberCode);
   const rates = commissionRates(receipt);
   const endDate = dayjs(receipt.confirmedAt).add(totalTermDays(receipt), "day");
+  // Mở PDF bằng trình xem / trình duyệt của máy (không cần thư viện native → không phải build lại)
+  // [CHỜ BE] pdfUrl công khai hay cần token — cần token thì phải tải bằng axios trước
+  const openPdf = async () => {
+    if (!receipt.pdfUrl)
+      return showToast("Bản PDF đang được tạo, thử lại sau ít phút");
+    try {
+      await Linking.openURL(receipt.pdfUrl);
+    } catch {
+      Alert.alert(
+        "Không mở được PDF",
+        "Máy chưa có ứng dụng xem PDF hoặc trình duyệt.",
+      );
+    }
+  };
+
+  const share = () =>
+    Share.share({
+      message: `Biên nhận ký gửi ${receipt.receiptNo} — ${receipt.productName}${receipt.pdfUrl ? `\n${receipt.pdfUrl}` : ""}`,
+    });
 
   return (
-    <Screen header={header} padded={false}>
+    <Screen
+      header={header}
+      padded={false}
+      footer={
+        <View style={styles.footerRow}>
+          <Button title="Tải bản PDF" onPress={openPdf} style={styles.flex} />
+          <Button
+            title="Chia sẻ"
+            variant="secondary"
+            onPress={share}
+            style={styles.flex}
+          />
+        </View>
+      }
+    >
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.confirmedRow}>
-          <Text style={[styles.muted, styles.flex]}>
+          <Text style={[styles.muted, styles.left, styles.flex]}>
             Xác nhận lúc {dayjs(receipt.confirmedAt).format("HH:mm DD/MM/YYYY")}
             {memberCode ? `\ntrên tài khoản ${memberCode}` : ""}
           </Text>
@@ -455,4 +491,6 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   small: { ...textStyles.caption, color: colors.textSecondary },
+  left: { textAlign: "left" },
+  footerRow: { flexDirection: "row", gap: spacing.md },
 });
