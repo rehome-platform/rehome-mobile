@@ -39,10 +39,17 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "ReHome cần truy cập thư viện ảnh để bạn chọn ảnh đại diện, logo và giấy tờ.",
-          "cameraPermission": "ReHome cần dùng camera để bạn chụp CCCD và giấy tờ của tổ chức."
+          "photosPermission": "ReHome cần truy cập thư viện ảnh để bạn chọn ảnh sản phẩm ký gửi, ảnh đại diện và giấy tờ.",
+          "cameraPermission": "ReHome cần dùng camera để bạn chụp ảnh sản phẩm ký gửi, CCCD và giấy tờ."
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ReHome dùng vị trí để gợi ý kho ký gửi gần bạn."
+        }
+      ],
+
       "@react-native-google-signin/google-signin"
     ],
 
