@@ -2,6 +2,7 @@
 export const ENV = {
   API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
   USE_MOCK: process.env.EXPO_PUBLIC_USE_MOCK === "true",
+  GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "", // Web client ID của BE (không phải secret)
 };
 
 // Nhóm API BE chưa có / chưa dùng được → mock. BE xong nhóm nào thì đổi nhóm đó sang false
