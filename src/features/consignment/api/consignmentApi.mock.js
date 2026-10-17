@@ -1,5 +1,6 @@
 // Mock nhóm ký gửi (API 14–24) [CHỜ BE]. Cùng tên hàm + hình dạng dữ liệu với bản thật sau này.
 // Dữ liệu "sống" trong RAM: tạo/sửa thấy ngay; reload app thì về dữ liệu mẫu.
+import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
 import { CONSIGN_LIMITS, FORM_STATUS } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
@@ -221,4 +222,54 @@ export async function getProduct(id) {
     });
   }
   return { ...product };
+}
+// API 23 — POST /products/{id}/price-reduction {newPrice}. Kiểm như BE: chỉ giảm, ≥ giá sàn, 1 lần/ngày
+export async function reducePrice(id, newPrice) {
+  await delay(800);
+  const p = products.find((x) => x.id === id);
+  if (!p)
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy sản phẩm.",
+    });
+  if (newPrice >= p.currentPrice) {
+    throw new ApiError({
+      status: 400,
+      code: "HTTP_400",
+      message: "Giá mới phải thấp hơn giá hiện tại.",
+    });
+  }
+  if (newPrice < p.floorPrice) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.BELOW_FLOOR_PRICE,
+      message: "Giá mới thấp hơn giá sàn.",
+    });
+  }
+  if (
+    p.lastPriceChangedAt &&
+    dayjs(p.lastPriceChangedAt).isSame(dayjs(), "day")
+  ) {
+    throw new ApiError({
+      status: 409,
+      code: ERROR_CODES.PRICE_CHANGE_LIMIT_REACHED,
+      message: "Hôm nay bạn đã đổi giá rồi.",
+    });
+  }
+  const now = new Date().toISOString();
+  products = products.map((x) =>
+    x.id === id
+      ? {
+          ...x,
+          currentPrice: newPrice,
+          lastPriceChangedAt: now,
+          priceChanges: [
+            { changedAt: now, oldPrice: x.currentPrice, newPrice },
+            ...(x.priceChanges ?? []),
+          ],
+        }
+      : x,
+  );
+  return { currentPrice: newPrice };
 }
