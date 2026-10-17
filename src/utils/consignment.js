@@ -1,4 +1,9 @@
 import dayjs from "dayjs";
+import {
+  END_OF_TERM_DECISION,
+  PRODUCT_STATUS,
+  PRODUCT_VIEW,
+} from "@/constants/consignment";
 
 // Tiền Member nhận = giá × (1 − hoa hồng), làm tròn xuống đồng. rate dạng 0.1
 export const calcPayout = (price, rate) => Math.floor(price * (1 - rate));
@@ -20,3 +25,47 @@ export const commissionRates = (receipt) =>
     receipt.commissionRateTerm2,
     receipt.commissionRateTerm3,
   ].filter((r) => r != null);
+// Quy đổi dữ liệu sản phẩm → trạng thái hiển thị. BE chưa chốt cách báo "chờ xử lý cuối kỳ"
+// → mọi chỗ khác chỉ gọi hàm này; BE chốt thì chỉ sửa ở đây [CHỜ BE]
+export function getProductView(p) {
+  if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
+  if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
+  const decision = p.endOfTermDecision;
+  if (decision?.decision === END_OF_TERM_DECISION.RE_CONSIGN)
+    return PRODUCT_VIEW.REPRICING;
+  if (decision && decision.decision == null)
+    return PRODUCT_VIEW.AWAITING_DECISION;
+  return PRODUCT_VIEW.SELLING;
+}
+
+// Thứ tự trên danh sách: việc cần Member làm lên đầu
+export const PRODUCT_VIEW_ORDER = [
+  PRODUCT_VIEW.AWAITING_DECISION,
+  PRODUCT_VIEW.REPRICING,
+  PRODUCT_VIEW.SELLING,
+  PRODUCT_VIEW.HAS_ORDER,
+  PRODUCT_VIEW.ENDED,
+];
+
+// Ngày thứ mấy trên sàn, tổng ngày, còn bao nhiêu ngày của kỳ hiện tại
+// Ngày n = (kỳ − 1) × số ngày một kỳ + số ngày từ đầu kỳ này + 1
+export function productTiming(p) {
+  const total = totalTermDays(p);
+  const sinceTermStart = dayjs()
+    .startOf("day")
+    .diff(dayjs(p.termStartedAt).startOf("day"), "day");
+  const dayNumber = Math.min(
+    (p.currentTerm - 1) * p.termLengthDays + sinceTermStart + 1,
+    total,
+  );
+  return {
+    dayNumber,
+    totalDays: total,
+    totalTerms: p.maxRenewals + 1,
+    isLastTerm: p.currentTerm >= p.maxRenewals + 1,
+    termDaysLeft: daysLeft(p.endOfTermDeadline),
+  };
+}
+
+// Tỷ lệ hoa hồng của kỳ đang chạy (0.1 / 0.15 / 0.2)
+export const currentRate = (p) => commissionRates(p)[p.currentTerm - 1];

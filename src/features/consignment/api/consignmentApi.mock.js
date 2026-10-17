@@ -4,11 +4,13 @@ import { ApiError } from "@/lib/api/errors";
 import { CONSIGN_LIMITS, FORM_STATUS } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { BRANDS, CATEGORIES } from "@/features/catalog/api/catalogApi.mock";
-import { seedForms, seedReceipts, WAREHOUSES } from "./mockData";
+import { seedForms, seedProducts, seedReceipts, WAREHOUSES } from "./mockData";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 let forms = seedForms();
 let receipts = seedReceipts();
+let products = seedProducts();
+
 const SAMPLE_PDF =
   "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; // PDF công khai để thử mở
 
@@ -195,4 +197,28 @@ export async function confirmReceipt(id) {
     f.receiptId === id ? { ...f, receiptConfirmed: true } : f,
   );
   return { id, confirmedAt, pdfUrl: SAMPLE_PDF };
+}
+// API 21 — GET /products/mine?page&size. Mock trả đủ field; lọc theo trạng thái làm ở app
+// (BE chưa chốt cách lọc "chờ cuối kỳ") [CHỜ BE]
+export async function getMyProducts({ page = 0, size = 20 } = {}) {
+  await delay();
+  return paginate(
+    products.map((p) => ({ ...p })),
+    page,
+    size,
+  );
+}
+
+// API 22 — GET /products/{id}
+export async function getProduct(id) {
+  await delay();
+  const product = products.find((p) => p.id === id);
+  if (!product) {
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy sản phẩm.",
+    });
+  }
+  return { ...product };
 }
