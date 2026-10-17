@@ -4,12 +4,6 @@ import { ApiError } from "@/lib/api/errors";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
-// [CHỜ BE POST /uploads] trả url giả
-export async function uploadFile(file) {
-  await delay(300);
-  return { url: `https://mock.rehome.vn/uploads/${Date.now()}-${file.name}` };
-}
-
 // Giả lập lỗi trùng của BE (409, đúng câu BE trả) để test nhánh lỗi:
 // email chứa "used" → trùng email; MST 0000000000 → trùng MST
 export async function registerOrganization(payload) {

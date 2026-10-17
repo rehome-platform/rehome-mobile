@@ -6,7 +6,7 @@
 > Ký hiệu: **[GIẢ ĐỊNH]** = mình tạm đặt vì chưa có quyết định, phải sửa khi có thông tin thật. **[CHỜ BE]** / **[CHỜ LEAD]** = đã hỏi, đang chờ trả lời (danh sách ở `CLAUDE.md`).
 > API: **code theo thứ đang chạy thật** (Swagger + code `../rehome-backend` nhánh develop), không theo `docs/API_CONTRACT.md` khi lệch. URL, field, cách bóc response chỉ nằm trong `features/*/api/*.real.js` và `src/lib/api`.
 
-> **Trạng thái 17/10 (tối):** xong mục 1 → 8; **AU-01 → AU-07, thanh tab Member, PR-01 → PR-04 chạy với BE thật**; **OA-01 → OA-04 + Xem lại + OA-06 (chờ xác minh) chạy mock**. Còn: Google (chờ BE + dev build), tự test mục 10, PR. **Code trong repo là bản chuẩn** — các đoạn code mẫu từ mục 9 trở đi chỉ là spec rút gọn; khi lệch thì theo code. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
+> **Trạng thái 17/10 (tối):** xong mục 1 → 8; **AU-01 → AU-07, thanh tab Member, PR-01 → PR-04 chạy với BE thật**; **OA-01 → OA-04 + Xem lại + OA-06 (chờ xác minh) chạy mock**. PR `feature/phase1-auth` → `develop` đã merge (#2, #3). **Google đã code + có dev build APK** (nhánh `feature/google-login`, chờ BE tạo OAuth client Android để test). **Tổ chức chuyển sang hướng "tạo account trước"** (chốt với BE 17/10 — xem `CLAUDE.md`), chờ BE rồi sửa + nối API thật. **Code trong repo là bản chuẩn** — các đoạn code mẫu từ mục 9 trở đi chỉ là spec rút gọn; khi lệch thì theo code. Bảng tiến độ ở `CLAUDE.md` → "Tiến độ".
 > **Wireframe là tham khảo** (chốt 17/10): chỗ nào thực tế các app làm tốt hơn thì làm theo thực tế, ghi lại trong bảng 0.3 để lead xem.
 > **Thay đổi lớn so với bản đầu:** không mock auth nữa (gọi thật, test bằng tài khoản thật); `authStore.signIn(tokens)` tự gọi `getMe()`; BE đã có `code` lỗi (`ACCOUNT_BANNED`, `EMAIL_NOT_VERIFIED`, `WRONG_PASSWORD`…) và gửi được mail OTP.
 
@@ -55,7 +55,7 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | Guest đăng ký Member     | AU-03, AU-04 | Thật                                   | ✅ chạy với BE thật           |
 | Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ✅ mock (OA-03 chưa test hết) |
 | Đăng nhập email          | AU-02       | Thật                                    | ✅                            |
-| Đăng nhập Google         | AU-02       | Tạm `Alert` tới khi có OAuth client + dev build | ⏳ [CHỜ BE/LEAD]     |
+| Đăng nhập Google         | AU-02       | Thật (`/api/auth/google`), chỉ chạy trên dev build | ✅ code + APK · ⏳ chờ BE tạo OAuth client Android |
 | Đổi mật khẩu             | AU-07       | Thật                                    | ✅                            |
 | Quên mật khẩu            | AU-05, 06   | Thật (`resend-otp` FORGOT_PASSWORD)     | ✅ [CHỜ BE xác nhận cách dùng] |
 | Member xem/sửa hồ sơ     | Tab, PR-01 → 04 | Thật (ảnh đại diện: Toast "sắp có") | ✅                            |
@@ -266,10 +266,16 @@ npm install axios @tanstack/react-query zustand react-hook-form zod @hookform/re
 
 Kiểm tra sau khi cài: `npx expo install --check` → "Dependencies are up to date". Lệnh `npx expo install` tự thêm plugin `expo-secure-store`, `expo-splash-screen`, `expo-font` vào `app.json`, giữ nguyên.
 
-Bản đồ (OA-04) và đăng nhập Google **chưa cài**:
+**Đăng nhập Google (cài 17/10):**
 
-- Bản đồ để sau. Phase 1 nhập địa chỉ bằng chữ, toạ độ để trống hoặc giả.
-- Google cần dev build (Expo Go không chạy được thư viện native ngoài bộ có sẵn). Phase 1 chỉ làm nút và gọi mock.
+```bash
+npx expo install @react-native-google-signin/google-signin expo-dev-client
+```
+
+- Hai thư viện này **không có trong Expo Go** → cần dev build (12.3). `google.js` chỉ `require` thư viện khi không chạy Expo Go, nên Expo Go vẫn mở được app.
+- `npx expo install` có thể tự thêm plugin vào `app.json` → kiểm để **không bị lặp** dòng plugin.
+
+Bản đồ (OA-04) **chưa cài**: để sau. Phase 1 nhập địa chỉ bằng chữ, toạ độ gửi `null`.
 
 ### 4.3. Đường dẫn rút gọn `@/`
 
@@ -1093,6 +1099,26 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 - **Bị khoá giữa chừng:** API bất kỳ (filter) hoặc refresh trả `ACCOUNT_BANNED` → `client.js` gọi `signOut(reason)` (mục 7.4, 8.2) → về AU-02, hiện khung lỗi bị khoá từ `sessionError`; bấm Đăng nhập lại thì `clearSessionError()`.
 - **Google:** Phase 1 chỉ có nút và gọi mock. Bản thật cần dev build và OAuth client Android (mục 12.3).
 
+### AU-02 · Đăng nhập bằng Google (✅ code 17/10, nhánh `feature/google-login`)
+
+- `src/features/auth/google.js`: `GOOGLE_AVAILABLE` (false trong Expo Go) + `getGoogleIdToken()` — `GoogleSignin.configure({ webClientId: ENV.GOOGLE_WEB_CLIENT_ID })` → `hasPlayServices` → `signOut()` (lần nào cũng cho chọn tài khoản) → `signIn()` → `res.data.idToken`; huỷ → `null`; lỗi → `Error` tiếng Việt.
+- `authApi.loginWithGoogle({ idToken })` → `POST /api/auth/google` → token như login → `authStore.signIn(tokens)`.
+- `LoginScreen`: mutation `google` + `onGoogle`; Expo Go → `Alert` "Cần bản cài đặt ReHome (dev build)…"; lỗi BE → khung lỗi (`ACCOUNT_BANNED`, `GOOGLE_ACCOUNT_CONFLICT`…).
+- **Test** (dev build, sau khi BE tạo OAuth client Android):
+
+| # | Làm | Phải thấy |
+| --- | --- | --- |
+| 1 | Expo Go → bấm Google | `Alert` "Cần bản cài đặt…", không crash |
+| 2 | Dev build → bấm Google | Hộp chọn tài khoản Google |
+| 3 | Huỷ chọn | Ở lại AU-02, không báo lỗi |
+| 4 | Gmail chưa đăng ký ReHome | Vào app; tên từ Google; Hồ sơ **SĐT trống** không lỗi |
+| 5 | Đăng xuất → Google lại cùng tài khoản | Cùng mã Member |
+| 6 | Gmail đã đăng ký bằng mật khẩu (đã xác thực) | Vào đúng tài khoản cũ; mật khẩu vẫn đăng nhập được |
+| 7 | Tài khoản chỉ có Google → Đổi mật khẩu | Lỗi `PASSWORD_NOT_SET` trong khung lỗi |
+| 8 | Tắt mạng → Google | Khung lỗi, không crash |
+
+- Chọn tài khoản xong báo "Không đăng nhập được bằng Google" (`DEVELOPER_ERROR`) = chưa có / sai OAuth client Android (package, SHA-1) hoặc client ID khác project.
+
 ### AU-03 · Đăng ký
 
 > **✅ Đã làm 16/10** (`features/auth/screens/RegisterScreen.js`, route `(auth)/register.js`), chạy với BE thật (đăng ký → mail OTP về).
@@ -1215,6 +1241,8 @@ Nút chính dùng `loading={mutation.isPending}` để không bấm hai lần. L
 - Mô tả hoạt động \*.
 - Logo (không bắt buộc; chưa có thì hiện chữ cái đầu).
 
+> **⚠️ Sẽ đổi (chốt với BE 17/10):** đăng ký tổ chức theo hướng **"tạo account trước"** — email + mật khẩu + OTP → đăng nhập → 4 bước → `POST /api/organizations/me/registration`; nộp lại = `PUT` cùng đường dẫn. Khi BE xong: bỏ khối mật khẩu ở OA-02, chuyển `org-register` ra khỏi nhóm `(auth)`, thêm `(org-status)` / `(org)`. Danh sách sửa đầy đủ ở `CLAUDE.md` → "Tiến độ".
+>
 > **✅ Đã làm 17/10 (mock)** — `OrgInfoScreen`, `OrgRepresentativeScreen`, `OrgDocumentsScreen`, `OrgLocationScreen`, `OrgReviewScreen`, `OrgSubmittedScreen`. Code trong repo là chuẩn; dưới đây là spec + các điểm khác wireframe (bảng 0.3 #22–#27).
 >
 > **Chung (as-built):** header `OrgRegisterHeader` (AppHeader + Stepper) nằm trong từng màn; mỗi bước `saveStep(key, values)` khi bấm Tiếp tục; bước 2–4 còn **tự lưu nháp** mỗi lần gõ (`watch((v) => saveStep(...))`) để vuốt Back không mất; bước nào thiếu dữ liệu bước trước → `<Redirect href="/org-register/info" />` (đặt **sau** mọi hook). OA-01 bấm ← khi đã nhập → hỏi "Thoát đăng ký tổ chức?" → `reset()`.
@@ -1377,16 +1405,29 @@ eas update --branch preview --message "Phase 1 auth"
 - Cách này chạy được vì Phase 1 chỉ dùng thư viện có sẵn trong Expo Go. Khi thêm Google Sign-In/push thì phải chuyển sang dev build (12.3).
 - Khi làm, đối chiếu lại docs "EAS Update" vì lệnh có thể thay đổi theo phiên bản.
 
-### 12.3. Sau này (Google Sign-In, push, bản đồ): dev build APK
+### 12.3. Dev build APK (✅ build lần đầu 17/10)
 
-- `eas build --profile development --platform android` → tải APK, cài lên điện thoại một lần.
-- Google Sign-In cần **OAuth client Android** trong Google Cloud project của backend, gắn với package name + SHA-1 của bản build. Hỏi người làm backend.
-  - BE kiểm `idToken` với **một** audience (`google.client-id`) → app phải xin token bằng **Web client ID** đó (đưa vào `.env` dạng `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`; client ID không phải secret). SHA-1 lấy bằng `eas credentials` sau khi build.
-- **Trước khi build APK lần đầu**, kiểm `app.json`:
-  - `icon` và `android.adaptiveIcon` vẫn là ảnh mặc định của template (`assets/icon.png`, `android-icon-*.png`, nền `#E6F4FE`) → thay bằng logo ReHome (foreground nên chừa lề ~ 1/3 vì Android cắt tròn/vuông), nền `#F6F9F4`.
-  - Thêm `android.package` (tạm `com.rehome.mobile`, chờ lead chốt — **đổi sau khi tạo OAuth client là phải tạo lại client**).
-  - Splash (AU-01) chỉ thấy đúng trên APK: kiểm logo không bị cắt, không lộ màn trắng (xem ghi chú `preventAutoHideAsync` ở 8.3).
-  - `expo-image-picker` cần câu xin quyền camera/thư viện khi build: thêm plugin `["expo-image-picker", { "cameraPermission": "…", "photosPermission": "…" }]` (tiếng Việt).
+**Đã làm:** tài khoản Expo cá nhân, `eas build:configure` (Android) → `eas.json` + `extra.eas.projectId` trong `app.json`; `app.json` có `android.package: "com.rehome.mobile"` (lead chốt), plugin `expo-image-picker` (câu xin quyền tiếng Việt) và `@react-native-google-signin/google-signin`.
+
+```bash
+eas whoami                                          # kiểm đang đăng nhập đúng tài khoản
+eas build --profile development --platform android  # ~20 phút; lần đầu "Generate a new Android Keystore?" → Yes
+eas credentials -p android                          # development → copy "SHA1 Fingerprint" → Go back/Exit (KHÔNG tạo/xoá keystore)
+npx expo start --dev-client                         # mở app "ReHome" trên điện thoại (không phải Expo Go)
+```
+
+- `eas.json` → `development`: `developmentClient: true`, `distribution: internal`, `android.buildType: "apk"`.
+- Câu "Install and run on emulator?" → `n` khi dùng điện thoại thật.
+- Cài APK: mở link build trên điện thoại → tải → mở file; Play Protect cảnh báo → **More details → Install anyway** (bấm OK là bị huỷ cài). Link tải giữ 13 ngày; app đã cài thì dùng tiếp.
+- `.env` **không** được upload lên EAS (bị `.gitignore`); bản dev không cần vì JS lấy từ Metro trên máy. Bản preview/production sau này phải khai biến môi trường trên EAS.
+- Google Sign-In cần **OAuth client Android** (package + SHA-1) trong **cùng** Google Cloud project với Web client ID mà BE dùng làm `google.client-id`. SHA-1 bản development đã gửi BE 17/10. Bản preview/production có keystore khác → gửi thêm SHA-1.
+- Thêm thư viện native / plugin / quyền → **build lại**.
+
+**Còn phải làm trước khi build bản cho lead / demo** (profile `preview`):
+- `icon` và `android.adaptiveIcon` vẫn là ảnh mặc định của template (`assets/icon.png`, `android-icon-*.png`, nền `#E6F4FE`) → thay bằng logo ReHome (foreground chừa lề ~ 1/3 vì Android cắt tròn/vuông), nền `#F6F9F4`.
+- Splash (AU-01): kiểm logo không bị cắt, không lộ màn trắng (ghi chú `preventAutoHideAsync` ở 8.3).
+- Khai `EXPO_PUBLIC_*` trên EAS (Environment variables) + thêm `android.buildType: "apk"` cho `preview`.
+- Không cần Android Studio: test trên điện thoại thật; muốn thấy màn hình điện thoại trên máy tính → `scrcpy`.
 
 ---
 
@@ -1398,11 +1439,11 @@ eas update --branch preview --message "Phase 1 auth"
 2. Mã Member: giữ QR hay chỉ mã text (ghi chú ngày 11/10 bỏ QR)?
 3. Đăng ký tổ chức: mật khẩu nhập ở bước nào; có màn Xem lại không?
 4. Sửa wireframe AU-05/06 sang OTP; xoá ghi chú ③ ở AU-04.
-5. ~~PR merge vào `develop` hay `main`~~ → `develop` (đã chốt 17/10); tên package Android.
+5. ~~PR merge vào `develop` hay `main`~~ → `develop` (đã chốt 17/10); ~~tên package Android~~ → `com.rehome.mobile` (chốt 17/10).
 6. Địa chỉ email hỗ trợ ReHome (thông báo tài khoản bị khoá).
 
 **Backend:** đã gửi, đang chờ; danh sách đầy đủ ở mục "Đang chờ xác nhận" trong `CLAUDE.md` (nhãn [CHỜ BE]). Còn hỏi thêm:
 
 1. Upload ảnh/tệp: giới hạn dung lượng, định dạng (mobile đang chặn JPG/PNG/PDF ≤ 5 MB).
-2. Google: Web client ID (`google.client-id`) + tạo OAuth client Android (package + SHA-1).
-3. Đăng ký tổ chức: danh sách gửi BE ngày 17/10 (mật khẩu, thông tin người đại diện/CCCD, mã `orgType`/`operationScope`, toạ độ, API trạng thái, `code` lỗi 409) — chi tiết ở `CLAUDE.md` "Đang chờ xác nhận".
+2. ~~Google: Web client ID~~ (đã nhận 17/10) · tạo OAuth client Android (package `com.rehome.mobile` + SHA-1 development, đã gửi 17/10) — **đang chờ**.
+3. Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10): API tạo account tổ chức, `/me` cho tổ chức (role, `verificationStatus`, trạng thái "chưa nộp"), `POST`/`PUT`/`GET /api/organizations/me/registration`, `/uploads` có token, mã `orgType`/`operationScope` — chi tiết ở `CLAUDE.md` "Đang chờ xác nhận".

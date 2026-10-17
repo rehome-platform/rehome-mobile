@@ -13,6 +13,7 @@ export function Screen({
   header, // thường là <AppHeader />; đứng yên ở trên, không cuộn
   footer, // nút chính cố định ở đáy; bàn phím mở thì nằm ngay trên bàn phím
   scroll = false, // true: nội dung cuộn được (form dài)
+  scrollRef, // ref của ScrollView (cuộn lên đầu khi có lỗi…)
   padded = true, // true: nội dung cách mép 16
   edges = ["top", "bottom"], // cạnh nào cần tránh tai thỏ / thanh điều hướng
   style,
@@ -20,6 +21,7 @@ export function Screen({
 }) {
   const content = scroll ? (
     <ScrollView
+      ref={scrollRef}
       contentContainerStyle={[
         styles.grow,
         padded && styles.padded,

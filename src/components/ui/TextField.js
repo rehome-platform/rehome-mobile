@@ -10,6 +10,7 @@ export function TextField({
   error,
   secure = false, // true: ô mật khẩu, có nút ẩn/hiện
   multiline = false, // true: ô nhiều dòng (mô tả…)
+  suffix, // chữ cố định cuối ô (vd "đ" ở ô tiền)
   style,
   onFocus,
   onBlur,
@@ -57,6 +58,8 @@ export function TextField({
           }}
           {...inputProps}
         />
+        {suffix ? <Text style={styles.suffix}>{suffix}</Text> : null}
+
         {secure ? (
           <Pressable
             onPress={() => setHidden((h) => !h)}
@@ -105,6 +108,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   inputMultiline: { minHeight: 96, textAlignVertical: "top" }, // Android: chữ bắt đầu từ trên, không nằm giữa ô
+  suffix: {
+    ...textStyles.body,
+    fontSize: 16,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
   helper: { ...textStyles.caption, color: colors.textSecondary },
   error: {
     ...textStyles.caption,

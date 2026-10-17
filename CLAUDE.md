@@ -33,7 +33,9 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 ## Stack và quy ước code
 
 - **Nền tảng:** Expo SDK 58, **JavaScript** (không TypeScript), expo-router (thư mục `src/app`).
-- **Thư viện:** axios · @tanstack/react-query · zustand · react-hook-form + zod · expo-secure-store · jwt-decode · dayjs · expo-image-picker · expo-document-picker · @react-native-community/datetimepicker (đều chạy trong Expo Go).
+- **Thư viện:** axios · @tanstack/react-query · zustand · react-hook-form + zod · expo-secure-store · jwt-decode · dayjs · expo-image-picker · expo-document-picker · @react-native-community/datetimepicker (đều chạy trong Expo Go) · **@react-native-google-signin/google-signin + expo-dev-client** (chỉ chạy trong **dev build**, không chạy trong Expo Go).
+- **Chạy app:** Expo Go (`npx expo start`) vẫn dùng được cho mọi màn trừ Google; **dev build** (`npx expo start --dev-client`, mở app "ReHome" đã cài từ APK) dùng được tất cả. Đổi cấu hình native (thêm thư viện native, plugin, quyền trong `app.json`) → phải **build lại** dev APK (`eas build --profile development --platform android`, ~20 phút, link tải APK giữ 13 ngày).
+- **EAS:** tài khoản Expo cá nhân `tranthimyhanh`, project `rehome-mobile`; `eas.json` profile `development` = dev client + `distribution: internal` + `buildType: apk`; keystore lưu trên máy chủ Expo (xem SHA-1: `eas credentials -p android` → development; **không** tạo/xoá keystore). Package Android **`com.rehome.mobile`** (lead chốt 17/10).
 - **Cài thư viện:** có native → `npx expo install`; thuần JS → `npm install`.
 - **Cấu trúc:**
   - `src/app` chỉ khai báo route, file mỏng.
@@ -61,8 +63,12 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Font Be Vietnam Pro: trên Android chọn độ đậm bằng `fontFamily`, không bằng `fontWeight`.
 - **Chữ trên giao diện:** tiếng Việt có dấu; tiền dạng `1.000.000 đ`; SĐT 10 số `/^0\d{9}$/`; mật khẩu ≥ 8 ký tự, có chữ và số.
 - **Enum/trạng thái:** khai báo trong `src/constants`, không viết chuỗi rải rác.
-- **Biến môi trường:** chỉ dùng `EXPO_PUBLIC_*` (bị nhúng vào app, không chứa secret). `.env` không commit.
-- **Git:** nhánh `feature/<việc>` tạo từ `develop`, mở PR vào **`develop`** (lead đã đồng ý 17/10); `develop` → `main` khi ổn định (trước demo/bảo vệ). Commit kiểu `feat: / fix: / chore: / docs: / refactor:`. Phase 1 làm ở `feature/phase1-auth` (đã push, chưa mở PR — mở khi xong Phase 1).
+- **Biến môi trường:** chỉ dùng `EXPO_PUBLIC_*` (bị nhúng vào app, không chứa secret), đọc qua `src/config/env.js` (`ENV`). Hiện có: `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_USE_MOCK`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (Web client ID của BE — không phải secret nhưng vẫn chỉ để trong `.env`, không ghi vào code/tài liệu). `.env` không commit; `.env.example` giữ tên biến, để trống giá trị. Đổi `.env` → `npx expo start --clear`.
+- **Git:**
+  - **Mỗi việc một nhánh tạo từ `develop`** (`feature/<việc>`, `fix/<việc>`) → push → PR vào **`develop`** (lead đồng ý 17/10) → merge. Không code thẳng trên `develop`; nhánh đã merge thì không làm tiếp trên đó. `develop` → `main` chỉ khi ổn định (trước demo/bảo vệ, gắn tag).
+  - Commit kiểu `feat: / fix: / chore: / docs: / refactor:`. **Trước khi commit đọc kỹ `git status`**: không có `.env`, không có file đuôi lạ (đã 2 lần commit nhầm `.j` thay `.js` → máy khác pull về lỗi "Unable to resolve module"); dòng `MM` = bản sửa mới chưa `git add`.
+  - Đã merge: `feature/phase1-auth` (PR #2, PR #3 sửa `.j` + Avatar thiếu `box`). Đang làm: `feature/google-login` (đã push, **chưa mở PR** — chờ test với BE).
+  - Sửa component dùng chung (`components/ui`) → mở lại **mọi màn** dùng nó trước khi commit.
 
 ## Business rules hay dùng (Tài liệu tổng quan, mục 7, 8, 11)
 
@@ -78,7 +84,13 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Phí rút hàng: trừ ví trước, thiếu thì MoMo.
   - Tự hoàn thành sau 3 ngày kể từ khi giao; yêu cầu trả hàng trong 3 ngày.
 - **Thử đồ AI:** mở từ trang sản phẩm; outfit = **Áo + Quần, hoặc Đầm**. Ảnh trả về < 120 giây, xử lý bất đồng bộ.
-- **Tổ chức:** đăng nhập bằng **email liên hệ (bước 1)** + mật khẩu đặt ở bước 2 (wireframe ghi SĐT người đại diện, nhưng login chỉ nhận email và BE tạo tài khoản bằng `contactEmail`). **1 email = 1 tài khoản**: email đã là Member thì BE từ chối 409. BE hiện tạo tài khoản tổ chức **không có mật khẩu** → tổ chức chưa đăng nhập được [CHỜ BE]. Chưa xác minh chỉ thấy màn trạng thái hồ sơ; một địa điểm nhận đồ.
+- **Tổ chức:** đăng nhập bằng **email + mật khẩu** (wireframe ghi SĐT người đại diện, nhưng login chỉ nhận email). **1 email = 1 tài khoản**: email đã là Member thì BE từ chối 409. Chưa xác minh chỉ thấy màn trạng thái hồ sơ; một địa điểm nhận đồ.
+- **Đăng ký tổ chức — "tạo account trước" (chốt với BE 17/10, BE đang làm):**
+  1. AU-03 chọn "Tổ chức" → email + mật khẩu → OTP xác thực email (dùng lại AU-04) → đăng nhập (role ORGANIZATION, chưa có hồ sơ).
+  2. Đã đăng nhập → điền 4 bước → `POST /api/organizations/me/registration` (cần token) → hồ sơ PENDING gắn vào account. **F002.**
+  3. Bị từ chối → sửa / bổ sung → `PUT` **cùng đường dẫn** (chỉ khi REJECTED, sai trạng thái 403) → PENDING. **F003** — dùng chung body/DTO với F002.
+  4. Điều hướng theo `role` + `verificationStatus` từ login / `/me`: chưa nộp → 4 bước; PENDING/REJECTED → `(org-status)`; VERIFIED → `(org)`. **F005.**
+  - Lý do: email xác thực trước; upload (CCCD — dữ liệu nhạy cảm) **bắt buộc đăng nhập**; F002/F003/F005 dùng một bộ API. Code OA hiện tại (mật khẩu ở bước 2, gửi khi chưa đăng nhập, mock) sẽ sửa theo — danh sách ở mục "Đang chờ xác nhận".
 - **Giấy tờ tổ chức:** JPG/PNG/PDF, ≤ 5 MB/tệp; 2 ảnh CCCD + 1–8 giấy tờ pháp lý (tối đa 10, tối thiểu 3 tệp). Gợi ý giấy tờ theo loại hình chỉ là gợi ý, không khoá nút.
 - **Email chưa xác thực:** **không đăng nhập được** (theo L-01 và BE). App chỉ có 2 trạng thái: Guest và Member đã xác thực.
 
@@ -106,7 +118,11 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - AU-04: "Mã có hiệu lực **5 phút**" (wireframe 10); lỗi mã hiện nguyên message BE (BE không phân biệt sai/hết hạn); **ẩn ghi chú ③**.
   - AU-05/06: dùng **OTP** thay link (đổi chữ "Gửi liên kết" → "Gửi mã", AU-06 thêm `OtpInput`, bỏ màn "Liên kết không còn dùng được").
   - AU-07: lỗi sai mật khẩu cũ (`WRONG_PASSWORD`) hiện dưới ô "Mật khẩu hiện tại"; đổi xong đăng xuất (wireframe ghi "thiết bị này giữ nguyên" — chờ BE chốt).
-- **Đăng ký tổ chức (OA, chốt 17/10, chạy mock):**
+- **Đăng nhập Google (code xong 17/10, chờ BE tạo OAuth client Android để test):**
+  - `src/features/auth/google.js`: `require` thư viện **chỉ khi không phải Expo Go** (`Constants.executionEnvironment !== "storeClient"`) → Expo Go không crash; `GOOGLE_AVAILABLE`; `getGoogleIdToken()` = `configure({ webClientId })` → `hasPlayServices` → `signOut()` (luôn cho chọn tài khoản) → `signIn()` → `idToken` (huỷ → `null`, lỗi → `Error` tiếng Việt).
+  - AU-02: nút "Đăng nhập bằng Google" → `getGoogleIdToken` → `authApi.loginWithGoogle({ idToken })` → `signIn(tokens)` (giống email). Expo Go → `Alert` "Cần bản cài đặt ReHome (dev build)". Lỗi BE (`ACCOUNT_BANNED`, `GOOGLE_ACCOUNT_CONFLICT`, mạng) → khung lỗi.
+  - `DEVELOPER_ERROR` khi chọn tài khoản = chưa có / sai OAuth client Android (package + SHA-1) hoặc client ID không cùng project.
+- **Đăng ký tổ chức (OA, chốt 17/10, chạy mock — sẽ sửa theo hướng "tạo account trước" ở trên):**
   - 4 bước (`Stepper`): Tổ chức · Đại diện · Giấy tờ · Nhận đồ → **Xem lại** (OA-05, tự thiết kế) → **Đã gửi / chờ xác minh** (OA-06 bản PENDING). Dữ liệu ở `orgRegisterStore` (chỉ trong RAM); bước 2–4 **tự lưu nháp** khi gõ (`watch` subscription) nên vuốt Back không mất; mỗi bước tự `Redirect` về bước 1 nếu thiếu dữ liệu bước trước.
   - Bước 1: loại hình, phạm vi **không chọn sẵn**; MST không bắt buộc (10 số hoặc 10-3); SĐT liên hệ nhận cả số bàn 11 số. Bấm ← khi đã nhập → hỏi "Thoát đăng ký tổ chức?" (thoát = xoá store).
   - Bước 2: thêm khối **"Tài khoản đăng nhập"** (email bước 1 chỉ đọc + "Sửa", mật khẩu + nhập lại + `PasswordChecklist`). SĐT người đại diện là số di động 10 số, dùng để xác minh, **không** dùng đăng nhập.
@@ -145,7 +161,10 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Body: `legalName*, displayName*, orgType*, taxCode, operationScope*, address*, contactPhone*, contactEmail*, website, description*, logoUrl, representative* {fullName*, position, cccdNumber*, cccdFrontUrl*, cccdBackUrl*}, documents* (≥ 1) [{docType*, docNumber, issueDate (LocalDate), issuingAuthority, fileUrl*}], donationPoint* {name*, address*, latitude*, longitude*, receivingHours, contactPhone}`.
   - Email trùng (không phân biệt hoa thường) → 409 "Email đã được sử dụng!!"; MST trùng → 409 "Mã số thuế đã được sử dụng!!" (dạng A, không có `code`).
   - Chưa có danh sách mã cho `orgType` / `operationScope` → mobile tạm dùng `SOCIAL_FUND…`, `NATIONAL…` [GIẢ ĐỊNH].
-- **Google:** `GoogleTokenVerifier` kiểm `idToken` với **một** `audience` = `google.client-id` trong `application.yml` → mobile phải xin idToken với **Web client ID** đó (OAuth client Android chỉ để Google cho phép app đăng nhập).
+- **Google:** `GoogleTokenVerifier` kiểm `idToken` với **một** `audience` = `google.client-id` trong `application.yml` → mobile phải xin idToken với **Web client ID** đó (OAuth client Android chỉ để Google cho phép app đăng nhập). BE đã gửi Web client ID (17/10, nằm trong `.env`). `loginWithGoogle` (BE):
+  - Email chưa có → tạo **Member** mới (`emailVerified: true`, tên từ Google, **không có SĐT**).
+  - Email đã có → gắn `googleId`; đăng nhập được cả mật khẩu lẫn Google. Nếu tài khoản đó **chưa xác thực** → BE **xoá mật khẩu cũ** + thu hồi token (chống giả mạo).
+  - Bị khoá → `ACCOUNT_BANNED`; email đã gắn Google khác → 409 `GOOGLE_ACCOUNT_CONFLICT`. Tài khoản chỉ có Google đổi mật khẩu → `PASSWORD_NOT_SET`.
 - **JWT:** `sub` = email; claim `roles` là **chuỗi** `"ROLE_MEMBER"` | `"ROLE_ORGANIZATION"` | `"ROLE_MODERATOR"` | `"ROLE_ADMIN"`. Access token 15 phút, refresh token 7 ngày.
 - **OTP:** 6 số, hết hạn **5 phút**, sai tối đa 5 lần, phải chờ **60 giây** mới gửi lại (sớm hơn → 429).
 - **Hành vi cần biết:**
@@ -171,11 +190,15 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - [CHỜ BE] `OtpServiceImpl` dòng 86/115/131/154 còn dùng `isEnabled()` (luôn `true`) → quên mật khẩu chưa chặn tài khoản bị khoá/chưa xác thực.
 - [CHỜ BE] Đổi mật khẩu: chuyển khỏi `/api/auth/**` hoặc trả 401 khi thiếu token (đang 500); DTO có `@NotBlank`; xác nhận thu hồi token cả thiết bị đang dùng có chủ ý không.
 - [CHỜ BE] `POST /uploads`; token hết hạn trả 401; logout không lỗi 500 khi token hết hạn; đăng ký trùng SĐT trả 409 thay vì 500.
-- [CHỜ BE] Đăng ký tổ chức (đã gửi danh sách 17/10): nhận `password` (+ mã hoá, `emailVerified`?); thêm `representative.phone/email`, thông tin CCCD (họ tên, ngày cấp, nơi cấp); danh sách mã `orgType` / `operationScope`; `latitude/longitude` tạm không bắt buộc; API trạng thái hồ sơ (PENDING/REJECTED + lý do + giấy tờ thiếu) và nộp bổ sung; login/`/me` trả role + `verificationStatus`; lỗi 409 có `code` (`EMAIL_EXISTED`, `TAX_CODE_EXISTED`); (tuỳ chọn) API kiểm tra email đã dùng chưa để báo sớm ở bước 1.
-- [CHỜ BE] Google: gửi **Web client ID** (`google.client-id`, không phải secret) + thêm OAuth client **Android** (package `com.rehome.mobile`, SHA-1 bản dev build) vào cùng Google Cloud project.
+- [CHỜ BE] Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10, BE đang làm). Cần BE gửi khi xong (Swagger/code `develop`):
+  1. API tạo account tổ chức (dùng chung `/api/auth/register` kèm loại tài khoản hay API riêng?) + OTP.
+  2. `/me` cho tổ chức: `role`, `verificationStatus` (kể cả trạng thái **"chưa nộp hồ sơ"**: `null` / `NOT_SUBMITTED`?), lý do từ chối, giấy tờ chưa đạt.
+  3. `POST` / `PUT` / `GET /api/organizations/me/registration`: body (đã thêm `representative.phone/email`, `cccdName/cccdIssueDate/cccdIssuePlace` chưa?), `latitude/longitude` có cho `null` không.
+  4. `POST /uploads` (cần token): tên field file, giới hạn dung lượng/định dạng, response.
+  5. Danh sách mã `orgType` / `operationScope`; lỗi 409 có `code`.
+- [CHỜ BE] Google: tạo OAuth client **Android** trong cùng project với Web client ID — package `com.rehome.mobile` + SHA-1 keystore **development** (đã gửi 17/10). Bản preview/production sau này có keystore riêng → gửi thêm SHA-1 của bản đó.
 - [CHỜ BE] Thống nhất base path, tên field OTP (`otp` hay `otpCode`), body reset password.
 - [CHỜ BE] Ngày sinh/giới tính (DB chưa có cột); `createdAt` cho "tham gia MM/YYYY" ở PR-01.
-- [CHỜ LEAD] Tên package Android (tạm `com.rehome.mobile`) — cần chốt trước khi tạo OAuth client Android. Google cần development build (Expo Go không chạy được).
 - [CHỜ LEAD] Xoá ghi chú ③ ở wireframe AU-04 (chưa xác thực vẫn đăng nhập được).
 - [CHỜ LEAD] Địa chỉ email hỗ trợ ReHome (thông báo tài khoản bị khoá).
 - [CHỜ LEAD] Xác nhận giữ QR ở PR-04 (mobile làm QR + mã chữ; ghi chú wireframe 11/10 bỏ QR).
@@ -195,10 +218,21 @@ Tiêu chí xong Phase 1: Guest đăng ký được Member/Organization · Đăng
 | Đăng nhập email        | ✅ AU-02 — API thật                                                            |
 | Đổi / quên mật khẩu    | ✅ AU-07, AU-05, AU-06 — API thật                                              |
 | Member xem/sửa hồ sơ   | ✅ Tab bar, PR-01 (+ Cài đặt), PR-02, PR-03, PR-04 — API thật (ảnh đại diện chờ upload) |
-| Guest đăng ký Tổ chức  | ✅ OA-01 → OA-04, Xem lại, OA-06 (bản chờ xác minh) — **mock** (chờ BE); khung tab tổ chức chờ BE cho đăng nhập |
-| Đăng nhập Google       | ⏳ chờ Web client ID + OAuth client Android (BE) + dev build                   |
+| Guest đăng ký Tổ chức  | ✅ UI OA-01 → OA-04, Xem lại, OA-06 (chờ xác minh) — **mock**. ⏳ Sửa theo hướng "tạo account trước" + nối API thật khi BE xong (T-002, T-003, T-005) |
+| Đăng nhập Google       | ✅ Code + dev build APK (nhánh `feature/google-login`). ⏳ Chờ BE tạo OAuth client Android → test → PR |
 
-Còn lại khác: AU-01 Splash ✅ (splash native + `BootSplash`, anchor `(member)`) · tự test checklist mục 10 (OA-03 chưa test hết bài) · gửi danh sách cho BE · mở PR `feature/phase1-auth` → `develop`.
+Còn lại khác: AU-01 Splash ✅ · PR `feature/phase1-auth` → `develop` ✅ (PR #2, #3) · tự test checklist mục 10 (OA-03, Xem lại chưa test hết) · trước khi build bản cho lead/demo: thay icon, `preventAutoHideAsync` (guide 12.3).
+
+**Khi BE xong tổ chức — mobile phải sửa** (nhánh mới `feature/org-real-api`, ước ~2 ngày):
+1. AU-03 "Tổ chức" → form email + mật khẩu → AU-04 OTP → đăng nhập.
+2. Chuyển `org-register` **ra khỏi nhóm `(auth)`** (nhóm này chỉ mở khi chưa đăng nhập) sang nhóm cho tổ chức đã đăng nhập.
+3. `authStore` / `getMe`: tổ chức gọi `/me` của tổ chức, **không** gọi `/members/me` (gọi sẽ lỗi → bị văng ra).
+4. `_layout.js`: thêm `(org-status)`, `(org)`; điều hướng theo `verificationStatus`.
+5. OA-02 bỏ khối "Tài khoản đăng nhập" (mật khẩu) + schema.
+6. `organizationApi.real.js` (`uploadFile` có token, `POST`/`PUT`/`GET` registration); `MOCK.organization`, `MOCK.upload` → `false`; upload ảnh đại diện PR-03 thật.
+7. Gửi xong → gọi lại `/me` → tự sang màn PENDING (bỏ màn `submitted` trong `(auth)`).
+8. OA-06 Bị từ chối (lý do, giấy tờ chưa đạt) → "Bổ sung hồ sơ" mở lại 4 bước điền sẵn → `PUT`.
+9. Khung 4 tab tổ chức (Chiến dịch · Bài viết · Tin nhắn · Hồ sơ) cho VERIFIED.
 
 ## Design tokens
 

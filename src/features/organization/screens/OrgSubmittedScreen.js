@@ -12,7 +12,7 @@ import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
-import { StatusTimeline } from "@/features/organization/components/StatusTimeline";
+import { StatusTimeline } from "@/components/ui/StatusTimeline";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 
 // Về tab Mua sắm, đóng hết các màn đăng ký phía trên
