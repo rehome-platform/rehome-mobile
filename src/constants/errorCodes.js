@@ -6,4 +6,5 @@ export const ERROR_CODES = {
   WRONG_PASSWORD: "WRONG_PASSWORD", // đổi mật khẩu: sai mật khẩu hiện tại
   NEW_PASSWORD_SAME_AS_OLD: "NEW_PASSWORD_SAME_AS_OLD", // đổi mật khẩu: mới trùng cũ
   GOOGLE_ACCOUNT_CONFLICT: "GOOGLE_ACCOUNT_CONFLICT", // email đã gắn với tài khoản Google khác
+  TOO_MANY_PENDING_FORMS: "TOO_MANY_PENDING_FORMS", // ký gửi: đã có 5 form chờ duyệt (API 15, 409)
 };

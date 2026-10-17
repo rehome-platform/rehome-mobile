@@ -1,7 +1,7 @@
 // Mock API 44 — GET /categories, GET /brands (chỉ trả mục đang hoạt động) [CHỜ BE]
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 
-const CATEGORIES = [
+export const CATEGORIES = [
   { id: "cat-ao", name: "Áo" },
   { id: "cat-ao-khoac", name: "Áo khoác" },
   { id: "cat-quan", name: "Quần" },
@@ -11,7 +11,7 @@ const CATEGORIES = [
   { id: "cat-phu-kien", name: "Phụ kiện" },
 ];
 
-const BRANDS = [
+export const BRANDS = [
   { id: "br-uniqlo", name: "Uniqlo" },
   { id: "br-zara", name: "Zara" },
   { id: "br-hm", name: "H&M" },
