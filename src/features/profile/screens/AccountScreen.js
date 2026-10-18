@@ -16,7 +16,6 @@ const COMING_SOON = [
   { icon: "receipt-outline", title: "Đơn hàng của tôi" },
   { icon: "cube-outline", title: "Hàng ký gửi" },
   { icon: "return-down-back-outline", title: "Yêu cầu trả hàng" },
-  { icon: "location-outline", title: "Địa chỉ giao hàng" },
   { icon: "images-outline", title: "Ảnh thử đồ đã lưu" },
   { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
   { icon: "chatbubbles-outline", title: "Tin nhắn" },
@@ -107,6 +106,12 @@ function MemberAccount() {
           title="Mã Member của tôi"
           description="Đọc cho nhân viên khi tới kho"
           onPress={() => router.push("/profile/member-code")}
+        />
+        <ListItem
+          icon="location-outline"
+          title="Địa chỉ giao hàng"
+          description="Nơi nhận hàng khi mua đồ"
+          onPress={() => router.push("/addresses")}
         />
       </ListGroup>
 
