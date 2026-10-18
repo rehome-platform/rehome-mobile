@@ -144,7 +144,7 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Body gửi BE ghép ở `utils/payload.js` (`buildRegisterPayload`); field BE chưa nhận đánh dấu [GIẢ ĐỊNH]: `password`, `representative.phone/email/cccdName/cccdIssueDate/cccdIssuePlace`.
 - Luồng AU-03 → AU-04: đăng ký xong `router.push` sang `/verify-email` (để "Quay lại sửa" được); xác thực xong `router.dismissTo("/login", { email, verified: "1" })` → AU-02 điền sẵn email + báo thành công.
 
-## API backend đang chạy thật (Swagger + code `develop` `c62dca4`, đọc 16/10)
+## API backend đang chạy thật (Swagger + code `develop`; đọc 16/10 tại `c62dca4`, đọc lại 18/10 tại `1852963`)
 
 - **Base path:** auth và tổ chức có `/api` (`/api/auth/...`, `/api/organizations/...`); member, sản phẩm, địa chỉ **không có `/api`** (`/members/...`, `/products/...`, `/addresses`). `/api/v1` trong `API_CONTRACT.md` chưa áp dụng.
 - **Envelope khi thành công:** `{ result, statusCode, message, isSuccess }`. Chỉ nhóm `/members`, `/addresses` bọc; nhóm `/api/auth` trả thẳng. Bóc bằng `res.data?.result ?? res.data`.
@@ -167,7 +167,9 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - `GET /members/me` → `result: {accountId, email, phone, fullName, avatarUrl, memberCode, emailVerified}`. Không có `createdAt`. `memberCode` dạng `MB000001`. **Đã chạy thật 16/10.**
   - `PATCH /members/me` `{fullName, phone, avatarUrl}`: ô trống = giữ nguyên. Response thiếu `email`, `memberCode` → lưu xong gọi lại `GET /members/me`.
   - `GET /members/me/code` → `result: {memberCode}`.
-- **Địa chỉ giao hàng** (mới, 16/10, Phase sau): `GET /addresses`, `POST /addresses` `{recipientName, phone, addressDetail, isDefault}` → có envelope, không có `/api`.
+- **Địa chỉ giao hàng** (Phase 3): `GET /addresses`, `POST /addresses` `{recipientName, phone, addressDetail, isDefault}`, **`PUT /addresses/{id}`** (body như POST), **`DELETE /addresses/{id}`** (18/10) → có envelope, không có `/api`.
+- **Mua hàng** (Phase 3, có từ 18/10 — chưa đọc kỹ body/response): `GET /products?search&categoryId&brandId&priceMin&priceMax&warehouseId&page&size` (public, PageResponse) · `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}` · `POST /orders` (tạo đơn từ giỏ; cấu hình BE: phí ship tạm cố định 25.000 đ, hạn thanh toán 15 phút, thuế 0).
+- **Khác (18/10):** `GET /health` (public, BE dùng để giữ server không ngủ); BE tự tạo tài khoản `admin@rehome.com` + `moderator1..3@rehome.com` khi khởi động (cho web; mật khẩu hỏi BE, không ghi vào tài liệu).
 - **Tổ chức:** `POST /api/organizations/register/organization` (JSON, giấy tờ là URL; email tài khoản = `contactEmail`; không có mật khẩu) → 201 `{accountId, verificationStatus}`. Đọc lại 17/10:
   - Body: `legalName*, displayName*, orgType*, taxCode, operationScope*, address*, contactPhone*, contactEmail*, website, description*, logoUrl, representative* {fullName*, position, cccdNumber*, cccdFrontUrl*, cccdBackUrl*}, documents* (≥ 1) [{docType*, docNumber, issueDate (LocalDate), issuingAuthority, fileUrl*}], donationPoint* {name*, address*, latitude*, longitude*, receivingHours, contactPhone}`.
   - Email trùng (không phân biệt hoa thường) → 409 "Email đã được sử dụng!!"; MST trùng → 409 "Mã số thuế đã được sử dụng!!" (dạng A, không có `code`).
@@ -188,27 +190,27 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - Logout khi access token đã hết hạn → 500.
   - Đăng ký trùng email → 409; trùng SĐT → 500 (BE chưa kiểm tra).
   - BE chỉ kiểm mật khẩu ≥ 6 ký tự; mobile vẫn dùng ≥ 8, có chữ và số.
-- **Chưa có:** API `/me` chung (role, trạng thái tổ chức), upload file, trạng thái/nộp lại hồ sơ tổ chức.
+- **Tổ chức (đọc lại 18/10 — CHƯA đúng hướng đã chốt):** `POST /api/organizations/register/organization` nay **bắt buộc token** và nhận account đang đăng nhập, nhưng `registerOrganization` **ghi đè** ngay bằng `accountRepository.save(Account.builder()…)` → vẫn tạo account mới theo `contactEmail`, **không mật khẩu** (không đăng nhập được); account đang đăng nhập bị bỏ qua. `existsByAccount` thêm vào repository nhưng chưa dùng. `/api/auth/register` vẫn luôn tạo MEMBER.
+- **Chưa có:** API tạo account tổ chức, `/me` chung hoặc `/api/organizations/me` (role, trạng thái tổ chức), `POST/PUT/GET /api/organizations/me/registration`, upload file, toàn bộ API ký gửi Phase 2 (14–24, 44).
 
 ## Đang chờ xác nhận
 
-Đã xong phía BE (16/10): field `code` cho lỗi đăng nhập/đổi mật khẩu; chặn tài khoản bị khoá ở filter + refresh; gửi mail OTP trên Render (Brevo API).
+Đã xong phía BE (16/10): field `code` cho lỗi đăng nhập/đổi mật khẩu; chặn tài khoản bị khoá ở filter + refresh; gửi mail OTP trên Render (Brevo API). (18/10): `OtpServiceImpl` bỏ `isEnabled()`, dùng `canResetPassword` (ACTIVE + đã xác thực) → quên mật khẩu đã chặn tài khoản bị khoá / chưa xác thực; OAuth client Android cho Google.
 
 - [CHỜ BE] Login trả thêm `account { id, role, verificationStatus }`; lỗi bị khoá kèm `reason`.
 - [CHỜ BE] Mọi lỗi theo một dạng envelope có `code` (dạng A vẫn còn: 401 sai mật khẩu, OTP, 409 email trùng…).
 - [CHỜ BE] Xác nhận mobile dùng `resend-otp` (FORGOT_PASSWORD) để gửi OTP quên mật khẩu (đang chạy thật 17/10), hoặc đổi `/password/forgot` sang gửi OTP.
 - [CHỜ BE] Định dạng `qrPayload` của API 25 `/counter/lookup` (mobile tạm mã hoá đúng `memberCode`).
-- [CHỜ BE] `OtpServiceImpl` dòng 86/115/131/154 còn dùng `isEnabled()` (luôn `true`) → quên mật khẩu chưa chặn tài khoản bị khoá/chưa xác thực.
 - [CHỜ BE] Đổi mật khẩu: chuyển khỏi `/api/auth/**` hoặc trả 401 khi thiếu token (đang 500); DTO có `@NotBlank`; xác nhận thu hồi token cả thiết bị đang dùng có chủ ý không.
 - [CHỜ BE] `POST /uploads`; token hết hạn trả 401; logout không lỗi 500 khi token hết hạn; đăng ký trùng SĐT trả 409 thay vì 500.
-- [CHỜ BE] Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10, BE đang làm). Cần BE gửi khi xong (Swagger/code `develop`):
+- [CHỜ BE] Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10). BE báo xong 18/10 nhưng code **chưa đúng** (xem "API backend" → Tổ chức) → **đã gửi lại bản chốt đầy đủ 18/10** (6 API: tạo account tổ chức, `/api/organizations/me`, `POST/GET/PUT /api/organizations/me/registration`, `/uploads`). **Mobile tạm chờ, giữ mock; chỉ làm khi người phát triển yêu cầu** — lúc đó đọc lại code BE trước. Cần BE gửi khi xong (Swagger/code `develop`):
   1. API tạo account tổ chức (dùng chung `/api/auth/register` kèm loại tài khoản hay API riêng?) + OTP.
   2. `/me` cho tổ chức: `role`, `verificationStatus` (kể cả trạng thái **"chưa nộp hồ sơ"**: `null` / `NOT_SUBMITTED`?), lý do từ chối, giấy tờ chưa đạt.
   3. `POST` / `PUT` / `GET /api/organizations/me/registration`: body (đã thêm `representative.phone/email`, `cccdName/cccdIssueDate/cccdIssuePlace` chưa?), `latitude/longitude` có cho `null` không.
   4. `POST /uploads` (cần token): tên field file, giới hạn dung lượng/định dạng, response.
   5. Danh sách mã `orgType` / `operationScope`; lỗi 409 có `code`.
-- [CHỜ BE] Google: OAuth client **Android** đã tạo 17/10 (package `com.rehome.mobile` + SHA-1 development; hộp chọn tài khoản đã chạy). **Còn:** biến `GOOGLE_CLIENT_ID` trên Render đang là **ID Android** → `POST /api/auth/google` trả 401 "Token không hợp lệ" → BE phải đặt lại = **Web client ID** (cùng giá trị trong `.env` mobile) rồi redeploy. Mobile không sửa gì. Bản preview/production có keystore riêng → gửi thêm SHA-1.
-- [CHỜ BE] Ký gửi (Phase 2): bản BE 16/10 **chưa có controller nào** của API 14–24, 44, `/uploads` (entity/DB đã có, khớp mock). Danh sách field mobile xin thêm: `docs/PHASE2_GUIDE.md` mục 11 (câu 1–19).
+- [CHỜ BE] Google: OAuth client **Android** đã tạo 17/10 (package `com.rehome.mobile` + SHA-1 development; hộp chọn tài khoản đã chạy). **Còn:** `POST /api/auth/google` trả 401 "Token không hợp lệ" vì biến `GOOGLE_CLIENT_ID` trên Render **không khớp** Web client ID (đặt nhầm ID Android). BE redeploy 18/10 vẫn lỗi (test bằng tài khoản đã đăng ký mật khẩu) → đã gửi lại hướng dẫn: Render → Environment → `GOOGLE_CLIENT_ID` = **Web client ID** (cùng giá trị trong `.env` mobile, không phải ID Android) → Save → Deploy, chờ Live; tuỳ chọn cho `GoogleTokenVerifier` nhận nhiều client ID (tách dấu phẩy). Mobile không sửa gì. Muốn kiểm tra `aud` của token: tạm `console.log(jwtDecode(idToken).aud)` trong `LoginScreen` (chỉ `__DEV__`, xoá sau). Bản preview/production có keystore riêng → gửi thêm SHA-1.
+- [CHỜ BE] Ký gửi (Phase 2): bản BE 18/10 (`1852963`) vẫn **chưa có controller nào** của API 14–24, 44, `/uploads` (entity/DB đã có, khớp mock). Danh sách field mobile xin thêm: `docs/PHASE2_GUIDE.md` mục 11 (câu 1–19).
 - [CHỜ BE] Thống nhất base path, tên field OTP (`otp` hay `otpCode`), body reset password.
 - [CHỜ BE] Ngày sinh/giới tính (DB chưa có cột); `createdAt` cho "tham gia MM/YYYY" ở PR-01.
 - [CHỜ LEAD] Xoá ghi chú ③ ở wireframe AU-04 (chưa xác thực vẫn đăng nhập được).
@@ -231,10 +233,10 @@ Tiêu chí xong Phase 1: Guest đăng ký được Member/Organization · Đăng
 | Đăng nhập email        | ✅ AU-02 — API thật                                                            |
 | Đổi / quên mật khẩu    | ✅ AU-07, AU-05, AU-06 — API thật                                              |
 | Member xem/sửa hồ sơ   | ✅ Tab bar, PR-01 (+ Cài đặt), PR-02, PR-03, PR-04 — API thật (ảnh đại diện chờ upload) |
-| Guest đăng ký Tổ chức  | ✅ UI OA-01 → OA-04, Xem lại, OA-06 (chờ xác minh) — **mock**. ⏳ Sửa theo hướng "tạo account trước" + nối API thật khi BE xong (T-002, T-003, T-005) |
-| Đăng nhập Google       | ✅ Code + dev build APK, đã vào `develop` (PR #4). ⏳ Chờ BE sửa `GOOGLE_CLIENT_ID` trên Render → test 8 bài (PHASE1_GUIDE "AU-02 · Google") |
+| Guest đăng ký Tổ chức  | ✅ UI OA-01 → OA-04, Xem lại, OA-06 (chờ xác minh) — **mock**. ⏳ Sửa theo hướng "tạo account trước" + nối API thật khi BE xong (T-002, T-003, T-005). 18/10: API BE chưa đúng, đã gửi lại bản chốt; mobile chờ |
+| Đăng nhập Google       | ✅ Code + dev build APK, đã vào `develop` (PR #4); hộp chọn tài khoản chạy. ⏳ Server vẫn 401 (18/10) — chờ BE sửa `GOOGLE_CLIENT_ID` trên Render → test 8 bài (PHASE1_GUIDE "AU-02 · Google") |
 
-Còn lại khác: AU-01 Splash ✅ · PR `feature/phase1-auth` → `develop` ✅ (PR #2, #3) · tự test checklist mục 10 (OA-03, Xem lại chưa test hết) · trước khi build bản cho lead/demo: thay icon, `preventAutoHideAsync` (guide 12.3).
+Còn lại khác: AU-01 Splash ✅ · PR `feature/phase1-auth` → `develop` ✅ (PR #2, #3) · server Render ngủ → lần mở đầu có thể trắng / chờ 30–50 giây (không phải lỗi code; cân nhắc thêm chữ "Đang kết nối máy chủ…" ở `BootSplash` và tăng timeout axios lên 60 giây) · tự test checklist mục 10 (OA-03, Xem lại chưa test hết) · trước khi build bản cho lead/demo: thay icon, `preventAutoHideAsync` (guide 12.3).
 
 **Khi BE xong tổ chức — mobile phải sửa** (nhánh mới `feature/org-real-api`, ước ~2 ngày):
 1. AU-03 "Tổ chức" → form email + mật khẩu → AU-04 OTP → đăng nhập.

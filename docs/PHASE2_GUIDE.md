@@ -4,7 +4,7 @@
 > Nguồn: _Tài liệu tổng quan_ (F-014…F-031, mục 7, 8, 11, 12), _Thiết kế Database_ (ConsignmentForm, ConsignmentReceipt, Product, PriceChangeLog, EndOfTermDecision), _API_CONTRACT_ (API 14–24, 44, upload), wireframe của lead (bảng **KG-01 → KG-12**).
 > Quy ước giữ nguyên như Phase 1 (`CLAUDE.md`). File này chỉ ghi phần **mới** của Phase 2.
 > Ký hiệu: **[GIẢ ĐỊNH]** = tạm làm vậy, chưa ai chốt · **[CHỜ BE]** = chờ backend · **[CHỜ LEAD]** = chờ lead chốt · **[KIỂM TRA]** = đối chiếu lại code BE trước khi dùng.
-> **Trạng thái BE (đọc 17/10):** `develop` mới nhất là `c62dca4` (16/10), mọi nhánh remote không có commit sau 16/10 → **chưa có controller nào của Phase 2** (API 14–24, 44, `/uploads`). Chỉ có `GET /products` (sàn mua, có envelope, không `/api`). **Entity/DB đã có và khớp guide** (mục 4.1) → mock theo đúng tên field của entity.
+> **Trạng thái BE (đọc lại 18/10, `develop` `1852963`):** vẫn **chưa có controller nào của Phase 2** (API 14–24, 44, `/uploads`). Mới có phần mua hàng Phase 3: `GET /products`, `/cart`, `/addresses` (đủ CRUD), `POST /orders`. **Entity/DB đã có và khớp guide** (mục 4.1) → mock theo đúng tên field của entity.
 > **Tiến độ (18/10): xong toàn bộ UI KG-01 → KG-12 chạy mock** — PR #4 (form KG-01→05 + Google + dev build), #5 (biên nhận KG-06/07), #6 (sản phẩm KG-08→10), #7 (cuối kỳ KG-11/12). **Code trong repo là bản chuẩn**; spec mục 7 là mô tả rút gọn, lệch thì theo code. Còn lại: nối API thật (`feature/consign-real-api`) khi BE có controller, thay điều khoản biên nhận [GIẢ ĐỊNH] bằng nguyên văn mục 12, checklist mục 9 phần BE thật.
 
 ---
