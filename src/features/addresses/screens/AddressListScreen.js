@@ -7,7 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { useCheckoutStore } from "@/stores/checkoutStore";
 import { colors, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -34,12 +35,25 @@ export default function AddressListScreen() {
   const addresses = useAddresses();
   const save = useSaveAddress();
   const remove = useDeleteAddress();
+  const { select } = useLocalSearchParams();
+  const selectMode = select === "1"; // mở từ checkout: bấm thẻ để chọn địa chỉ giao
+  const storeAddressId = useCheckoutStore((s) => s.addressId);
+  const setAddressId = useCheckoutStore((s) => s.setAddressId);
 
   if (!isAuthed) return <Redirect href="/login" />;
 
-  const header = <AppHeader title="Địa chỉ giao hàng" onBack={goBack} />;
+  const header = (
+    <AppHeader
+      title={selectMode ? "Chọn địa chỉ giao hàng" : "Địa chỉ giao hàng"}
+      onBack={goBack}
+    />
+  );
+
   const list = addresses.data ?? [];
   const full = list.length >= ADDRESS_LIMIT;
+  // Địa chỉ đang chọn ở checkout: đã chọn trước đó, không thì địa chỉ mặc định
+  const currentId = storeAddressId ?? list.find((a) => a.isDefault)?.id;
+
   // id địa chỉ đang được lưu / xoá → khoá nút trên thẻ đó
   const busyId = save.isPending
     ? save.variables?.id
@@ -139,6 +153,15 @@ export default function AddressListScreen() {
           <AddressCard
             address={item}
             busy={busyId === item.id}
+            selected={selectMode && item.id === currentId}
+            onPress={
+              selectMode
+                ? () => {
+                    setAddressId(item.id);
+                    router.back();
+                  }
+                : undefined
+            }
             onEdit={() => router.push(`/addresses/${item.id}/edit`)}
             onSetDefault={() => setDefault(item)}
             onDelete={() => confirmDelete(item)}

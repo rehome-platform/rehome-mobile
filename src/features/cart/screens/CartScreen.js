@@ -22,12 +22,9 @@ import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import { cartItems, useCart, useRemoveCartItem } from "../hooks/useCart";
 import { WarehouseGroup } from "../components/WarehouseGroup";
+import { PendingPaymentBanner } from "../components/PendingPaymentBanner";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
-
-// [TẠM] Đặt hàng → checkout làm ở nhánh feature/checkout-payment
-const comingSoon = () =>
-  Alert.alert("Sắp có", "Đặt hàng đang được hoàn thiện.");
 
 // Dải thông báo đầu giỏ
 function Banner({ icon, children }) {
@@ -80,6 +77,7 @@ export default function CartScreen() {
   if (!items.length) {
     return (
       <Screen header={header}>
+        <PendingPaymentBanner />
         <EmptyState
           icon="cart-outline"
           title="Giỏ hàng đang trống"
@@ -127,21 +125,21 @@ export default function CartScreen() {
       ],
     );
 
-  const listHeader =
-    unavailableCount > 0 || orderCount >= 2 ? (
-      <View style={styles.banners}>
-        {unavailableCount > 0 ? (
-          <Banner icon="alert-circle-outline">
-            {`${unavailableCount} món không còn mua được. Các món còn lại vẫn đặt bình thường.`}
-          </Banner>
-        ) : null}
-        {orderCount >= 2 ? (
-          <Banner icon="information-circle-outline">
-            {`Hàng của bạn ở ${orderCount} kho khác nhau, sẽ tách thành ${orderCount} đơn và tính phí vận chuyển riêng.`}
-          </Banner>
-        ) : null}
-      </View>
-    ) : null;
+  const listHeader = (
+    <View style={styles.banners}>
+      <PendingPaymentBanner />
+      {unavailableCount > 0 ? (
+        <Banner icon="alert-circle-outline">
+          {`${unavailableCount} món không còn mua được. Các món còn lại vẫn đặt bình thường.`}
+        </Banner>
+      ) : null}
+      {orderCount >= 2 ? (
+        <Banner icon="information-circle-outline">
+          {`Hàng của bạn ở ${orderCount} kho khác nhau, sẽ tách thành ${orderCount} đơn và tính phí vận chuyển riêng.`}
+        </Banner>
+      ) : null}
+    </View>
+  );
 
   const listFooter = (
     <NoteBox style={styles.note}>
@@ -166,7 +164,12 @@ export default function CartScreen() {
       <Button
         title={selected.length ? `Đặt hàng (${selected.length})` : "Đặt hàng"}
         disabled={!selected.length}
-        onPress={comingSoon}
+        onPress={() =>
+          router.push({
+            pathname: "/checkout",
+            params: { ids: selected.map((i) => i.product.id).join(",") },
+          })
+        }
       />
     </View>
   );

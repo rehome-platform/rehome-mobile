@@ -94,3 +94,9 @@ export async function removeCartItem(cartItemId) {
   }
   return null;
 }
+// [MOCK] ordersApi.mock dùng: id các món trong giỏ (đặt cả giỏ) và xoá món đã đặt khỏi giỏ (như BE)
+export const mockCartProductIds = () => items.map((ci) => ci.productId);
+
+export const mockRemoveFromCart = (productIds) => {
+  items = items.filter((ci) => !productIds.includes(ci.productId));
+};

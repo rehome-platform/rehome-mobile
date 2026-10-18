@@ -63,10 +63,6 @@ const STATE_INFO = {
   },
 };
 
-// [TẠM] Mua ngay → checkout làm ở nhánh feature/checkout-payment
-const comingSoon = () =>
-  Alert.alert("Sắp có", "Giỏ hàng và đặt hàng đang được hoàn thiện.");
-
 const askLogin = (href) =>
   Alert.alert(
     "Đăng nhập để mua hàng",
@@ -188,7 +184,9 @@ export default function ProductDetailScreen() {
       },
     });
   };
-  const onBuyNow = isAuthed ? comingSoon : () => askLogin(`/products/${id}`);
+  const onBuyNow = isAuthed
+    ? () => router.push({ pathname: "/checkout", params: { buyNow: id } })
+    : () => askLogin(`/products/${id}`);
 
   let footer = null;
   if (state === SALE_STATE.ON_SALE) {

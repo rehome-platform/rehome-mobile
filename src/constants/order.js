@@ -1,3 +1,16 @@
+// Trạng thái đơn (enum OrderStatus của BE)
+export const ORDER_STATUS = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PAID: "PAID",
+  PACKING: "PACKING",
+  SHIPPING: "SHIPPING",
+  DELIVERED: "DELIVERED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+};
+
+export const PAYMENT_METHOD = { MOMO: "MOMO", WALLET: "WALLET" }; // Phase 3 chỉ MoMo; Ví bật ở Phase 4
+
 // API 52: BE trả unavailableReason = tên ProductStatus của món khi món không còn ON_SALE (đọc code 19/10)
 export const CART_UNAVAILABLE_LABEL = {
   RESERVED: "Đang có người thanh toán",

@@ -201,6 +201,7 @@ export async function getProduct(id) {
     categoryId: p.categoryId,
     photos: p.photos,
     description: p.description,
+    warehouseId: p.warehouseId, // Mua ngay cần để tách đơn theo kho
     warehouseName: nameOf(WAREHOUSES, p.warehouseId),
     inspectedAt: p.inspectedAt,
   };
