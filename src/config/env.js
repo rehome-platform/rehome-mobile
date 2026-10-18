@@ -14,4 +14,5 @@ export const MOCK = {
   // Phase 3 — mua hàng
   products: true, // [TẠM] GET /products đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → lọc gửi id giả lên BE sẽ lỗi; sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng
   productDetail: true, // [CHỜ BE] API 50 GET /products/{id}
+  cart: true, // [TẠM] đi CÙNG MOCK.products: id món mock (sp-001…) gửi lên BE sẽ 404. BE có sản phẩm mẫu → đổi cả hai sang false
 };

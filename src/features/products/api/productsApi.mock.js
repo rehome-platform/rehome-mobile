@@ -210,3 +210,5 @@ export async function mockSetStatus(id, status) {
   const p = products.find((x) => x.id === id);
   if (p) p.status = status;
 }
+// [MOCK] cartApi.mock dựng giỏ từ cùng dữ liệu này → đổi trạng thái ở khung Mock thì giỏ cũng đổi theo
+export const mockFindProduct = (id) => products.find((p) => p.id === id);

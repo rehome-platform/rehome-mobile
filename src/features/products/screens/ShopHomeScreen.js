@@ -12,6 +12,7 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { useCategoryOptions } from "@/features/catalog/hooks/useCatalogOptions";
 import { useProducts } from "../hooks/useProducts";
 import { ProductGrid } from "../components/ProductGrid";
+import { CartButton } from "@/features/cart/components/CartButton";
 
 const ALL = "ALL";
 
@@ -113,7 +114,7 @@ function ShopHeader() {
           Tìm áo, quần, thương hiệu…
         </Text>
       </Pressable>
-      {/* Nút giỏ hàng + badge: thêm ở nhánh feature/cart-address */}
+      <CartButton />
     </View>
   );
 }
