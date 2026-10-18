@@ -105,7 +105,7 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - API nào backend có thì gọi thật, chưa có thì mock. **Không mock auth** (đã bỏ tài khoản mock `member@`, `banned@`…); test bằng tài khoản thật trên server Render (mẹo Gmail `ten+test1@gmail.com` để tạo nhiều email nhận chung hộp thư).
   - **Phase 1 gọi thật:** đăng ký, verify-otp, resend-otp, đăng nhập email, refresh, logout, đổi mật khẩu (AU-07), quên / đặt lại mật khẩu (AU-05/06), `GET/PATCH /members/me`. (Mã Member lấy từ `user.memberCode`, không gọi `GET /members/me/code`.)
   - **Phase 1 mock / chưa làm:** upload ảnh đại diện (bấm → Toast "sắp có"), toàn bộ đăng ký và trạng thái tổ chức, đăng nhập Google (chờ dev build).
-- **Thanh tab Member: 4 tab** Mua sắm · Cộng đồng · Ký gửi · Cá nhân (theo BR-01; PR-01 vẽ 5 tab có "Thử đồ" nhưng thử đồ mở từ trang sản phẩm) [CHỜ LEAD]. Icon rỗng/đặc theo trạng thái; khai báo bằng mảng `TABS`. 3 tab đầu là `EmptyState` "Sắp có".
+- **Thanh tab Member: 4 tab** Mua sắm · Cộng đồng · Ký gửi · Cá nhân (theo BR-01; PR-01 vẽ 5 tab có "Thử đồ" nhưng thử đồ mở từ trang sản phẩm) [CHỜ LEAD]. Icon rỗng/đặc theo trạng thái; khai báo bằng mảng `TABS`. Tab Mua sắm (Phase 3) và Ký gửi (Phase 2) đã có màn; Cộng đồng vẫn `EmptyState` "Sắp có".
 - **PR-01 Tab Cá nhân:** thẻ đầu (Avatar, tên, mã) → PR-02; "Mã Member của tôi" → PR-04; nhóm "Sắp có" (đơn hàng, ký gửi, trả hàng, địa chỉ, ảnh thử đồ, tổ chức theo dõi, tin nhắn) **mờ nhưng bấm được → Toast**; Đăng xuất đỏ, **hỏi xác nhận**; thẻ ví (Phase 4) **ẩn**; nút ⚙ → màn **Cài đặt** (Hồ sơ cá nhân, Đổi mật khẩu, Phiên bản). Bản khách: thẻ mời Đăng nhập / Tạo tài khoản. Không hiện "tham gia MM/YYYY" (chưa có `createdAt`).
 - **PR-02 / PR-03:** **ẩn Ngày sinh, Giới tính** (DB chưa có cột) và khối "Hoạt động trên ReHome" (phase sau); dòng thông tin kiểu nhãn trên / giá trị dưới; SĐT hiển thị `0912 345 678`. PR-03: email chỉ đọc (nền xám), bỏ "Đổi email"; nút **Lưu mờ khi chưa sửa** (`isDirty`); Huỷ/← khi đã sửa → hỏi "Bỏ thay đổi?"; lưu xong Toast + về PR-02; trùng SĐT (BE trả 500) → lỗi dưới ô SĐT.
 - Đổi mật khẩu xong: **chủ động đăng xuất**, hiện "Đổi mật khẩu thành công, mời đăng nhập lại" (BE thu hồi refresh token của mọi thiết bị, kể cả máy đang dùng).
@@ -168,7 +168,7 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
   - `PATCH /members/me` `{fullName, phone, avatarUrl}`: ô trống = giữ nguyên. Response thiếu `email`, `memberCode` → lưu xong gọi lại `GET /members/me`.
   - `GET /members/me/code` → `result: {memberCode}`.
 - **Địa chỉ giao hàng** (Phase 3): `GET /addresses`, `POST /addresses` `{recipientName, phone, addressDetail, isDefault}`, **`PUT /addresses/{id}`** (body như POST), **`DELETE /addresses/{id}`** (18/10) → có envelope, không có `/api`.
-- **Mua hàng** (Phase 3, có từ 18/10 — chưa đọc kỹ body/response): `GET /products?search&categoryId&brandId&priceMin&priceMax&warehouseId&page&size` (public, PageResponse) · `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}` · `POST /orders` (tạo đơn từ giỏ; cấu hình BE: phí ship tạm cố định 25.000 đ, hạn thanh toán 15 phút, thuế 0).
+- **Mua hàng** (Phase 3, có từ 18/10, **đã đọc kỹ 19/10** — bảng đầy đủ + chỗ lệch contract: `docs/PHASE3_GUIDE.md` mục 5.2, 5.2b): `GET /products?search&categoryId&brandId&priceMin&priceMax&warehouseId&page&size` (public, chỉ ON_SALE, mới lên sàn trước; id lọc là **UUID**; `condition` = chữ tự do; tìm theo tên có phân biệt dấu) · `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}` · `POST /orders` (có `productIds` thì **không xoá khỏi giỏ**; không có thì lấy cả giỏ, 1 món hết hàng → 409 cả lần; phí ship 25.000 đ, hạn thanh toán 15 phút). **Chưa có:** `GET /products/{id}`, checkout-preview, thanh toán, xem đơn, danh mục/thương hiệu (API 44).
 - **Khác (18/10):** `GET /health` (public, BE dùng để giữ server không ngủ); BE tự tạo tài khoản `admin@rehome.com` + `moderator1..3@rehome.com` khi khởi động (cho web; mật khẩu hỏi BE, không ghi vào tài liệu).
 - **Tổ chức:** `POST /api/organizations/register/organization` (JSON, giấy tờ là URL; email tài khoản = `contactEmail`; không có mật khẩu) → 201 `{accountId, verificationStatus}`. Đọc lại 17/10:
   - Body: `legalName*, displayName*, orgType*, taxCode, operationScope*, address*, contactPhone*, contactEmail*, website, description*, logoUrl, representative* {fullName*, position, cccdNumber*, cccdFrontUrl*, cccdBackUrl*}, documents* (≥ 1) [{docType*, docNumber, issueDate (LocalDate), issuingAuthority, fileUrl*}], donationPoint* {name*, address*, latitude*, longitude*, receivingHours, contactPhone}`.
@@ -258,6 +258,15 @@ Phase 2 (20–30/10): Ký gửi phía Member (luồng L-02). Hướng dẫn chi 
 | KG-08 → KG-10 Sản phẩm (danh sách, chi tiết 6 trạng thái, giảm giá 3 trạng thái) | ✅ mock — PR #6 |
 | KG-11, KG-12 Cuối kỳ (nhận lại / ký gửi lại, biên nhận mới) | ✅ mock — PR #7 |
 | Nối API thật (`feature/consign-real-api`): `consignmentApi.real.js`, `catalogApi.real.js`, `upload.real.js`, tắt `MOCK.consignment`/`upload`, timeout axios 60 giây, test với web Moderator | ⏳ chờ BE (dự kiến 28–30/10) |
+
+Phase 3 (làm sớm từ 19/10, kế hoạch 31/10 – 05/11): Mua hàng & thanh toán phía Member (luồng L-03). Hướng dẫn chi tiết: `docs/PHASE3_GUIDE.md` (quyết định + chỗ lệch wireframe: mục 0.4 #1–#17).
+
+| Nhánh | Trạng thái (19/10) |
+| ----- | ------------------ |
+| 1 `feature/shop-browse`: BR-01 trang chủ, BR-02/03 tìm kiếm + bộ lọc, BR-04 chi tiết (4 trạng thái + 404), quay lại sau đăng nhập | ✅ mock — PR #10 (`MOCK.products`, `MOCK.productDetail` = true: chờ API 44, API 50) |
+| 2 `feature/cart-address`: BR-05 giỏ, BR-06/07 địa chỉ, badge giỏ, thêm vào giỏ thật | ⏳ đang làm — API thật |
+| 3 `feature/checkout-payment`: BR-08, BR-09, `checkoutStore`, mock thanh toán | ⏳ |
+| 4 `feature/payment-momo`: MoMo sandbox (cài `expo-web-browser` + build lại) | ⏳ chờ BE API 60/61 |
 
 Dev build hiện có: `expo-location`, Google Sign-In, `expo-dev-client` (build 17/10). Thêm thư viện native khác → build lại.
 

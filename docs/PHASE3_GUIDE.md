@@ -5,6 +5,7 @@
 > Quy ước giữ nguyên như `CLAUDE.md` và PHASE2_GUIDE. File này chỉ ghi phần **mới**.
 > Ký hiệu: **[GIẢ ĐỊNH]** · **[CHỜ BE]** · **[CHỜ LEAD]** · **[KIỂM TRA]** (đối chiếu code BE trước khi dùng).
 > **Trạng thái BE (đã đọc code 19/10 tại `develop` `1852963` — kết quả ở mục 5.2 + 5.2b):** có thật `GET /products` (public), `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}`, `GET/POST/PUT/DELETE /addresses`, `POST /orders`. **Chưa có:** `GET /products/{id}` (API 50 — chi tiết sản phẩm!), checkout-preview (58), thanh toán (60), webhook MoMo (61), xem đơn (63). Có mấy điểm BE làm **khác contract** ảnh hưởng luồng giỏ → đặt hàng (mục 5.2b) — đọc trước khi code.
+> **Tiến độ (19/10):** ✅ Nhánh 1 `feature/shop-browse` (BR-01 → BR-04) đã merge `develop` — PR #10, chạy mock (mục 5.1). ⏳ Nhánh 2 `feature/cart-address` (BR-05 → BR-07).
 
 ---
 
@@ -65,6 +66,12 @@ Chạy trên Android thật; phần BE đã có thì gọi thật, phần chưa 
 | 9   | BR-04 "Share"                                                                          | Chia sẻ chữ (tên + giá + mã SKU) bằng `Share`                                                                                    | Chưa có link web sản phẩm                                                                                                                            |
 | 10  | Sau thanh toán                                                                         | Thêm màn **kết quả** (thành công / hết hạn) ngay trong `payment.js`; nút "Xem đơn hàng" ẩn tới Phase 4                           | Wireframe không vẽ; BR-10/11 là Phase 4                                                                                                              |
 | 11  | Giỏ hàng chỉ mở từ BR-01/BR-04                                                         | Thêm dải "Đơn chờ thanh toán" ở giỏ để quay lại BR-09                                                                            | Chưa có danh sách đơn (Phase 4); tránh Member mất đường quay lại đơn đang giữ                                                                        |
+| 12  | BR-01 4 chip danh mục cố định                                                          | **Mọi** danh mục trên một hàng cuộn ngang (`ChipGroup horizontal`); ghi chú kiểm định có ✕ để ẩn                                 | Không phải đoán danh mục nào được hiện (Shopee, Vinted); người dùng quay lại mỗi ngày không cần đọc lại ghi chú                                       |
+| 13  | BR-02 mở ra là có kết quả                                                              | Mở màn tìm kiếm trống: "Bạn đang tìm món gì?", **chưa gọi API** tới khi bấm Enter hoặc đặt bộ lọc; ✕ trong ô chỉ xoá chữ         | Không gọi API theo từng chữ; giống ô tìm của các app mua sắm                                                                                          |
+| 14  | BR-03 có "Xoá tất cả" ở đầu sheet, chip chọn lại không bỏ được                         | Chỉ "Đặt lại" ở footer; **bấm lại chip đang chọn = bỏ chọn**; ẩn mục Kho                                                         | Một nút làm một việc; chưa có API danh sách kho cho người mua                                                                                         |
+| 15  | BR-04 "Không khả dụng" là một trang khác hẳn (thẻ nhỏ, không ảnh)                      | **Một bố cục chung** cho mọi trạng thái: ảnh mờ + nhãn góc (ĐANG GIỮ HÀNG / ĐÃ BÁN / NGỪNG BÁN) + khối giải thích; thêm "Ngừng bán" cho WITHDRAWN… | Người mở lại từ giỏ / link cũ cần nhìn thấy đó là món nào (Vinted, Shopee giữ nguyên trang)                                                           |
+| 16  | BR-04 nhãn "ĐANG BÁN", "Hàng chính hãng", SKU                                          | Bỏ cả 3                                                                                                                          | Mọi món trên sàn đều đang bán; BE không có trường xác nhận chính hãng / SKU (app không tự khẳng định)                                                 |
+| 17  | Guest bấm mua → đăng nhập                                                              | Đăng nhập xong **mở lại đúng sản phẩm** (`stores/pendingRedirect.js`, hết hạn 10 phút), không tự thêm vào giỏ hộ                 | Expo Router đưa về trang chủ khi nhóm `(auth)` đóng; tránh thêm nhầm                                                                                  |
 
 ---
 
@@ -75,7 +82,7 @@ Mỗi việc một nhánh từ `develop`:
 | Thứ tự | Nhánh                                | Nội dung                                            | Ngày (gợi ý) |
 | ------ | ------------------------------------ | --------------------------------------------------- | ------------ |
 | 0      | —                                    | ✅ Đã đọc code BE, điền mục 5.2 + 5.2b (19/10)      | 19/10        |
-| 1      | `feature/shop-browse`                | constants, api products, BR-01 → BR-04              | 19–21/10     |
+| 1      | `feature/shop-browse`                | ✅ api products (mock), BR-01 → BR-04 — PR #10      | 19/10        |
 | 2      | `feature/cart-address`               | BR-05 → BR-07, badge giỏ, quay lại sau đăng nhập    | 22–23/10     |
 | 3      | `feature/checkout-payment`           | BR-08, BR-09, `checkoutStore`, mock thanh toán      | 24–26/10     |
 | 4      | `feature/payment-momo`               | MoMo sandbox thật (khi BE có API 60/61)             | khi BE xong  |
@@ -103,14 +110,15 @@ Việc Phase 1 (tổ chức, Google) vẫn theo nhánh riêng khi BE báo xong (
 
 ```
 src/
-├─ constants/product.js              # PRODUCT_CONDITION + nhãn (dùng chung với Phase 2 nếu trùng)
-├─ constants/order.js                # ORDER_STATUS, PAYMENT_METHOD, CART_UNAVAILABLE_REASON
+├─ constants/order.js                # ORDER_STATUS, PAYMENT_METHOD, CART_UNAVAILABLE_LABEL, ADDRESS_LIMIT
 ├─ stores/checkoutStore.js           # đơn vừa tạo đang chờ trả (chỉ RAM), địa chỉ đang chọn
-├─ stores/pendingActionStore.js      # (tuỳ chọn) việc cần làm tiếp sau khi đăng nhập
-├─ features/products/
-│  ├─ api/ productsApi.js · productsApi.real.js · productsApi.mock.js · queryKeys.js
-│  ├─ components/ ProductCard.js · ProductGrid.js · PhotoCarousel.js · PriceTag.js
-│  │              FilterSheet.js · ActiveFilterChips.js · InspectedBadge.js
+├─ stores/pendingRedirect.js         # ✅ màn mở lại sau khi đăng nhập (setPendingRedirect / takePendingRedirect)
+├─ features/products/                # ✅ nhánh 1
+│  ├─ api/ productsApi.js · productsApi.real.js · productsApi.mock.js · queryKeys.js (shopKeys)
+│  ├─ hooks/ useProducts.js (useInfiniteQuery, { enabled }) · useProductDetail.js (+ useSimilarProducts)
+│  ├─ utils/ filters.js (cleanFilters, countFilters, priceLabel) · saleState.js (SALE_STATE, saleStateOf)
+│  ├─ components/ ProductCard.js (+ metaLine) · ProductGrid.js · PriceTag.js · PhotoCarousel.js
+│  │              SimilarProducts.js · FilterSheet.js · ActiveFilterChips.js · MockStatusPanel.js (chỉ __DEV__)
 │  └─ screens/ ShopHomeScreen.js · SearchScreen.js · ProductDetailScreen.js
 ├─ features/cart/
 │  ├─ api/ cartApi.js · cartApi.real.js · cartApi.mock.js
@@ -201,15 +209,20 @@ export const MOCK = {
   upload: true,
   organization: true,
   consignment: true,
-  // Phase 3 — theo kết quả đọc code BE 19/10 (mục 5.2)
-  products: false, // GET /products thật; riêng getProduct(id) (API 50) chưa có → xem 5.2b #1
-  cart: false, // /cart thật
-  orders: false, // POST /orders thật; getCheckoutPreview / getOrder chưa có → tự tính / mock trong ordersApi (5.2b)
+  // Phase 3
+  products: true, // ✅ đang dùng. [TẠM] GET /products thật đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → gửi id giả lên BE sẽ lỗi (BE nhận UUID); sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng
+  productDetail: true, // ✅ đang dùng. [CHỜ BE] API 50 GET /products/{id}
+  cart: false, // nhánh 2: /cart thật
+  orders: false, // nhánh 3: POST /orders thật; getCheckoutPreview / getOrder chưa có → tự tính / mock trong ordersApi (5.2b)
   payment: true, // API 60/61 chưa có
 };
 ```
 
-Một nhóm API có hàm thật và hàm chưa có (vd `productsApi`): file `*.js` ghép như `authApi.js` ở Phase 1 — `{ ...real, getProduct: MOCK.productDetail ? mock.getProduct : real.getProduct }` — để từng hàm bật/tắt mock riêng.
+Một nhóm API có hàm thật và hàm chưa có: file `*.js` chọn **từng hàm** — `productsApi = { getProducts: MOCK.products ? mock… : real…, getProduct: MOCK.productDetail ? mock… : real…, mockSetStatus: mock.mockSetStatus }`.
+
+**Thử BE thật cho danh sách:** đổi `products: false` → reload → thấy "Chưa có món nào lên sàn" hoặc hàng thật. **Đừng bấm chip danh mục** ở chế độ này (id giả). Thử xong đổi lại `true`.
+
+**Khung Mock ở BR-04** (`MockStatusPanel`, chỉ `__DEV__ && MOCK.productDetail`): cuối màn chi tiết có chip Đang bán / Giữ hàng / Đã bán / Ngừng bán đổi trạng thái món trong dữ liệu mock (món rời sàn thật như bị người khác mua; reload app để về như cũ) + link mở sản phẩm 404. Dữ liệu mock có thêm `sp-reserved`, `sp-sold`.
 
 `addressApi` chỉ có `*.real.js` (API đã đủ CRUD từ 18/10) — giống `profileApi` ở Phase 1.
 
@@ -236,7 +249,7 @@ Base path: **không có `/api`**, **có envelope** `{result, isSuccess, statusCo
 
 ### 5.2b. Điểm BE làm khác contract / còn thiếu — ảnh hưởng cách làm (đọc code 19/10)
 
-1. **Chưa có `GET /products/{id}`** → BR-04 chưa gọi thật được. Cách làm: khi bấm thẻ ở danh sách, **lấy sẵn dữ liệu thẻ** (đã có tên, ảnh đầu, giá, thương hiệu, danh mục, size, tình trạng) từ cache `useInfiniteQuery` làm `initialData`; phần thiếu (nhiều ảnh, mô tả, kho, trạng thái) để trống / mock qua `productsApi.mock.getProduct`. Mở từ giỏ (chỉ có `product{id, name, thumbnailUrl, size, giá}`) → hiện phần có. Mở bằng link không có cache → mock. BE có API 50 thì chỉ đổi `getProduct` sang thật.
+1. **Chưa có `GET /products/{id}`** → BR-04 chưa gọi thật được. ✅ Đã làm: `useProductDetail` lấy thẻ trong cache các danh sách `["products","list",…]` làm **`placeholderData`** (hiện ngay tên, giá, ảnh đầu; `isPlaceholderData` = chưa biết trạng thái → ẩn nút mua) rồi gọi `getProduct` (mock) lấy phần còn lại. BE có API 50 thì chỉ đổi `MOCK.productDetail = false`.
 2. **`POST /orders` có 2 nhánh, khác contract:**
    - **Không gửi `productIds`** → lấy **cả giỏ**; **một món không còn ON_SALE là 409 cho cả lần đặt** (không đặt phần còn lại); đặt xong **BE xoá các món đó khỏi giỏ**.
    - **Có `productIds`** (BE gọi là "mua ngay", nhận **nhiều** id) → khoá đúng các món đó, **không đụng tới giỏ** → đặt xong các món vẫn nằm trong giỏ (thành "Đang có người thanh toán").
@@ -389,16 +402,15 @@ Nguồn: API 50. Header: ← · Chia sẻ · `CartButton`.
 - **Món của chính mình** (người ký gửi mở món mình trên sàn): [CHỜ BE] cách nhận biết. Nếu biết được → thay footer bằng NoteBox "Đây là món bạn ký gửi" + nút "Xem trong Ký gửi" → `my-products/[id]`.
 - Chia sẻ: `Share.share({ message: \`${name} — ${formatVnd(currentPrice)} trên ReHome (mã ${id})\` })`.
 
-### Quay lại sau đăng nhập (dùng cho BR-04, BR-01 giỏ)
+### Quay lại sau đăng nhập (✅ làm ở nhánh 1)
 
-Khi Guest bấm việc cần đăng nhập:
+Đã kiểm tra thật: đăng nhập xong nhóm `(auth)` đóng → app về **trang chủ** (không về màn trước). Cách làm:
 
-1. Lưu "việc đang làm" vào `pendingActionStore` (RAM): `{ type: "VIEW_PRODUCT", productId }` hoặc `{ type: "OPEN_CART" }`.
-2. `router.push("/login")`.
-3. Sau khi `signIn` thành công, `_layout.js` chuyển sang nhóm `(member)` như hiện tại; màn đầu tiên của nhóm (hoặc một `useEffect` ở `_layout`) đọc `pendingActionStore`, **xoá** nó, rồi `router.push` tới đúng chỗ.
+1. Trước khi `router.push("/login")`: `setPendingRedirect("/products/<id>")` (`stores/pendingRedirect.js`, biến trong RAM, hết hạn 10 phút).
+2. `ShopHomeScreen` có `useFocusEffect`: khi `status === "authenticated"` → `takePendingRedirect()` (lấy một lần rồi xoá) → `router.push(href)`.
 
 - Không tự thêm vào giỏ hộ — chỉ đưa về đúng màn để Member bấm lại (tránh thêm nhầm).
-- Đọc lại cách `_layout.js` đang đổi nhóm sau đăng nhập trước khi làm; nếu phức tạp thì Phase 3 chấp nhận về trang chủ, ghi vào PR.
+- Không sửa `LoginScreen`. Dùng lại cho giỏ hàng (Guest bấm icon giỏ → `setPendingRedirect("/cart")`).
 
 ### BR-05 · Giỏ hàng (`cart.js`)
 
@@ -548,11 +560,12 @@ Chạy trên Android thật (dev build cho phần MoMo).
 
 **Duyệt sản phẩm (Guest và Member)**
 
-- [ ] Trang chủ: chip danh mục lọc đúng; cuộn tới cuối tự tải trang sau; kéo xuống tải lại.
-- [ ] Tìm "áo" → có kết quả; tìm chuỗi vô nghĩa → màn không có kết quả; "Xoá hết bộ lọc" chạy.
-- [ ] Bộ lọc: giá Từ > Đến bị chặn; Đặt lại / Áp dụng đúng; chip ✕ bỏ từng bộ lọc.
-- [ ] Chi tiết: lướt ảnh; giá gạch khi đã giảm; món tương tự không chứa chính nó.
-- [ ] Guest bấm Thêm vào giỏ → đăng nhập → quay lại đúng sản phẩm (hoặc ghi rõ trong PR nếu chưa làm).
+- [x] Trang chủ: chip danh mục lọc đúng; cuộn tới cuối tự tải trang sau; kéo xuống tải lại. (mock, 19/10)
+- [x] Tìm "áo" → có kết quả; tìm chuỗi vô nghĩa → màn không có kết quả; "Xoá hết bộ lọc" chạy.
+- [x] Bộ lọc: giá Từ > Đến bị chặn; Đặt lại / Áp dụng đúng; chip ✕ bỏ từng bộ lọc.
+- [x] Chi tiết: lướt ảnh; giá gạch khi đã giảm; món tương tự không chứa chính nó; 4 trạng thái + 404 (khung Mock).
+- [x] Guest bấm Thêm vào giỏ → đăng nhập → quay lại đúng sản phẩm.
+- [ ] Danh sách với BE thật (`MOCK.products = false`) khi BE có API 44 + hàng.
 
 **Giỏ và địa chỉ (Member)**
 
@@ -599,8 +612,8 @@ Mô tả PR: Đã làm · Gọi thật / mock (theo `MOCK`) · Lệch wireframe 
 3. Bao giờ có **API 58 (checkout-preview), 60, 61, 63**? Webhook trên Render đã nhận được từ MoMo sandbox chưa?
 4. **API 58 nhận `productIds`** (cho "Mua ngay" và cho "đặt phần còn lại") được không?
 5. **API 50 (chi tiết)** trả thêm: `brandName`, `categoryName`, `categoryId` (để tìm món tương tự), `size`, `condition`/`conditionNote`, `description`, `originalPrice`, `warehouseName`, ngày kiểm định, toàn bộ `photos`. API này dùng chung với API 22 (người ký gửi) — người mua có bị lộ các field riêng của người ký gửi (giá sàn, hoa hồng…) không?
-6. **`condition`:** API 49 trả `LIKE_NEW` nhưng bảng Product chỉ có `condition_note`. Danh sách enum là gì (Như mới / Tốt / Khá)?
-7. **Lọc thêm** Size, Tình trạng, nhiều danh mục/thương hiệu, **sắp xếp** (mới nhất, giá tăng/giảm) có làm không? Mặc định API 49 sắp xếp theo gì?
+6. ~~**`condition`** là enum gì?~~ → Đã đọc code: `condition` = `conditionNote` chữ tự do. App hiện nguyên chữ.
+7. **Lọc thêm** Size, Tình trạng, nhiều danh mục/thương hiệu, **sắp xếp** (giá tăng/giảm) có làm không? (Mặc định đã biết: mới lên sàn trước.)
 8. **Danh sách kho công khai** cho bộ lọc (dùng chung với KG-03 Phase 2)?
 9. **Mã lỗi `code`** cho các 409 (hiện chỉ có message): `PRODUCT_NOT_AVAILABLE`, `ALREADY_IN_CART`, `CART_EMPTY`, `ORDER_NOT_PENDING`, `INSUFFICIENT_BALANCE`, `ADDRESS_LIMIT_REACHED`, `DEFAULT_ADDRESS_CANNOT_DELETE`. Mobile không so chữ trong message.
 10. **Thêm trùng món vào giỏ** trả gì (409 hay 200 giữ nguyên)? `unavailableReason` có những giá trị nào ngoài `SOLD`?
@@ -616,6 +629,9 @@ Mô tả PR: Đã làm · Gọi thật / mock (theo `MOCK`) · Lệch wireframe 
 20b. **Địa chỉ:** BE không giới hạn 5, không chặn xoá mặc định, không tự đặt mặc định cho địa chỉ đầu tiên — mobile đang tự làm cả 3; BE có muốn chặn phía server không? `POST`/`PUT /addresses` trả thiếu trường (`phone`, `addressDetail`) — trả đủ địa chỉ được không?
 21b. **`GET /cart` item** thiếu `brandName`, `condition` (BR-05 có "Thương hiệu · Size · Tình trạng").
 22b. Mã lỗi `code` cho 409 của `/cart/items` và `/orders` (câu 9).
+(Câu 18b–22b đã gửi BE 19/10.)
+23b. **Tìm kiếm không dấu:** API 49 tìm `name LIKE %q%` có phân biệt dấu → gõ "ao khoac" không ra "Áo khoác". Người Việt hay gõ không dấu → đề xuất dùng `unaccent` của PostgreSQL. Không gấp.
+24b. **API 44 (danh mục, thương hiệu)** cần trước khi bật danh sách sản phẩm thật — bộ lọc gửi `categoryId`/`brandId` dạng UUID.
 
 **Lead**
 
