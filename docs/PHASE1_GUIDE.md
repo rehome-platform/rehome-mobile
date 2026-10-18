@@ -55,7 +55,7 @@ Nếu không kịp, để sau theo thứ tự: đăng nhập Google thật, đ�
 | Guest đăng ký Member     | AU-03, AU-04 | Thật                                   | ✅ chạy với BE thật           |
 | Guest đăng ký Tổ chức    | OA-01 → 06  | Mock (BE thiếu mật khẩu, upload, trạng thái) | ✅ mock (OA-03 chưa test hết) |
 | Đăng nhập email          | AU-02       | Thật                                    | ✅                            |
-| Đăng nhập Google         | AU-02       | Thật (`/api/auth/google`), chỉ chạy trên dev build | ✅ code + APK · ⏳ chờ BE tạo OAuth client Android |
+| Đăng nhập Google         | AU-02       | Thật (`/api/auth/google`), chỉ chạy trên dev build | ✅ code + APK, client Android đã tạo · ⏳ server 401 — chờ BE sửa `GOOGLE_CLIENT_ID` trên Render (18/10) |
 | Đổi mật khẩu             | AU-07       | Thật                                    | ✅                            |
 | Quên mật khẩu            | AU-05, 06   | Thật (`resend-otp` FORGOT_PASSWORD)     | ✅ [CHỜ BE xác nhận cách dùng] |
 | Member xem/sửa hồ sơ     | Tab, PR-01 → 04 | Thật (ảnh đại diện: Toast "sắp có") | ✅                            |
@@ -1445,5 +1445,5 @@ npx expo start --dev-client                         # mở app "ReHome" trên đ
 **Backend:** đã gửi, đang chờ; danh sách đầy đủ ở mục "Đang chờ xác nhận" trong `CLAUDE.md` (nhãn [CHỜ BE]). Còn hỏi thêm:
 
 1. Upload ảnh/tệp: giới hạn dung lượng, định dạng (mobile đang chặn JPG/PNG/PDF ≤ 5 MB).
-2. ~~Google: Web client ID~~ (đã nhận 17/10) · tạo OAuth client Android (package `com.rehome.mobile` + SHA-1 development, đã gửi 17/10) — **đang chờ**.
-3. Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10): API tạo account tổ chức, `/me` cho tổ chức (role, `verificationStatus`, trạng thái "chưa nộp"), `POST`/`PUT`/`GET /api/organizations/me/registration`, `/uploads` có token, mã `orgType`/`operationScope` — chi tiết ở `CLAUDE.md` "Đang chờ xác nhận".
+2. ~~Google: Web client ID~~ (đã nhận 17/10) · ~~OAuth client Android~~ (BE tạo 17/10, chạy) · **`GOOGLE_CLIENT_ID` trên Render phải = Web client ID** (18/10 vẫn 401) — **đang chờ**.
+3. Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10; code BE 18/10 chưa đúng — vẫn tạo account mới không mật khẩu; đã gửi lại bản chốt 18/10): API tạo account tổ chức, `/me` cho tổ chức (role, `verificationStatus`, trạng thái "chưa nộp"), `POST`/`PUT`/`GET /api/organizations/me/registration`, `/uploads` có token, mã `orgType`/`operationScope` — chi tiết ở `CLAUDE.md` "Đang chờ xác nhận".

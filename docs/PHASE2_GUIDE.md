@@ -4,7 +4,8 @@
 > Nguồn: _Tài liệu tổng quan_ (F-014…F-031, mục 7, 8, 11, 12), _Thiết kế Database_ (ConsignmentForm, ConsignmentReceipt, Product, PriceChangeLog, EndOfTermDecision), _API_CONTRACT_ (API 14–24, 44, upload), wireframe của lead (bảng **KG-01 → KG-12**).
 > Quy ước giữ nguyên như Phase 1 (`CLAUDE.md`). File này chỉ ghi phần **mới** của Phase 2.
 > Ký hiệu: **[GIẢ ĐỊNH]** = tạm làm vậy, chưa ai chốt · **[CHỜ BE]** = chờ backend · **[CHỜ LEAD]** = chờ lead chốt · **[KIỂM TRA]** = đối chiếu lại code BE trước khi dùng.
-> **Trạng thái BE (đọc 17/10):** `develop` mới nhất là `c62dca4` (16/10), mọi nhánh remote không có commit sau 16/10 → **chưa có controller nào của Phase 2** (API 14–24, 44, `/uploads`). Chỉ có `GET /products` (sàn mua, có envelope, không `/api`). **Entity/DB đã có và khớp guide** (mục 4.1) → mock theo đúng tên field của entity.
+> **Trạng thái BE (đọc lại 18/10, `develop` `1852963`):** vẫn **chưa có controller nào của Phase 2** (API 14–24, 44, `/uploads`). Mới có phần mua hàng Phase 3: `GET /products`, `/cart`, `/addresses` (đủ CRUD), `POST /orders`. **Entity/DB đã có và khớp guide** (mục 4.1) → mock theo đúng tên field của entity.
+> **Tiến độ (18/10): xong toàn bộ UI KG-01 → KG-12 chạy mock** — PR #4 (form KG-01→05 + Google + dev build), #5 (biên nhận KG-06/07), #6 (sản phẩm KG-08→10), #7 (cuối kỳ KG-11/12). **Code trong repo là bản chuẩn**; spec mục 7 là mô tả rút gọn, lệch thì theo code. Còn lại: nối API thật (`feature/consign-real-api`) khi BE có controller, thay điều khoản biên nhận [GIẢ ĐỊNH] bằng nguyên văn mục 12, checklist mục 9 phần BE thật.
 
 ---
 
@@ -21,7 +22,7 @@
 
 | Mã    | Màn hình                                                       | Route đề xuất (dưới `src/app/(member)/`)                      | API        | F                   |
 | ----- | -------------------------------------------------------------- | ------------------------------------------------------------- | ---------- | ------------------- |
-| —     | Tab Ký gửi (2 mục: Form · Sản phẩm)                            | `(tabs)/consign.js` (đã có, đang là EmptyState)               | 16, 21     | F-018, F-024        |
+| —     | Tab Ký gửi (2 mục: Form · Sản phẩm)                            | `(tabs)/consign.js` → `ConsignTabScreen`                      | 16, 21     | F-018, F-024        |
 | KG-01 | Danh sách form (rỗng / có dữ liệu)                             | nằm trong tab, mục "Form ký gửi"                              | 16         | F-016, F-018        |
 | KG-02 | Tạo form — bước 1 (thông tin + ảnh)                            | `consign-forms/new.js`                                        | 44, upload | F-014               |
 | KG-03 | Tạo form — bước 2 (chọn kho)                                   | cùng màn `new.js` (bước 2 của Stepper)                        | 14, 15     | F-015, F-016        |
@@ -62,10 +63,19 @@ Chạy trên Android thật, với mock (`MOCK.consignment = true`) trước, r�
 | 3   | KG-02 lỗi "Thiếu ảnh nhãn mác" (ảnh theo loại)    | Chỉ kiểm số lượng ảnh 1–6 [GIẢ ĐỊNH], ghi hướng dẫn chụp  | API chỉ nhận `photoUrls[]`, không phân loại ảnh                          |
 | 4   | KG-03 có bản đồ                                   | Chỉ danh sách kho                                         | Không có trong phạm vi F-015                                             |
 | 5   | KG-04 nút **Hủy form**; KG-04 Từ chối nút **Xóa** | **Ẩn**                                                    | API_CONTRACT không có endpoint huỷ/xóa form (DB có `CANCELLED`) [CHỜ BE] |
-| 6   | KG-04 Từ chối: "Tạo form mới từ thông tin này"    | Làm được (điền sẵn form mới) **nếu** API 17 trả đủ trường | Xem câu hỏi BE mục 11                                                    |
-| 7   | KG-10 có lịch sử đổi giá                          | Ẩn phần lịch sử                                           | Không có API đọc PriceChangeLog [CHỜ BE]                                 |
-| 8   | KG-12 "Từ chối giá" / "Hủy, nhận lại hàng"        | **Ẩn**                                                    | API 24 chỉ có `decide`, không có từ chối đề xuất / đổi ý [CHỜ BE]        |
+| 6   | KG-04 Từ chối: "Tạo form mới từ thông tin này"    | ✅ Làm (cả form Hết hạn): `new?fromFormId=` điền sẵn từ cache, **chọn kho lại** | Cần API 17 trả đủ trường (câu hỏi BE mục 11)               |
+| 7   | KG-10 có lịch sử đổi giá                          | Hiện **nếu API trả** `priceChanges` (mock có sẵn)         | DB đã có `PriceChangeLog`, chưa có API đọc [CHỜ BE]                      |
+| 8   | KG-12 "Từ chối giá" / "Hủy, nhận lại hàng"; KG-10/12 "Nhắn cho kho" | **Ẩn**                                  | Chưa có API từ chối đề xuất / đổi ý [CHỜ BE]; chưa có chat               |
 | 9   | KG-09 dòng "Thuế khấu trừ"                        | Không hiện                                                | Tài liệu không có thuế trong công thức                                   |
+| 10  | KG-02/03: `select` danh mục/thương hiệu; "Bước 1/2" | `SelectField` (danh sách trượt từ dưới, thương hiệu **tìm không dấu**); chữ "Bước x / 2" + thanh 2 nấc | RN không có `select`; Shopee/Grab dùng bottom sheet          |
+| 11  | KG-02 lỗi validate: nút Tiếp tục mờ               | **Hộp tổng lỗi** ("Còn n mục chưa hợp lệ") + cuộn lên đầu; **nút luôn bấm được** | Thống nhất Phase 1 #12. Áp dụng cả KG-06 (chưa tick → lỗi dưới ô tick) |
+| 12  | KG-07 dialog có bảng số                           | **Modal** riêng, có "bạn nhận …" tính từ giá × (1 − hoa hồng kỳ 1) | `Alert` không hiện bảng được                                     |
+| 13  | KG-06 "Tải bản PDF"                               | Mở bằng `Linking` (trình xem của máy)                     | Không thêm thư viện native → không phải build lại APK                    |
+| 14  | KG-08 là màn riêng có nút "Lọc"                   | Bỏ nút Lọc; **dải đếm** bấm được để lọc nhanh; việc cần làm lên đầu | 4 chip đã là bộ lọc                                          |
+| 15  | KG-09 Đã có đơn: "Theo dõi đơn", 2 nút mờ         | Tiến trình đơn 4 nấc (`OrderStatus`), **không** nút        | Theo dõi đơn là Phase 3; nút mờ gây rối                                  |
+| 16  | KG-11: chưa vẽ bước sau khi chọn "Nhận lại hàng"  | Trạng thái mới **"Chờ nhận lại"** (`PRODUCT_VIEW.PICKUP`): đến kho trong 7 ngày [GIẢ ĐỊNH] + nút Mã Member | Không có thì sản phẩm vẫn hiện "Chờ cuối kỳ" dù đã chọn |
+| 17  | KG-12 ghi chú "Đổi ý lúc nào cũng được: bấm Huỷ…" | Đổi thành "Hàng vẫn giữ tại kho… kho đề xuất giá thì bạn xác nhận biên nhận mới" | Nút Huỷ đã ẩn (#8)                                    |
+| 18  | KG-06 Điều 4–7, 9, 10                             | ⚠️ Bản tóm tắt **[GIẢ ĐỊNH]** (`features/consignment/receiptTerms.js`) | Chưa có nguyên văn mục 12 Tài liệu tổng quan — **phải thay trước demo** [CHỜ LEAD] |
 
 ---
 
@@ -73,13 +83,13 @@ Chạy trên Android thật, với mock (`MOCK.consignment = true`) trước, r�
 
 Mỗi việc một nhánh từ `develop` (như Phase 1). Thứ tự đề xuất:
 
-| Thứ tự | Nhánh                         | Nội dung                                                              | Ngày (gợi ý) |
-| ------ | ----------------------------- | --------------------------------------------------------------------- | ------------ |
-| 1      | `feature/consign-form`        | constants, api mock, tab Ký gửi, KG-01 → KG-05                        | 20–23/10     |
-| 2      | `feature/consign-receipt`     | KG-06, KG-07, mở PDF                                                  | 24–25/10     |
-| 3      | `feature/consign-products`    | KG-08, KG-09, KG-10                                                   | 25–27/10     |
-| 4      | `feature/consign-end-of-term` | KG-11, KG-12                                                          | 27–28/10     |
-| 5      | `feature/consign-real-api`    | `*.real.js`, tắt `MOCK.consignment`, test với Moderator thật trên web | 28–30/10     |
+| Thứ tự | Nhánh                         | Nội dung                                                              | Trạng thái |
+| ------ | ----------------------------- | --------------------------------------------------------------------- | ---------- |
+| 1      | `feature/consign-form`        | constants, api mock, tab Ký gửi, KG-01 → KG-05 (+ gộp `feature/google-login`) | ✅ PR #4 (17/10) |
+| 2      | `feature/consign-receipt`     | KG-06, KG-07, mở PDF, chia sẻ                                         | ✅ PR #5 (18/10) |
+| 3      | `feature/consign-products`    | KG-08, KG-09, KG-10                                                   | ✅ PR #6 (18/10) |
+| 4      | `feature/consign-end-of-term` | KG-11, KG-12, trạng thái "Chờ nhận lại"                               | ✅ PR #7 (18/10) |
+| 5      | `feature/consign-real-api`    | `*.real.js`, tắt `MOCK.consignment`, test với Moderator thật trên web | ⏳ chờ BE (dự kiến 28–30/10) |
 
 ```bash
 git checkout develop && git pull
@@ -92,7 +102,7 @@ Việc Phase 1 còn dở (tổ chức, Google) vẫn ở nhánh riêng của nó
 
 | Nhánh | Việc | Ước lượng | Khi nào |
 | --- | --- | --- | --- |
-| `feature/google-login` (đã có, chưa PR) | Test 8 bài (PHASE1_GUIDE AU-02 Google) → PR | ~0,5 ngày | BE tạo xong OAuth client Android |
+| ~~`feature/google-login`~~ (code đã vào `develop` qua PR #4) | Test 8 bài (PHASE1_GUIDE AU-02 Google) — **không cần sửa code** | ~0,5 ngày | BE đặt `GOOGLE_CLIENT_ID` trên Render = **Web client ID** rồi redeploy (đang đặt nhầm ID Android → 401 "Token không hợp lệ") |
 | `feature/org-real-api` | Tổ chức "tạo account trước" — 9 việc trong `CLAUDE.md` → "Tiến độ" | ~2 ngày | BE push API account tổ chức + `/me` + registration + `/uploads` |
 
 Đang làm dở nhánh Phase 2 mà phải chuyển: commit (hoặc `git stash`) trước → `git checkout develop && git pull` → tạo nhánh kia → xong quay lại `git checkout feature/consign-…`.
@@ -101,16 +111,16 @@ Việc Phase 1 còn dở (tổ chức, Google) vẫn ở nhánh riêng của nó
 
 ## 2. Thư viện mới
 
-| Thư viện            | Dùng cho                              | Cài                                                                                             |
+| Thư viện            | Dùng cho                              | Trạng thái                                                                                      |
 | ------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `expo-location`     | Lấy vị trí cho "kho gần nhất" (KG-03) | `npx expo install expo-location`                                                                |
-| `expo-web-browser`  | Mở PDF biên nhận (KG-06)              | `npx expo install expo-web-browser` (có thể đã có sẵn trong template — kiểm tra `package.json`) |
-| `expo-image-picker` | Chọn ảnh form (đã có từ Phase 1)      | —                                                                                               |
+| `expo-location`     | Lấy vị trí cho "kho gần nhất" (KG-03) | ✅ đã cài + plugin + **build lại dev APK** (17/10)                                               |
+| ~~`expo-web-browser`~~ | Mở PDF biên nhận (KG-06)           | **Không dùng** — mở bằng `Linking.openURL` (không phải build lại)                               |
+| `expo-image-picker` | Chọn / chụp ảnh form (đã có từ Phase 1) | Câu xin quyền camera/thư viện đã sửa nhắc cả ảnh sản phẩm ký gửi                              |
 | `dayjs`             | Đếm ngày còn lại (đã có)              | —                                                                                               |
 
 Chia sẻ PDF dùng `Share` có sẵn của React Native, không cần thêm thư viện.
 
-Sau khi cài `expo-location`, thêm lời xin quyền vào `app.json` (plugin), rồi **build lại dev build** (thư viện có native — Expo Go chạy được nhưng dev build của bạn cần build lại):
+Đã làm: cài `expo-location`, thêm lời xin quyền vào `app.json` (plugin), **build lại dev build**. Thư viện native mới → app ReHome bản cũ sẽ crash khi mở nếu code import nó; trong lúc chờ build thì test bằng Expo Go:
 
 ```json
 "plugins": [
@@ -126,44 +136,46 @@ Dùng vị trí chỉ khi đang mở app (foreground), **không** xin quyền n�
 
 ## 3. Cấu trúc thư mục thêm mới
 
+**Như đã làm (18/10):**
+
 ```
 src/
-├─ lib/api/upload.js                  # uploadFile dùng chung (chuyển từ organization sang) — real/mock theo MOCK.upload
-├─ lib/api/upload.mock.js
-├─ constants/consignment.js          # enum trạng thái, nhãn, giới hạn
-├─ utils/money.js                     # formatVnd, parseVnd (nếu chưa có)
-├─ utils/consignment.js               # tính tiền nhận, đếm ngày còn lại
-├─ features/consignment/
-│  ├─ api/
-│  │  ├─ consignmentApi.js            # chọn real/mock theo MOCK.consignment
-│  │  ├─ consignmentApi.real.js
-│  │  ├─ consignmentApi.mock.js
-│  │  ├─ mockData.js                  # dữ liệu mẫu đủ mọi trạng thái
-│  │  └─ queryKeys.js
-│  ├─ schemas.js                      # zod cho form ký gửi, giảm giá
-│  ├─ components/
-│  │  ├─ StatusBadge.js
-│  │  ├─ FormCard.js  ProductCard.js
-│  │  ├─ PhotoPicker.js               # lưới ảnh 1–6
-│  │  ├─ MoneyField.js                # TextField số + định dạng đ
-│  │  ├─ WarehouseOption.js
-│  │  ├─ PayoutBreakdown.js           # Giá bán − hoa hồng = bạn nhận
-│  │  ├─ Timeline.js                  # tiến trình dọc KG-04/KG-12
-│  │  └─ DeadlineBanner.js            # "Còn X ngày…"
-│  └─ screens/
-│     ├─ ConsignTabScreen.js
-│     ├─ FormListSection.js  ProductListSection.js
-│     ├─ CreateFormScreen.js  EditFormScreen.js  FormDetailScreen.js
-│     ├─ ReceiptScreen.js
-│     ├─ ProductDetailScreen.js  ReducePriceScreen.js
-│     └─ EndOfTermScreen.js  ReconsignScreen.js
-└─ app/(member)/
-   ├─ consign-forms/new.js  [id]/index.js  [id]/edit.js
-   ├─ receipts/[id].js
-   └─ my-products/[id]/index.js  reduce-price.js  end-of-term.js  reconsign.js
+├─ lib/api/upload.js · upload.mock.js  # uploadFile dùng chung (chuyển từ organization); mock trả lại uri → ảnh vẫn hiện
+├─ components/ui/                      # dùng chung mới: SelectField · MoneyField · StatusTimeline (chuyển từ organization)
+│                                      #   TextField thêm `suffix`; Screen thêm `scrollRef`
+├─ constants/consignment.js           # FORM_STATUS(+_LABEL) · PRODUCT_STATUS · END_OF_TERM_DECISION · PRODUCT_VIEW(+_LABEL)
+│                                      # PRODUCT_ENDED_LABEL · ORDER_STEPS · CONSIGN_LIMITS
+├─ constants/errorCodes.js            # + TOO_MANY_PENDING_FORMS · FORM_NOT_EDITABLE · BELOW_FLOOR_PRICE
+│                                      #   PRICE_CHANGE_LIMIT_REACHED · DECISION_EXPIRED · GOOGLE_ACCOUNT_CONFLICT
+├─ utils/money.js                      # formatNumber · formatVnd · parseVnd
+├─ utils/consignment.js                # calcPayout · formatRate · daysLeft · totalTermDays · commissionRates
+│                                      # getProductView · PRODUCT_VIEW_ORDER · productTiming · currentRate
+├─ features/catalog/                   # api/catalogApi(.mock).js (API 44) · hooks/useCatalogOptions.js
+└─ features/consignment/
+   ├─ api/ consignmentApi.js (= mock) · consignmentApi.mock.js · mockData.js · queryKeys.js
+   ├─ hooks/usePendingFormCount.js     # API 16 lọc PENDING size 1 → totalElements
+   ├─ utils/photos.js                  # uploadPhotos: URL cũ giữ nguyên, ảnh mới mới upload
+   ├─ schemas.js                       # consignFormSchema · STEP1_FIELDS · formToValues · makeReducePriceSchema
+   ├─ receiptTerms.js                  # ⚠️ Điều 4–7, 9, 10 [GIẢ ĐỊNH]
+   ├─ components/
+   │  ├─ FormListSection · FormCard · StatusBadge                   # KG-01
+   │  ├─ ConsignFormFields · PhotoPicker · WarehouseStep            # KG-02/03/05
+   │  ├─ KeyValueTable · ReceiptConfirmModal                        # KG-06/07
+   │  ├─ ProductListSection · ProductCard · ProductBadge            # KG-08
+   │  ├─ PayoutBreakdown · TermProgress · PickupInfo                # KG-09/10/11
+   └─ screens/
+      ├─ ConsignTabScreen · CreateFormScreen · FormDetailScreen · EditFormScreen
+      ├─ ReceiptScreen · ProductDetailScreen · ReducePriceScreen
+      └─ EndOfTermScreen · ReconsignScreen
+src/app/(member)/
+├─ consign-forms/new.js · [id]/index.js · [id]/edit.js
+├─ receipts/[id].js
+└─ my-products/[id]/index.js · reduce-price.js · end-of-term.js · reconsign.js
 ```
 
-Danh mục/thương hiệu (`GET /categories`, `/brands`) là API dùng chung cho cả sàn mua (Phase 3) → nên để ở `features/catalog/api/` thay vì nhét vào consignment. Kho (`/warehouses/nearest`) để trong consignment là đủ.
+- Danh mục/thương hiệu (`GET /categories`, `/brands`) để ở `features/catalog/` vì sàn mua (Phase 3) dùng chung.
+- `FormListSection`, `ProductListSection` đặt trong `components` (là một phần của màn tab, không phải màn riêng).
+- `consignmentApi.real.js` **chưa tạo** — làm ở nhánh `feature/consign-real-api` khi BE có controller.
 
 ---
 
@@ -330,7 +342,13 @@ Upload ảnh: **một** hàm `uploadFile(file)` dùng chung ở `src/lib/api/upl
 - `decideEndOfTerm`: quá `deadline` → 409 `DECISION_EXPIRED`; `RE_CONSIGN` → sản phẩm sang "Chờ chốt giá", sau đó (giả lập Moderator) có `newReceiptId`.
 - Mỗi hàm `await sleep(400–800ms)` để thấy trạng thái loading.
 
-Gợi ý nhỏ: thêm một dòng ẩn trong màn **Cài đặt** (chỉ hiện khi `__DEV__`) "Mock: Moderator duyệt form / đề xuất giá" để chuyển trạng thái khi demo mà không cần web. Không bắt buộc.
+**Như đã làm:**
+
+- Dữ liệu mẫu (`mockData.js`): 5 form (`form-001` Đã duyệt có biên nhận `rc-001` chờ xác nhận, 2 Chờ duyệt, 1 Bị từ chối, 1 Hết hạn), 3 kho TP.HCM, 6 sản phẩm (Kỳ 1, Kỳ 3 còn 4 ngày, Đã có đơn, Chờ cuối kỳ, Chờ chốt giá, Đã bán). Ngày tính theo **hôm nay** nên "còn X ngày" luôn đúng.
+- `confirmReceipt`: biên nhận ký gửi lại (có `productId`) → sản phẩm lên sàn lại (kỳ 1, giá mới); có `formId` → form `receiptConfirmed: true`.
+- `decideEndOfTerm`: `TAKE_BACK` → gắn `pickupDeadline` = +7 ngày [GIẢ ĐỊNH].
+- **`mockProposeNewPrice(productId)`** [chỉ mock]: giả lập Moderator đề xuất giá (−20%) + tạo biên nhận mới. Gọi từ nút **"[Dev] Giả lập kho đề xuất giá"** ở KG-12, chỉ hiện khi `__DEV__ && MOCK.consignment` (bản build thật / nối BE thật thì tự ẩn).
+- Chưa giả lập được: Moderator duyệt / từ chối form, `FORM_NOT_EDITABLE`, `DECISION_EXPIRED` (test khi có BE + web).
 
 ### 5.5. React Query
 
@@ -592,18 +610,19 @@ Chạy trên Android thật. Ghi ✅ khi qua.
 
 **Mock (`MOCK.consignment = true`)**
 
-- [ ] Guest mở tab Ký gửi → thẻ mời đăng nhập.
-- [ ] Danh sách form: đủ 4 trạng thái, lọc chip đúng, kéo tải lại, trạng thái rỗng (tạm xoá dữ liệu mock để thử).
-- [ ] Tạo form: bỏ trống hết bấm Tiếp tục → hộp tổng lỗi + lỗi từng ô; giá `0` bị chặn; chọn 6 ảnh thì ô "+" biến mất.
-- [ ] Bước 2: cho phép vị trí → danh sách kho có km; từ chối vị trí → vẫn chọn được kho, có thông báo.
-- [ ] Gửi form thứ 6 khi đã có 5 chờ → báo lỗi đúng, không treo loading.
-- [ ] Chi tiết form 4 trạng thái; Đã duyệt → Mã Member mở PR-04; có biên nhận → mở KG-06.
-- [ ] Sửa form: dữ liệu điền sẵn; nút Lưu disabled khi chưa sửa; form không còn PENDING → toast + quay lại.
-- [ ] Biên nhận: chưa tick không bấm được; dialog đúng số tiền; xác nhận xong đổi trạng thái; mở PDF được; Chia sẻ mở bảng chia sẻ.
-- [ ] Sản phẩm: 4 kiểu thẻ; chi tiết Kỳ 1, Kỳ 3 (banner), Đã có đơn (không giảm giá được), Chờ cuối kỳ.
-- [ ] Giảm giá: số "bạn nhận" đổi theo khi gõ; ≥ giá hiện tại bị chặn; < giá sàn hiện trạng thái Dưới giá sàn; "Về giá sàn" điền đúng; đổi lần 2 trong ngày → trạng thái Đã đổi hôm nay.
-- [ ] Cuối kỳ: chưa chọn không bấm được; Nhận lại → hướng dẫn + Mã Member; Ký gửi lại → màn Chờ chốt giá → (giả lập) biên nhận mới → xác nhận.
-- [ ] Mất mạng (bật chế độ máy bay) ở 1 màn danh sách và 1 màn mutation → thông báo lỗi mạng, bấm thử lại được.
+- [x] ✅ Guest mở tab Ký gửi → thẻ mời đăng nhập.
+- [x] ✅ Danh sách form: đủ 4 trạng thái, lọc chip đúng, kéo tải lại. (Trạng thái rỗng: thử bằng `let forms = []`.)
+- [x] ✅ Tạo form: bỏ trống bấm Tiếp tục → hộp tổng lỗi + lỗi từng ô; giá `0` bị chặn; đủ 6 ảnh thì ô "+" biến mất.
+- [x] ✅ Bước 2: cho phép vị trí → danh sách kho có km, kho gần nhất chọn sẵn. (Từ chối vị trí: chưa thử.)
+- [x] ✅ Đủ 5 form chờ → "+ Tạo form" báo "Chưa tạo thêm được"; vào thẳng màn tạo → màn chặn.
+- [x] ✅ Chi tiết form 4 trạng thái; Đã duyệt → Mã Member; có biên nhận → KG-06; đã xác nhận → tiến trình hoàn tất.
+- [x] ✅ Sửa form: dữ liệu điền sẵn; Lưu mờ khi chưa sửa; lưu xong cập nhật chi tiết + danh sách. Tạo lại từ form Bị từ chối / Hết hạn.
+- [x] ✅ Biên nhận: chưa tick → lỗi dưới ô tick; dialog đúng số tiền; xác nhận xong đổi trạng thái; mở PDF; Chia sẻ.
+- [x] ✅ Sản phẩm: dải đếm + 4 chip; chi tiết Kỳ 1, Kỳ 3 (banner), Đã có đơn (tiến trình, số tiền đã chốt), Chờ cuối kỳ, Chờ chốt giá, Đã bán.
+- [x] ✅ Giảm giá: "bạn nhận" đổi theo khi gõ; ≥ giá hiện tại bị chặn; < giá sàn → trạng thái Dưới giá sàn; "Về giá sàn"; đổi xong vào lại → Đã đổi hôm nay + lịch sử.
+- [x] ✅ Cuối kỳ: chọn sẵn theo nút bấm; Nhận lại → "Chờ nhận lại" + Mã Member; Ký gửi lại → Chờ chốt giá → [Dev] giả lập → biên nhận mới → xác nhận → lên sàn lại kỳ 1.
+- [ ] Mất mạng (bật chế độ máy bay) ở 1 màn danh sách và 1 màn mutation → thông báo lỗi mạng, bấm thử lại được. (Mock không gọi mạng → thử khi nối BE thật.)
+- [ ] Từ chối quyền vị trí ở bước 2 → NoteBox "Bật quyền vị trí…", vẫn chọn được kho.
 
 **BE thật (28–30/10)** — cùng danh sách, cộng:
 
@@ -646,9 +665,16 @@ Mô tả PR có các mục: Đã làm · Đang dùng mock (chờ BE) · Lệch s
 12. Ký gửi lại: Member **từ chối giá** đề xuất / **đổi ý sang nhận lại** gọi API nào? (KG-12)
 13. Bảng `PriceChangeLog` đã có trong DB — có **API đọc** lịch sử đổi giá / giá theo kỳ không? (KG-10, KG-09 cuối kỳ) — không có thì app ẩn.
 14. Giới hạn validation: số ảnh tối thiểu/tối đa, độ dài tên/mô tả.
+15. **API 19** có `formId` (biên nhận lần đầu) hoặc `productId` (biên nhận ký gửi lại) không? Với ký gửi lại: `previousPrice`, `moderatorNote`.
+16. **API 17** có cờ biên nhận đã xác nhận chưa (mobile đang dùng `receiptConfirmed`)?
+17. Chọn **Nhận lại hàng** (`TAKE_BACK`): hạn đến kho lấy hàng bao lâu (mobile giả định 7 ngày, theo KG-11)? Trả về field gì (mobile đang dùng `pickupDeadline`)? `ProductStatus` khi đang chờ lấy?
+18. Đơn hàng trong API 22 (RESERVED): `order {code, status, lockedCommissionRate, orderedTerm, orderedDay}` — tên field thật?
+19. Danh sách sản phẩm: số đếm theo nhóm (Đang bán / Đã có đơn / Chờ cuối kỳ) để không phải tải hết.
 
 **Lead**
 
-15. Gộp KG-01 và KG-08 vào tab Ký gửi (2 mục) — đồng ý?
-16. Bỏ ô Kích cỡ/Tình trạng ở KG-02 (DB không có), hướng dẫn ghi vào Mô tả — đồng ý? Hay xin BE thêm cột?
-17. Ảnh theo loại (mặt trước/sau/nhãn mác/tem) có bắt buộc không? Nếu có thì cần BE phân loại ảnh.
+20. Gộp KG-01 và KG-08 vào tab Ký gửi (2 mục) — đồng ý?
+21. Bỏ ô Kích cỡ/Tình trạng ở KG-02 (DB không có), hướng dẫn ghi vào Mô tả — đồng ý? Hay xin BE thêm cột?
+22. Ảnh theo loại (mặt trước/sau/nhãn mác/tem) có bắt buộc không? Nếu có thì cần BE phân loại ảnh.
+23. **Nguyên văn mục 12** (mẫu biên nhận) Tài liệu tổng quan để thay Điều 4–7, 9, 10 đang tạm (`receiptTerms.js`).
+24. Duyệt các chỗ lệch #10–#18 ở bảng 0.4 (đặc biệt #16 trạng thái "Chờ nhận lại").
