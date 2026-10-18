@@ -5,7 +5,7 @@
 > Quy ước giữ nguyên như `CLAUDE.md` và PHASE2_GUIDE. File này chỉ ghi phần **mới**.
 > Ký hiệu: **[GIẢ ĐỊNH]** · **[CHỜ BE]** · **[CHỜ LEAD]** · **[KIỂM TRA]** (đối chiếu code BE trước khi dùng).
 > **Trạng thái BE (đã đọc code 19/10 tại `develop` `1852963` — kết quả ở mục 5.2 + 5.2b):** có thật `GET /products` (public), `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}`, `GET/POST/PUT/DELETE /addresses`, `POST /orders`. **Chưa có:** `GET /products/{id}` (API 50 — chi tiết sản phẩm!), checkout-preview (58), thanh toán (60), webhook MoMo (61), xem đơn (63). Có mấy điểm BE làm **khác contract** ảnh hưởng luồng giỏ → đặt hàng (mục 5.2b) — đọc trước khi code.
-> **Tiến độ (19/10):** ✅ Nhánh 1 `feature/shop-browse` (BR-01 → BR-04) đã merge `develop` — PR #10, chạy mock (mục 5.1). ⏳ Nhánh 2 `feature/cart-address` (BR-05 → BR-07).
+> **Tiến độ (19/10):** ✅ Nhánh 1 `feature/shop-browse` (BR-01 → BR-04) — PR #10, mock. ✅ Nhánh 2 `feature/cart-address` (BR-05 → BR-07) — PR #12: giỏ **mock** (chờ BE có sản phẩm mẫu), địa chỉ **API thật**. ⏳ Nhánh 3 `feature/checkout-payment` (BR-08, BR-09).
 
 ---
 
@@ -72,6 +72,9 @@ Chạy trên Android thật; phần BE đã có thì gọi thật, phần chưa 
 | 15  | BR-04 "Không khả dụng" là một trang khác hẳn (thẻ nhỏ, không ảnh)                      | **Một bố cục chung** cho mọi trạng thái: ảnh mờ + nhãn góc (ĐANG GIỮ HÀNG / ĐÃ BÁN / NGỪNG BÁN) + khối giải thích; thêm "Ngừng bán" cho WITHDRAWN… | Người mở lại từ giỏ / link cũ cần nhìn thấy đó là món nào (Vinted, Shopee giữ nguyên trang)                                                           |
 | 16  | BR-04 nhãn "ĐANG BÁN", "Hàng chính hãng", SKU                                          | Bỏ cả 3                                                                                                                          | Mọi món trên sàn đều đang bán; BE không có trường xác nhận chính hãng / SKU (app không tự khẳng định)                                                 |
 | 17  | Guest bấm mua → đăng nhập                                                              | Đăng nhập xong **mở lại đúng sản phẩm** (`stores/pendingRedirect.js`, hết hạn 10 phút), không tự thêm vào giỏ hộ                 | Expo Router đưa về trang chủ khi nhóm `(auth)` đóng; tránh thêm nhầm                                                                                  |
+| 18  | BR-05 nút "Đặt 2 món còn lại", tạm tính theo món còn mua được                          | Giữ ô tích từng món / cả kho; **tạm tính, số đơn, dải "tách n đơn" và nút "Đặt hàng (k)" theo món đang tích**; tiền tự cộng trên app (không dùng `totalAmount` BE) | Có ô tích thì con số phải theo lựa chọn (Shopee); BE đặt được tập con qua `productIds` (5.2b #2)                                                       |
+| 19  | BR-05 dòng "Thương hiệu · Size · Tình trạng"                                           | Chỉ hiện Size (dùng `metaLine` — BE trả thêm thì tự hiện)                                                                        | `GET /cart` chưa trả `brandName`, `condition` (câu 21b)                                                                                               |
+| 20  | BR-07 sửa địa chỉ mặc định                                                             | Ô "mặc định" **khoá** khi đang sửa địa chỉ mặc định (đổi bằng "Đặt làm mặc định" ở địa chỉ khác)                                 | BE cho bỏ cờ mặc định → Member sẽ không còn địa chỉ mặc định nào. (Tỉnh/Phường: xem #5 — từ 01/07/2025 VN bỏ cấp quận/huyện, wireframe còn ô Quận/Huyện) |
 
 ---
 
@@ -83,7 +86,7 @@ Mỗi việc một nhánh từ `develop`:
 | ------ | ------------------------------------ | --------------------------------------------------- | ------------ |
 | 0      | —                                    | ✅ Đã đọc code BE, điền mục 5.2 + 5.2b (19/10)      | 19/10        |
 | 1      | `feature/shop-browse`                | ✅ api products (mock), BR-01 → BR-04 — PR #10      | 19/10        |
-| 2      | `feature/cart-address`               | BR-05 → BR-07, badge giỏ, quay lại sau đăng nhập    | 22–23/10     |
+| 2      | `feature/cart-address`               | ✅ BR-05 → BR-07, badge giỏ — PR #12                | 19/10        |
 | 3      | `feature/checkout-payment`           | BR-08, BR-09, `checkoutStore`, mock thanh toán      | 24–26/10     |
 | 4      | `feature/payment-momo`               | MoMo sandbox thật (khi BE có API 60/61)             | khi BE xong  |
 | —      | `feature/consign-real-api` (Phase 2) | nối API ký gửi thật                                 | 28–30/10     |
@@ -120,15 +123,16 @@ src/
 │  ├─ components/ ProductCard.js (+ metaLine) · ProductGrid.js · PriceTag.js · PhotoCarousel.js
 │  │              SimilarProducts.js · FilterSheet.js · ActiveFilterChips.js · MockStatusPanel.js (chỉ __DEV__)
 │  └─ screens/ ShopHomeScreen.js · SearchScreen.js · ProductDetailScreen.js
-├─ features/cart/
-│  ├─ api/ cartApi.js · cartApi.real.js · cartApi.mock.js
-│  ├─ hooks/ useCart.js · useAddToCart.js
-│  ├─ components/ CartButton.js (icon + badge) · CartItemRow.js · WarehouseGroup.js · PendingPaymentBanner.js
+├─ features/cart/                    # ✅ nhánh 2
+│  ├─ api/ cartApi.js · cartApi.real.js · cartApi.mock.js (dựng từ mockFindProduct của productsApi.mock) · queryKeys.js
+│  ├─ hooks/ useCart.js (useCart, cartItems, useAddToCart, useRemoveCartItem)
+│  ├─ components/ CartButton.js (icon + badge) · CartItemRow.js · WarehouseGroup.js · PendingPaymentBanner.js (nhánh 3)
 │  └─ screens/ CartScreen.js
-├─ features/addresses/
+├─ features/addresses/               # ✅ nhánh 2
 │  ├─ api/ addressApi.js · addressApi.real.js
+│  ├─ hooks/ useAddresses.js (addressKeys, useAddresses — mặc định lên đầu, useSaveAddress, useDeleteAddress)
 │  ├─ schemas.js
-│  ├─ components/ AddressCard.js · AddressFormFields.js
+│  ├─ components/ AddressCard.js
 │  └─ screens/ AddressListScreen.js · AddressFormScreen.js (dùng cho cả thêm và sửa)
 └─ features/orders/                  # Phase 4 mở rộng thêm danh sách / chi tiết đơn
    ├─ api/ ordersApi.js · ordersApi.real.js · ordersApi.mock.js · paymentApi.js · paymentApi.real.js · paymentApi.mock.js
@@ -212,7 +216,7 @@ export const MOCK = {
   // Phase 3
   products: true, // ✅ đang dùng. [TẠM] GET /products thật đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → gửi id giả lên BE sẽ lỗi (BE nhận UUID); sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng
   productDetail: true, // ✅ đang dùng. [CHỜ BE] API 50 GET /products/{id}
-  cart: false, // nhánh 2: /cart thật
+  cart: true, // ✅ đang dùng. [TẠM] đi CÙNG products: id món mock (sp-001…) gửi lên BE sẽ 404; DB Render chưa có sản phẩm. BE tạo sản phẩm mẫu → đổi products + cart = false cùng lúc
   orders: false, // nhánh 3: POST /orders thật; getCheckoutPreview / getOrder chưa có → tự tính / mock trong ordersApi (5.2b)
   payment: true, // API 60/61 chưa có
 };
@@ -224,7 +228,9 @@ Một nhóm API có hàm thật và hàm chưa có: file `*.js` chọn **từng 
 
 **Khung Mock ở BR-04** (`MockStatusPanel`, chỉ `__DEV__ && MOCK.productDetail`): cuối màn chi tiết có chip Đang bán / Giữ hàng / Đã bán / Ngừng bán đổi trạng thái món trong dữ liệu mock (món rời sàn thật như bị người khác mua; reload app để về như cũ) + link mở sản phẩm 404. Dữ liệu mock có thêm `sp-reserved`, `sp-sold`.
 
-`addressApi` chỉ có `*.real.js` (API đã đủ CRUD từ 18/10) — giống `profileApi` ở Phase 1.
+`addressApi` chỉ có `*.real.js` (API đã đủ CRUD từ 18/10) — giống `profileApi` ở Phase 1. ✅ Đã test trên server thật 19/10.
+
+**Giỏ mock:** sẵn 4 món (2 ở Kho Quận 1, 1 ở Kho Bình Thạnh, 1 đã bán `sp-sold`) để thấy đủ trạng thái; dựng từ cùng dữ liệu với `productsApi.mock` → đổi trạng thái món bằng khung Mock ở BR-04 thì giỏ cũng đổi theo (`MockStatusPanel` invalidate cả `["cart"]`). Reload app → về giỏ mẫu.
 
 ### 5.2. Bảng API Phase 3 (theo API_CONTRACT, cột "BE thật" = đọc code `develop` `1852963` ngày 19/10)
 
@@ -416,27 +422,29 @@ Nguồn: API 50. Header: ← · Chia sẻ · `CartButton`.
 
 - Header: ← · "Giỏ hàng (n)".
 - `PendingPaymentBanner` (mục 0.4 #11): `checkoutStore` có đơn chờ trả còn hạn → dải "Bạn có n đơn chờ thanh toán — còn mm:ss" + "Thanh toán" → `payment`. Hết hạn → tự ẩn.
-- Có từ 2 kho → NoteBox: "Hàng của bạn ở n kho khác nhau, sẽ tách thành n đơn và tính phí vận chuyển riêng."
-- Có món không khả dụng → ErrorBox nhẹ: "k món không còn mua được. Các món còn lại vẫn đặt bình thường."
-- `WarehouseGroup` theo `groupedByWarehouse`: tiêu đề "Kho Quận 7 · 2 món" → `CartItemRow` (ảnh, tên, "Thương hiệu · Size · Tình trạng", giá, nút ✕).
-  - Món có `unavailableReason` → mờ, nhãn `unavailableLabel(reason)`, không tính tiền, vẫn có ✕.
-  - Bấm hàng → `products/[id]`.
-  - ✕ → `Alert` "Xoá khỏi giỏ?" → API 53 → làm mới giỏ.
-- NoteBox cuối danh sách: "Mỗi món là hàng ký gửi duy nhất, không có số lượng. Thêm vào giỏ chưa giữ chỗ — ai thanh toán trước thì được."
-- Footer cố định: "Tạm tính k món · 1.970.000 đ" + "Chưa gồm phí vận chuyển của n đơn" + nút **Đặt hàng** (có món không khả dụng → **Đặt k món còn lại**). Không còn món mua được → nút mờ.
-- Tạm tính: dùng `totalAmount` của BE (contract đã loại món không khả dụng); số món tự đếm các món `unavailableReason == null`.
-- **Rỗng:** `EmptyState` "Giỏ hàng đang trống" + nút "Khám phá sản phẩm" → tab Mua sắm.
+✅ Đã làm (nhánh 2, mock):
+
+- **Ô tích** (0.4 #18): state `excluded` = các món Member **bỏ tích** → món mới vào giỏ mặc định được tích, món vừa thành không khả dụng tự bị loại. Ô tích nhóm kho = tích/bỏ mọi món còn mua được trong kho. `Checkbox` có thêm `disabled`, `accessibilityLabel`, cho phép không kèm chữ.
+- Dải đầu giỏ: "k món không còn mua được. Các món còn lại vẫn đặt bình thường." · "Hàng của bạn ở n kho khác nhau, sẽ tách thành n đơn…" (n = số kho có món **đang tích**).
+- `WarehouseGroup`: "Kho Quận 1 · 2 món" / "· 1 món đặt được" → `CartItemRow` (ô tích, ảnh, tên, `metaLine` — hiện chỉ Size, giá, nút ✕).
+  - Món có `unavailableReason` → nền xám, ảnh mờ, giá gạch, nhãn `unavailableLabel(reason)`, ô tích khoá, vẫn có ✕.
+  - Bấm hàng → `products/[id]`. ✕ → `Alert` "Xoá khỏi giỏ?" → API 53 → làm mới giỏ.
+- NoteBox cuối danh sách: "Mỗi món là hàng ký gửi duy nhất… ai thanh toán trước thì được." (+ câu giải thích món không khả dụng nếu có).
+- Footer: "Tạm tính k món · 1.970.000 đ" (tự cộng `currentPrice` món đang tích) + "Chưa gồm phí vận chuyển của n đơn" + **Đặt hàng (k)** (không tích món nào → mờ + "Tích chọn món để đặt hàng"). Nhánh 3: bấm → `checkout` với danh sách `productIds` đang tích.
+- **Rỗng:** `EmptyState` "Giỏ hàng đang trống" + "Khám phá sản phẩm" → `router.dismissTo("/")`.
+- Nút giỏ (`CartButton`): header BR-01, BR-04; badge = số món trong giỏ (kể cả không khả dụng), đỏ, "99+"; Guest → `setPendingRedirect("/cart")` → đăng nhập.
+- BR-04: món đã có trong giỏ → "Xem giỏ hàng"; thêm xong `showToast`; 409 → invalidate chi tiết + toast message BE.
 
 ### BR-06 · Địa chỉ giao hàng (`addresses/index.js`)
 
 Hai chế độ:
 
-- **Quản lý** (mở từ Cá nhân → "Địa chỉ" — bật dòng này ở PR-01, đang "Sắp có"): xem, sửa, xoá, đặt mặc định.
-- **Chọn** (`addresses?select=1` từ checkout): bấm thẻ → ghi `checkoutStore.setAddressId(id)` → `router.back()`. Thẻ đang chọn có viền đậm.
+- **Quản lý** ✅ (Cá nhân → "Địa chỉ giao hàng", đã bỏ khỏi nhóm "Sắp có"): xem, sửa, xoá, đặt mặc định.
+- **Chọn** (nhánh 3, `addresses?select=1` từ checkout): bấm thẻ → ghi `checkoutStore.setAddressId(id)` → `router.back()`. Thẻ đang chọn có viền đậm.
 
-`AddressCard`: tên người nhận + nhãn "MẶC ĐỊNH" · SĐT `formatPhone` · địa chỉ. Hành động: **Sửa** · **Đặt làm mặc định** (ẩn nếu đang là mặc định) · **Xoá** (ẩn ở địa chỉ mặc định; thay bằng chữ mờ "Không xoá được địa chỉ mặc định").
+`AddressCard`: tên người nhận + nhãn "MẶC ĐỊNH" (thẻ viền đậm) · SĐT `formatPhone` · địa chỉ. Hành động: **Sửa** · **Đặt làm mặc định** (ẩn nếu đang là mặc định) · **Xoá** (ẩn ở địa chỉ mặc định; thay bằng chữ mờ "Không xoá được địa chỉ mặc định"). Thẻ đang lưu / xoá → khoá nút.
 
-- Đặt mặc định → `updateAddress(id, {...address, isDefault: true})` [KIỂM TRA BE tự bỏ mặc định ở địa chỉ cũ].
+- Đặt mặc định → `updateAddress(id, {...address, isDefault: true})` — ✅ đã kiểm tra thật: BE tự bỏ mặc định ở địa chỉ cũ. Danh sách sắp mặc định lên đầu (`select`).
 - Xoá → `Alert` xác nhận → API 57.
 - NoteBox: "Tối đa 5 địa chỉ. Đơn đã đặt giữ nguyên địa chỉ lúc đặt, sửa ở đây không ảnh hưởng."
 - Footer: **+ Thêm địa chỉ mới** → `addresses/new`; đủ 5 → nút mờ + chữ "Đã đủ 5 địa chỉ".
@@ -446,9 +454,9 @@ Hai chế độ:
 
 Một màn `AddressFormScreen` dùng cho cả hai (giống `ConsignFormFields` ở Phase 2).
 
-- **Họ tên người nhận \*** · **Số điện thoại \*** (bàn phím số, `/^0\d{9}$/`) · **Địa chỉ cụ thể \*** (nhiều dòng, helper "Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố") · `Checkbox` **Đặt làm địa chỉ mặc định**.
-- Địa chỉ đầu tiên: checkbox tích sẵn và khoá (phải có một mặc định).
-- Sửa: điền sẵn từ cache `addresses` (không cần API chi tiết); nút **Lưu** mờ khi chưa sửa (`isDirty`); ← khi đã sửa → "Bỏ thay đổi?".
+- **Họ tên người nhận \*** · **Số điện thoại \*** (bàn phím số, cho gõ có dấu cách, `/^0\d{9}$/`) · **Địa chỉ cụ thể \*** (nhiều dòng, helper "Số nhà, tên đường, phường/xã, tỉnh/thành phố") · `Checkbox` **Đặt làm địa chỉ mặc định** · NoteBox nhắc ghi đủ địa chỉ.
+- Địa chỉ đầu tiên, **hoặc đang sửa địa chỉ mặc định** (0.4 #20): checkbox tích sẵn và khoá, có câu giải thích.
+- Sửa: chờ danh sách `addresses` rồi mới dựng form (điền sẵn, không cần API chi tiết); id không có → "Không tìm thấy địa chỉ"; mở `new` khi đã đủ 5 → "Đã đủ 5 địa chỉ". Nút **Lưu** mờ khi chưa sửa (`isDirty`); Huỷ / ← khi đã sửa → "Bỏ thay đổi?". Lưu xong toast + `router.back()`.
 - Mở từ checkout (`?from=checkout`): lưu xong chọn luôn địa chỉ mới cho checkout rồi quay lại.
 - Lỗi 400 → hiện dưới ô theo `fieldErrors` nếu có; không có thì `ErrorBox` với message BE.
 
@@ -569,10 +577,11 @@ Chạy trên Android thật (dev build cho phần MoMo).
 
 **Giỏ và địa chỉ (Member)**
 
-- [ ] Thêm vào giỏ → badge tăng; thêm lại cùng món → "Đã có trong giỏ".
-- [ ] Giỏ 2 kho → báo tách 2 đơn; món không khả dụng mờ, không tính tiền; xoá có hỏi lại; giỏ rỗng.
-- [ ] Địa chỉ: thêm đầu tiên tự mặc định; thêm tới 5 thì nút mờ; không xoá được mặc định; đặt mặc định cho địa chỉ khác.
-- [ ] SĐT sai định dạng, địa chỉ quá ngắn → lỗi dưới ô.
+- [x] Thêm vào giỏ → badge tăng; món đã có trong giỏ → "Xem giỏ hàng". (mock, 19/10)
+- [x] Giỏ 2 kho → báo tách 2 đơn; món không khả dụng mờ, không tính tiền; tích / bỏ tích đổi tạm tính; xoá có hỏi lại; giỏ rỗng; Guest → đăng nhập → giỏ.
+- [x] Địa chỉ (server thật): thêm đầu tiên tự mặc định; thêm tới 5 thì nút mờ; không xoá được mặc định; đặt mặc định cho địa chỉ khác.
+- [x] SĐT sai định dạng, địa chỉ quá ngắn → lỗi dưới ô.
+- [ ] Giỏ với BE thật (`MOCK.cart = false`) khi BE có sản phẩm mẫu.
 
 **Đặt hàng và thanh toán**
 
@@ -632,6 +641,8 @@ Mô tả PR: Đã làm · Gọi thật / mock (theo `MOCK`) · Lệch wireframe 
 (Câu 18b–22b đã gửi BE 19/10.)
 23b. **Tìm kiếm không dấu:** API 49 tìm `name LIKE %q%` có phân biệt dấu → gõ "ao khoac" không ra "Áo khoác". Người Việt hay gõ không dấu → đề xuất dùng `unaccent` của PostgreSQL. Không gấp.
 24b. **API 44 (danh mục, thương hiệu)** cần trước khi bật danh sách sản phẩm thật — bộ lọc gửi `categoryId`/`brandId` dạng UUID.
+25b. **Sản phẩm mẫu trên Render** (~10 món ON_SALE, ≥ 2 kho, đủ ảnh / biên nhận / danh mục / thương hiệu) để mobile test `GET /products`, giỏ, `POST /orders` với server thật. (Đã nhờ 19/10.)
+26b. *(Đọc lại 19/10, `develop` `2af9d85`)* BE đã: trả **401** (envelope, `code: UNAUTHORIZED`) khi thiếu / hết hạn token, 403 khi sai quyền — `client.js` đã xử lý 401, không cần sửa; `GoogleTokenVerifier` nhận nhiều client ID (tách dấu phẩy); login trả thêm `role`. Còn hỏi: biến `GOOGLE_CLIENT_ID` trên Render đã sửa chưa.
 
 **Lead**
 
