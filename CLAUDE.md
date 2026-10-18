@@ -209,7 +209,12 @@ Bản "mô hình cửa hàng/Shop, PayOS" (bản 5, 07/10) và mô hình C2C th�
 - [CHỜ BE] Định dạng `qrPayload` của API 25 `/counter/lookup` (mobile tạm mã hoá đúng `memberCode`).
 - [CHỜ BE] Đổi mật khẩu: chuyển khỏi `/api/auth/**` hoặc trả 401 khi thiếu token (đang 500); DTO có `@NotBlank`; xác nhận thu hồi token cả thiết bị đang dùng có chủ ý không.
 - [CHỜ BE] `POST /uploads`; ~~token hết hạn trả 401~~ (xong `2af9d85`); logout không lỗi 500 khi token hết hạn; đăng ký trùng SĐT trả 409 thay vì 500.
-- [CHỜ BE] Đăng ký tổ chức theo hướng **"tạo account trước"** (chốt 17/10). BE báo xong 18/10 nhưng code **chưa đúng** (xem "API backend" → Tổ chức) → **đã gửi lại bản chốt đầy đủ 18/10** (6 API: tạo account tổ chức, `/api/organizations/me`, `POST/GET/PUT /api/organizations/me/registration`, `/uploads`). **Mobile tạm chờ, giữ mock; chỉ làm khi người phát triển yêu cầu** — lúc đó đọc lại code BE trước. Cần BE gửi khi xong (Swagger/code `develop`):
+- [CHỜ BE] **Tổ chức (19/10):** code BE `2af9d85` đã theo hướng "tạo account trước" (xem "API backend" → Tổ chức); mobile làm xong bước 1–3 (bảng "Khi BE xong tổ chức" bên dưới). **Đã báo BE 19/10:**
+  - **Deploy `develop` lên Render** — Swagger trên Render (`/v3/api-docs`) vẫn là bản cũ: `RegisterRequest` chưa có `role`, chưa có `PUT …/me/registration`, `/warehouses` → đăng ký "Tổ chức" hiện vẫn ra Member. Kiểm nhanh: Swagger có `role` trong `RegisterRequest` = đã deploy.
+  - `register`: `role` null → mặc định MEMBER; **chỉ cho MEMBER / ORGANIZATION** (hiện tạo được ADMIN qua API công khai); không tạo `MemberProfile` cho tổ chức.
+  - `GET /api/organizations/me` (`verificationStatus` — `null` khi chưa nộp, `rejectionReason`, `displayName`…), `POST /uploads`, danh sách mã `orgType` / `operationScope`.
+  - API nộp hồ sơ: `@PreAuthorize hasRole ORGANIZATION`; bỏ kiểm trùng MST khi `taxCode` trống.
+- *(Bản chốt gửi BE 18/10, giữ để tra cứu)* Cần BE gửi khi xong (Swagger/code `develop`):
   1. API tạo account tổ chức (dùng chung `/api/auth/register` kèm loại tài khoản hay API riêng?) + OTP.
   2. `/me` cho tổ chức: `role`, `verificationStatus` (kể cả trạng thái **"chưa nộp hồ sơ"**: `null` / `NOT_SUBMITTED`?), lý do từ chối, giấy tờ chưa đạt.
   3. `POST` / `PUT` / `GET /api/organizations/me/registration`: body (đã thêm `representative.phone/email`, `cccdName/cccdIssueDate/cccdIssuePlace` chưa?), `latitude/longitude` có cho `null` không.
@@ -239,12 +244,12 @@ Tiêu chí xong Phase 1: Guest đăng ký được Member/Organization · Đăng
 | Đăng nhập email        | ✅ AU-02 — API thật                                                            |
 | Đổi / quên mật khẩu    | ✅ AU-07, AU-05, AU-06 — API thật                                              |
 | Member xem/sửa hồ sơ   | ✅ Tab bar, PR-01 (+ Cài đặt), PR-02, PR-03, PR-04 — API thật (ảnh đại diện chờ upload) |
-| Guest đăng ký Tổ chức  | ✅ UI OA-01 → OA-04, Xem lại, OA-06 (chờ xác minh) — **mock**. ⏳ Sửa theo hướng "tạo account trước" + nối API thật khi BE xong (T-002, T-003, T-005). 18/10: API BE chưa đúng, đã gửi lại bản chốt. **19/10: BE `2af9d85` đã theo hướng tạo account trước (thiếu `GET /me`, upload) → làm nhánh `feature/org-real-api`** |
+| Guest đăng ký Tổ chức  | ✅ UI OA-01 → OA-04, Xem lại, OA-06 (chờ xác minh) — **mock**. ⏳ Sửa theo hướng "tạo account trước" + nối API thật khi BE xong (T-002, T-003, T-005). 18/10: API BE chưa đúng, đã gửi lại bản chốt. **19/10: BE `2af9d85` đã theo hướng tạo account trước → nhánh `feature/org-real-api` xong bước 1–3 (code, chưa test với server: Render chưa deploy; `MOCK.organization = true`). Bước 4 chờ `GET /me` + `/uploads`** |
 | Đăng nhập Google       | ✅ **Chạy thật 19/10** (dev build) — BE đã sửa `GOOGLE_CLIENT_ID`; bỏ log debug (PR #15) |
 
 Còn lại khác: AU-01 Splash ✅ · PR `feature/phase1-auth` → `develop` ✅ (PR #2, #3) · server Render ngủ → lần mở đầu có thể trắng / chờ 30–50 giây (không phải lỗi code; cân nhắc thêm chữ "Đang kết nối máy chủ…" ở `BootSplash` và tăng timeout axios lên 60 giây) · tự test checklist mục 10 (OA-03, Xem lại chưa test hết) · trước khi build bản cho lead/demo: thay icon, `preventAutoHideAsync` (guide 12.3).
 
-**Khi BE xong tổ chức — mobile phải sửa** (nhánh mới `feature/org-real-api`, ước ~2 ngày):
+**Khi BE xong tổ chức — mobile phải sửa** (nhánh `feature/org-real-api`). **19/10 đã làm:** fix `register` gửi `role`; AU-03 chọn Tổ chức = cùng form với `role: ORGANIZATION`; nhóm `(org)` + màn `/org` (`OrgHomeScreen`); 4 bước chuyển sang `(org)/org/registration` (bỏ mật khẩu, email liên hệ điền sẵn); `organizationApi.real` (POST nộp, PUT nộp lại, lỗi theo `code`); toạ độ điểm nhận từ `expo-location.geocodeAsync` (`utils/geocode.js`). **Còn:** test với server sau khi BE deploy (đổi `MOCK.organization = false`); màn trạng thái theo `GET /me` (mục 4, 7, 8); upload thật (mục 6); khung tab cho VERIFIED (mục 9). Danh sách gốc:
 1. AU-03 "Tổ chức" → form email + mật khẩu → AU-04 OTP → đăng nhập.
 2. Chuyển `org-register` **ra khỏi nhóm `(auth)`** (nhóm này chỉ mở khi chưa đăng nhập) sang nhóm cho tổ chức đã đăng nhập.
 3. `authStore` / `getMe`: tổ chức gọi `/me` của tổ chức, **không** gọi `/members/me` (gọi sẽ lỗi → bị văng ra).
