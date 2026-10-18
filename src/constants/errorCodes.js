@@ -11,4 +11,8 @@ export const ERROR_CODES = {
   BELOW_FLOOR_PRICE: "BELOW_FLOOR_PRICE", // giảm giá: thấp hơn giá sàn (API 23, 409)
   PRICE_CHANGE_LIMIT_REACHED: "PRICE_CHANGE_LIMIT_REACHED", // giảm giá: hôm nay đã đổi rồi (API 23, 409)
   DECISION_EXPIRED: "DECISION_EXPIRED", // cuối kỳ: quá hạn 30 ngày chọn cách xử lý (API 24, 409)
+  ORGANIZATION_PROFILE_ALREADY_EXISTS: "ORGANIZATION_PROFILE_ALREADY_EXISTS", // tổ chức: tài khoản đã nộp hồ sơ (409)
+  ORGANIZATION_EMAIL_TAKEN: "ORGANIZATION_EMAIL_TAKEN", // tổ chức: email liên hệ trùng (409)
+  ORGANIZATION_TAX_CODE_TAKEN: "ORGANIZATION_TAX_CODE_TAKEN", // tổ chức: MST trùng (409)
+  ORGANIZATION_NOT_REJECTED: "ORGANIZATION_NOT_REJECTED", // tổ chức: chỉ nộp lại khi bị từ chối (403)
 };

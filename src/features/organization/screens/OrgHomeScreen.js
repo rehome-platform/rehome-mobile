@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { useAuthStore } from "@/stores/authStore";
+import { router } from "expo-router";
 
 const CHECKLIST = [
   "Giấy phép / quyết định thành lập (ảnh hoặc PDF)",
@@ -63,10 +64,7 @@ export default function OrgHomeScreen() {
         ))}
         <Button
           title="Bắt đầu nộp hồ sơ"
-          // [TẠM] bước 3 nối vào 4 bước nộp hồ sơ
-          onPress={() =>
-            Alert.alert("Sắp có", "Bước nộp hồ sơ đang được nối API.")
-          }
+          onPress={() => router.push("/org/registration/info")}
           style={styles.cta}
         />
       </View>

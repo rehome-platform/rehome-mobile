@@ -9,7 +9,7 @@ export const ENV = {
 export const MOCK = {
   password: false, // quên / đặt lại mật khẩu — gọi thật qua resend-otp + verify-otp + password/reset
   upload: true, // [CHỜ BE] POST /uploads
-  organization: true, // [CHỜ BE] đăng ký có mật khẩu, trạng thái hồ sơ
+  organization: true, // [TẠM] API thật có từ BE 2af9d85 nhưng Render chưa deploy (bản cũ tạo nhầm account mới) → đổi false khi BE deploy
   consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2
   // Phase 3 — mua hàng
   products: true, // [TẠM] GET /products đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → lọc gửi id giả lên BE sẽ lỗi; sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng

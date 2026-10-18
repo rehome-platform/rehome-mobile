@@ -25,12 +25,15 @@ import {
 } from "@/features/organization/utils/summary";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { uploadFile } from "@/lib/api/upload";
+import { ERROR_CODES } from "@/constants/errorCodes";
+import { locateAddress } from "@/features/organization/utils/geocode";
 
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
-// Upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → có url → gửi hồ sơ
+// Toạ độ điểm nhận (BE bắt buộc) → upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → gửi hồ sơ
 async function submitApplication(data) {
-  const { info, documents } = data;
+  const { info, documents, location } = data;
+  const coords = await locateAddress(pickupAddress(info, location)); // lỗi → báo ngay, chưa upload gì
   const upload = (file) => uploadFile(file).then((res) => res.url);
 
   const [logo, cccdFront, cccdBack, legalDocs] = await Promise.all([
@@ -42,12 +45,11 @@ async function submitApplication(data) {
     Promise.all(documents.legalDocs.map((doc) => upload(doc.file))),
   ]);
 
-  const payload = buildRegisterPayload(data, {
-    logo,
-    cccdFront,
-    cccdBack,
-    legalDocs,
-  });
+  const payload = buildRegisterPayload(
+    data,
+    { logo, cccdFront, cccdBack, legalDocs },
+    coords,
+  );
   return organizationApi.registerOrganization(payload);
 }
 
@@ -60,23 +62,31 @@ export default function OrgReviewScreen() {
   const [agreed, setAgreed] = useState(false);
   const [agreeError, setAgreeError] = useState(null);
 
+  // Sang màn "Đã gửi". BE chỉ trả {accountId, verificationStatus} → tên, email lấy từ dữ liệu đã nhập
+  const goSubmitted = () => {
+    router.dismissAll(); // bỏ các màn nộp hồ sơ khỏi lịch sử → Back không quay lại form đã gửi
+    router.replace({
+      pathname: "/org/registration/submitted",
+      params: {
+        displayName: info.displayName,
+        email: info.contactEmail,
+        submittedAt: new Date().toISOString(),
+      },
+    });
+  };
+
   const submit = useMutation({
     mutationFn: submitApplication,
-    onSuccess: (result) => {
-      router.dismissAll(); // bỏ các màn đăng ký khỏi lịch sử → Back không quay lại form đã gửi
-      router.replace({
-        pathname: "/org-register/submitted",
-        params: {
-          displayName: result.displayName,
-          email: result.contactEmail,
-          submittedAt: result.submittedAt,
-        },
-      });
+    onSuccess: goSubmitted,
+    onError: (e) => {
+      // Tài khoản đã nộp hồ sơ trước đó → coi như đang chờ duyệt [CHỜ BE GET /api/organizations/me]
+      if (e.code === ERROR_CODES.ORGANIZATION_PROFILE_ALREADY_EXISTS)
+        goSubmitted();
     },
   });
 
   if (!info || !representative || !documents || !location) {
-    return <Redirect href="/org-register/info" />;
+    return <Redirect href="/org/registration/info" />;
   }
 
   const onSubmit = () => {
@@ -85,7 +95,7 @@ export default function OrgReviewScreen() {
   };
 
   // Về đúng bước để sửa (các bước giữa vẫn giữ dữ liệu) → bấm Tiếp tục để quay lại đây
-  const edit = (step) => router.dismissTo(`/org-register/${step}`);
+  const edit = (step) => router.dismissTo(`/org/registration/${step}`);
 
   return (
     <Screen
@@ -122,7 +132,7 @@ export default function OrgReviewScreen() {
         <ReviewRow label="Phạm vi" value={scopeLabel(info.operationScope)} />
         <ReviewRow label="Trụ sở" value={info.address} />
         <ReviewRow label="SĐT liên hệ" value={info.contactPhone} />
-        <ReviewRow label="Email đăng nhập" value={info.contactEmail} />
+        <ReviewRow label="Email liên hệ" value={info.contactEmail} />
         <ReviewRow label="Website" value={info.website} />
       </ReviewSection>
 
@@ -134,7 +144,6 @@ export default function OrgReviewScreen() {
         <ReviewRow label="Chức vụ" value={representative.position} />
         <ReviewRow label="Số điện thoại" value={representative.phone} />
         <ReviewRow label="Email" value={representative.email} />
-        <ReviewRow label="Mật khẩu" value="Đã đặt" />
       </ReviewSection>
 
       <ReviewSection title="Giấy tờ" onEdit={() => edit("documents")}>
@@ -197,9 +206,10 @@ export default function OrgReviewScreen() {
       </Checkbox>
 
       <ErrorBox message={submit.error?.message}>
-        {submit.error?.status === 409 ? (
+        {submit.error?.code === ERROR_CODES.ORGANIZATION_EMAIL_TAKEN ||
+        submit.error?.code === ERROR_CODES.ORGANIZATION_TAX_CODE_TAKEN ? (
           <Text style={styles.muted}>
-            Bấm "Sửa" ở khối Tổ chức để đổi email hoặc mã số thuế.
+            Bấm "Sửa" ở khối Tổ chức để đổi email liên hệ hoặc mã số thuế.
           </Text>
         ) : null}
       </ErrorBox>

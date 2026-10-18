@@ -3,11 +3,12 @@ import {
   pickupAddress,
 } from "@/features/organization/utils/summary";
 
-// Ghép dữ liệu 4 bước + url tệp đã upload → body gửi BE (RegisterOrganizationRequest).
-// Trường ghi [GIẢ ĐỊNH]: BE chưa nhận — đã có trong danh sách gửi BE
+// Ghép dữ liệu 4 bước + url tệp đã upload + toạ độ điểm nhận → body RegisterOrganizationRequest (BE 2af9d85).
+// Trường [GIẢ ĐỊNH]: BE chưa lưu (gửi lên bị bỏ qua) — đã có trong danh sách gửi BE
 export function buildRegisterPayload(
   { info, representative, documents, location },
   urls,
+  coords,
 ) {
   return {
     legalName: info.legalName,
@@ -21,7 +22,6 @@ export function buildRegisterPayload(
     website: info.website || null,
     description: info.description,
     logoUrl: urls.logo,
-    password: representative.password, // [GIẢ ĐỊNH]
     representative: {
       fullName: representative.fullName,
       position: representative.position,
@@ -44,8 +44,8 @@ export function buildRegisterPayload(
     donationPoint: {
       name: location.name,
       address: pickupAddress(info, location),
-      latitude: null, // [GIẢ ĐỊNH] bản đồ ghim làm sau — BE đang bắt buộc
-      longitude: null,
+      latitude: coords.latitude, // BE bắt buộc — lấy từ địa chỉ (utils/geocode.js)
+      longitude: coords.longitude,
       receivingHours: formatReceivingHours(location),
       contactPhone: location.contactPhone || info.contactPhone,
     },
