@@ -56,8 +56,11 @@ export function roleFromToken(accessToken) {
 
 // BE chưa có /me chung → tự ghép user từ JWT + /members/me
 export async function getMe() {
-  const role = roleFromToken(await tokenStorage.getAccessToken());
-  if (role !== ROLES.MEMBER) return { role }; // tổ chức: chưa có API thông tin [CHỜ BE]
+  const token = await tokenStorage.getAccessToken();
+  const role = roleFromToken(token);
+  // Tổ chức: chưa có GET /api/organizations/me [CHỜ BE] → tạm lấy email từ JWT (sub)
+  if (role !== ROLES.MEMBER)
+    return { role, email: token ? jwtDecode(token).sub : null };
   const profile = unwrap(await api.get("/members/me")); // không có tiền tố /api
   return { role, ...profile };
 }
