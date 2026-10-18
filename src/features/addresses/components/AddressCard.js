@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { formatPhone } from "@/utils/format";
 
@@ -16,12 +17,38 @@ function Action({ title, onPress, disabled, danger }) {
   );
 }
 
-// Thẻ địa chỉ (BR-06). Mặc định: viền đậm + nhãn, không có nút Xoá
-export function AddressCard({ address, onEdit, onSetDefault, onDelete, busy }) {
+// Thẻ địa chỉ (BR-06). Mặc định: viền đậm + nhãn, không có nút Xoá.
+// Chế độ chọn (checkout): có onPress; selected → viền xanh + dấu tích
+export function AddressCard({
+  address,
+  onEdit,
+  onSetDefault,
+  onDelete,
+  busy,
+  onPress,
+  selected,
+}) {
   const isDefault = !!address.isDefault;
   return (
-    <View style={[styles.card, isDefault && styles.cardDefault]}>
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? "radio" : undefined}
+      accessibilityState={onPress ? { checked: !!selected } : undefined}
+      style={[
+        styles.card,
+        isDefault && styles.cardDefault,
+        selected && styles.cardSelected,
+      ]}
+    >
       <View style={styles.head}>
+        {onPress ? (
+          <Ionicons
+            name={selected ? "radio-button-on" : "radio-button-off"}
+            size={20}
+            color={selected ? colors.primary : colors.textSecondary}
+          />
+        ) : null}
         <Text style={styles.name} numberOfLines={1}>
           {address.recipientName}
         </Text>
@@ -45,7 +72,7 @@ export function AddressCard({ address, onEdit, onSetDefault, onDelete, busy }) {
           </>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -59,6 +86,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardDefault: { borderWidth: 2, borderColor: colors.text },
+  cardSelected: { borderWidth: 2, borderColor: colors.primary },
   head: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   name: { flex: 1, ...textStyles.heading, color: colors.text },
   badge: {

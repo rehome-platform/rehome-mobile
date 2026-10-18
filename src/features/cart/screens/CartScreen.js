@@ -25,10 +25,6 @@ import { WarehouseGroup } from "../components/WarehouseGroup";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
-// [TẠM] Đặt hàng → checkout làm ở nhánh feature/checkout-payment
-const comingSoon = () =>
-  Alert.alert("Sắp có", "Đặt hàng đang được hoàn thiện.");
-
 // Dải thông báo đầu giỏ
 function Banner({ icon, children }) {
   return (
@@ -166,7 +162,12 @@ export default function CartScreen() {
       <Button
         title={selected.length ? `Đặt hàng (${selected.length})` : "Đặt hàng"}
         disabled={!selected.length}
-        onPress={comingSoon}
+        onPress={() =>
+          router.push({
+            pathname: "/checkout",
+            params: { ids: selected.map((i) => i.product.id).join(",") },
+          })
+        }
       />
     </View>
   );
