@@ -51,11 +51,11 @@ export default function OrgLocationScreen() {
     return () => sub.unsubscribe();
   }, [watch, saveStep]);
 
-  if (!info || !documents) return <Redirect href="/org-register/info" />;
+  if (!info || !documents) return <Redirect href="/org/registration/info" />;
 
   const onSubmit = handleSubmit((values) => {
     saveStep("location", values);
-    router.push("/org-register/review");
+    router.push("/org/registration/review");
   });
 
   return (

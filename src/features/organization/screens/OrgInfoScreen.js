@@ -14,6 +14,7 @@ import { OrgRegisterHeader } from "@/features/organization/components/OrgRegiste
 import { OPERATION_SCOPES, ORG_TYPES } from "@/features/organization/constants";
 import { orgInfoSchema } from "@/features/organization/schemas";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { useAuthStore } from "@/stores/authStore";
 
 const EMPTY_INFO = {
   legalName: "",
@@ -30,6 +31,7 @@ const EMPTY_INFO = {
 };
 
 export default function OrgInfoScreen() {
+  const loginEmail = useAuthStore((s) => s.user?.email);
   const saved = useOrgRegisterStore((s) => s.info);
   const saveStep = useOrgRegisterStore((s) => s.saveStep);
   const reset = useOrgRegisterStore((s) => s.reset);
@@ -42,7 +44,7 @@ export default function OrgInfoScreen() {
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(orgInfoSchema),
-    defaultValues: saved ?? EMPTY_INFO, // quay lại từ bước 2 → hiện lại dữ liệu đã nhập
+    defaultValues: saved ?? { ...EMPTY_INFO, contactEmail: loginEmail ?? "" }, // điền sẵn email đăng nhập
   });
 
   const logoUri = watch("logoUri");
@@ -51,7 +53,7 @@ export default function OrgInfoScreen() {
   // Thoát luồng: xoá dữ liệu tạm. Đã nhập gì thì hỏi trước
   const exit = () => {
     reset();
-    router.canGoBack() ? router.back() : router.replace("/register");
+    router.canGoBack() ? router.back() : router.replace("/org");
   };
   const onBack = () => {
     if (!isDirty && !saved) return exit();
@@ -79,7 +81,7 @@ export default function OrgInfoScreen() {
 
   const onSubmit = handleSubmit((values) => {
     saveStep("info", values);
-    router.push("/org-register/representative");
+    router.push("/org/registration/representative");
   });
 
   return (
@@ -224,7 +226,7 @@ export default function OrgInfoScreen() {
             required
             keyboardType="email-address"
             autoCapitalize="none"
-            helper="Dùng để đăng nhập và nhận thông báo của ReHome"
+            helper="Email tổ chức nhận thông báo và người quyên góp liên hệ. Mặc định là email đăng nhập, đổi được"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}

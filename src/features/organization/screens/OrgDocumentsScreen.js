@@ -71,7 +71,8 @@ export default function OrgDocumentsScreen() {
     return () => sub.unsubscribe();
   }, [watch, saveStep]);
 
-  if (!info || !representative) return <Redirect href="/org-register/info" />;
+  if (!info || !representative)
+    return <Redirect href="/org/registration/info" />;
 
   const orgType = ORG_TYPES.find((t) => t.value === info.orgType);
   const suggestions = (orgType?.suggestedDocs ?? []).map((d) => ({
@@ -108,7 +109,7 @@ export default function OrgDocumentsScreen() {
 
   const onSubmit = handleSubmit((values) => {
     saveStep("documents", values);
-    router.push("/org-register/location");
+    router.push("/org/registration/location");
   });
 
   const cccdImageError = errors.cccdFront?.message ?? errors.cccdBack?.message;

@@ -5,7 +5,7 @@ import { Stepper } from "@/components/ui/Stepper";
 import { ORG_REGISTER_STEPS } from "@/features/organization/constants";
 
 const defaultBack = () =>
-  router.canGoBack() ? router.back() : router.replace("/register");
+  router.canGoBack() ? router.back() : router.replace("/org");
 
 // Header chung của 4 bước đăng ký tổ chức: AppHeader + Stepper. step: 0..3
 export function OrgRegisterHeader({ step, onBack = defaultBack }) {

@@ -15,8 +15,8 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { StatusTimeline } from "@/components/ui/StatusTimeline";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 
-// Về tab Mua sắm, đóng hết các màn đăng ký phía trên
-const goHome = () => router.dismissTo("/");
+// Về màn đầu của tổ chức, đóng hết các màn nộp hồ sơ phía trên
+const goHome = () => router.dismissTo("/org");
 
 // OA-06 (bản Chờ xác minh). Bản Bị từ chối + làm mới trạng thái: cần tổ chức đăng nhập được [CHỜ BE]
 export default function OrgSubmittedScreen() {
@@ -46,7 +46,7 @@ export default function OrgSubmittedScreen() {
   return (
     <Screen
       scroll
-      footer={<Button title="Về trang chủ" onPress={goHome} />}
+      footer={<Button title="Về trang tổ chức" onPress={goHome} />}
       contentStyle={styles.content}
     >
       <Stack.Screen options={{ gestureEnabled: false }} />
@@ -80,9 +80,8 @@ export default function OrgSubmittedScreen() {
 
       <NoteBox>
         <Text style={styles.noteText}>
-          Khi hồ sơ được duyệt, đăng nhập bằng{" "}
-          <Text style={styles.bold}>{email}</Text> và mật khẩu đã đặt. Trong lúc
-          chờ, tài khoản tổ chức chưa dùng được các chức năng chính.
+          Kết quả xác minh gửi về <Text style={styles.bold}>{email}</Text>.
+          Trong lúc chờ, tài khoản tổ chức chưa dùng được các chức năng chính.
         </Text>
       </NoteBox>
     </Screen>

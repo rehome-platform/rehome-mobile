@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { RadioCard } from "@/components/ui/RadioCard";
 import { Checkbox } from "@/components/ui/Checkbox";
+import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { ROLES } from "@/constants/roles";
 import { authApi } from "@/features/auth/api/authApi";
 import { registerSchema } from "@/features/auth/schemas";
 
@@ -21,7 +23,14 @@ const goBack = () =>
 const showSoon = () =>
   Alert.alert("Sắp có", "Nội dung điều khoản đang được hoàn thiện.");
 
+// AU-03 · Đăng ký. Cá nhân → Member; Tổ chức → account ORGANIZATION (nộp hồ sơ SAU khi đăng nhập).
+// Mở thẳng tab Tổ chức: /register?role=ORGANIZATION
 export default function RegisterScreen() {
+  const params = useLocalSearchParams();
+  const [role, setRole] = useState(
+    params.role === ROLES.ORGANIZATION ? ROLES.ORGANIZATION : ROLES.MEMBER,
+  );
+  const isOrg = role === ROLES.ORGANIZATION;
   const [formError, setFormError] = useState(null);
 
   const {
@@ -42,9 +51,9 @@ export default function RegisterScreen() {
   });
 
   const signUp = useMutation({
-    // Chỉ gửi 4 field BE cần (không gửi confirmPassword, agree)
+    // Chỉ gửi field BE cần (không gửi confirmPassword, agree)
     mutationFn: ({ fullName, email, phone, password }) =>
-      authApi.register({ fullName, email, phone, password }),
+      authApi.register({ fullName, email, phone, password, role }),
     onSuccess: (_data, values) => {
       // BE đã gửi OTP → sang AU-04. push (không replace) để "Nhập sai email? Quay lại sửa" quay về được
       router.push({
@@ -79,7 +88,7 @@ export default function RegisterScreen() {
       header={<AppHeader title="Đăng ký tài khoản" onBack={goBack} />}
       footer={
         <Button
-          title="Tạo tài khoản"
+          title={isOrg ? "Tạo tài khoản tổ chức" : "Tạo tài khoản"}
           onPress={onSubmit}
           loading={signUp.isPending}
         />
@@ -92,23 +101,38 @@ export default function RegisterScreen() {
           <RadioCard
             title="Cá nhân"
             description="Mua, ký gửi, quyên góp"
-            selected
+            selected={!isOrg}
+            onPress={() => setRole(ROLES.MEMBER)}
           />
           <RadioCard
             title="Tổ chức"
-            description="Cần giấy tờ pháp lý"
-            onPress={() => router.push("/org-register/info")}
+            description="Nhận quyên góp, cần giấy tờ pháp lý"
+            selected={isOrg}
+            onPress={() => setRole(ROLES.ORGANIZATION)}
           />
         </View>
       </View>
+
+      {isOrg ? (
+        <NoteBox>
+          Bước 1: tạo tài khoản và xác thực email. Bước 2: đăng nhập rồi nộp hồ
+          sơ tổ chức (giấy tờ pháp lý, người đại diện, điểm nhận đồ) để ReHome
+          xác minh.
+        </NoteBox>
+      ) : null}
 
       <Controller
         control={control}
         name="fullName"
         render={({ field }) => (
           <TextField
-            label="Họ và tên"
+            label={isOrg ? "Họ tên người quản lý tài khoản" : "Họ và tên"}
             required
+            helper={
+              isOrg
+                ? "Người đại diện hoặc nhân viên phụ trách. Tên tổ chức nhập ở bước nộp hồ sơ."
+                : undefined
+            }
             autoCapitalize="words"
             autoComplete="name"
             textContentType="name"
@@ -125,9 +149,9 @@ export default function RegisterScreen() {
         name="email"
         render={({ field }) => (
           <TextField
-            label="Email"
+            label={isOrg ? "Email đăng nhập của tổ chức" : "Email"}
             required
-            placeholder="ban@example.com"
+            placeholder={isOrg ? "lienhe@tochuc.org" : "ban@example.com"}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -145,7 +169,7 @@ export default function RegisterScreen() {
         name="phone"
         render={({ field }) => (
           <TextField
-            label="Số điện thoại"
+            label={isOrg ? "Số điện thoại người quản lý" : "Số điện thoại"}
             required
             placeholder="0912 345 678"
             keyboardType="phone-pad"

@@ -55,7 +55,10 @@ export default function RootLayout() {
         <Stack.Protected guard={!isAuthed}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        {/* (org-status), (org): thêm khi làm phần tổ chức */}
+        {/* Chỉ tài khoản Tổ chức */}
+        <Stack.Protected guard={isOrg}>
+          <Stack.Screen name="(org)" />
+        </Stack.Protected>
       </Stack>
     </QueryClientProvider>
   );

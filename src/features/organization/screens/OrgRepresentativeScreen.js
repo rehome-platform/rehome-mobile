@@ -1,15 +1,13 @@
 import { useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Redirect, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { NoteBox } from "@/components/ui/NoteBox";
-import { PasswordChecklist } from "@/components/ui/PasswordChecklist";
 import { OrgRegisterHeader } from "@/features/organization/components/OrgRegisterHeader";
 import { orgRepresentativeSchema } from "@/features/organization/schemas";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
@@ -19,10 +17,9 @@ const EMPTY_REPRESENTATIVE = {
   position: "",
   phone: "",
   email: "",
-  password: "",
-  confirmPassword: "",
 };
 
+// OA-02 · Người đại diện. (Mật khẩu đặt lúc tạo tài khoản tổ chức — không hỏi lại ở đây)
 export default function OrgRepresentativeScreen() {
   const info = useOrgRegisterStore((s) => s.info);
   const saved = useOrgRegisterStore((s) => s.representative);
@@ -37,21 +34,19 @@ export default function OrgRepresentativeScreen() {
     resolver: zodResolver(orgRepresentativeSchema),
     defaultValues: saved ?? EMPTY_REPRESENTATIVE,
   });
-  const password = watch("password");
 
-  // Tự lưu nháp mỗi lần gõ → vuốt Back về bước 1 rồi quay lại không mất dữ liệu.
-  // Chỉ lưu trong RAM; thoát luồng thì reset() xoá hết (kể cả mật khẩu)
+  // Tự lưu nháp mỗi lần gõ → vuốt Back về bước 1 rồi quay lại không mất dữ liệu (chỉ trong RAM)
   useEffect(() => {
     const sub = watch((values) => saveStep("representative", { ...values }));
     return () => sub.unsubscribe();
   }, [watch, saveStep]);
 
   // Vào thẳng bước 2 mà chưa có bước 1 (mở bằng link, app bị tải lại…) → về bước 1
-  if (!info) return <Redirect href="/org-register/info" />;
+  if (!info) return <Redirect href="/org/registration/info" />;
 
   const onSubmit = handleSubmit((values) => {
     saveStep("representative", values);
-    router.push("/org-register/documents");
+    router.push("/org/registration/documents");
   });
 
   return (
@@ -135,67 +130,6 @@ export default function OrgRepresentativeScreen() {
           />
         )}
       />
-
-      {/* ---- Tài khoản đăng nhập ---- */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tài khoản đăng nhập</Text>
-        <Text style={styles.desc}>
-          Tổ chức đăng nhập ReHome bằng email liên hệ ở bước 1 và mật khẩu dưới
-          đây.
-        </Text>
-      </View>
-
-      <View style={styles.loginEmail}>
-        <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
-        <Text style={styles.emailText} numberOfLines={1}>
-          {info.contactEmail}
-        </Text>
-        <Text
-          style={styles.link}
-          onPress={() => router.back()}
-          accessibilityRole="link"
-        >
-          Sửa
-        </Text>
-      </View>
-
-      <Controller
-        control={control}
-        name="password"
-        render={({ field }) => (
-          <TextField
-            label="Mật khẩu"
-            required
-            secure
-            autoComplete="new-password"
-            textContentType="newPassword"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.password?.message}
-          />
-        )}
-      />
-
-      <PasswordChecklist password={password} />
-
-      <Controller
-        control={control}
-        name="confirmPassword"
-        render={({ field }) => (
-          <TextField
-            label="Nhập lại mật khẩu"
-            required
-            secure
-            autoComplete="new-password"
-            textContentType="newPassword"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.confirmPassword?.message}
-          />
-        )}
-      />
     </Screen>
   );
 }
@@ -204,22 +138,4 @@ const styles = StyleSheet.create({
   content: { gap: spacing.lg },
   noteText: { ...textStyles.body, color: colors.textSecondary },
   bold: { fontFamily: fonts.semibold, color: colors.text },
-  section: { gap: spacing.xs, marginTop: spacing.sm },
-  sectionTitle: { ...textStyles.heading, color: colors.text },
-  desc: { ...textStyles.body, color: colors.textSecondary },
-  loginEmail: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    minHeight: 48,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.input,
-    backgroundColor: colors.neutral, // nền xám: ô chỉ đọc, không gõ được
-  },
-  emailText: { flex: 1, ...textStyles.body, fontSize: 16, color: colors.text },
-  link: {
-    ...textStyles.body,
-    fontFamily: fonts.semibold,
-    color: colors.primary,
-  },
 });

@@ -5,9 +5,22 @@ import { ROLES } from "@/constants/roles";
 import { OTP_PURPOSE } from "@/constants/auth";
 
 // ===== Đăng ký + OTP =====
-export const register = async ({ fullName, email, phone, password }) =>
+// role: "MEMBER" | "ORGANIZATION" — BE bắt buộc từ 2af9d85 (thiếu → lỗi 500). Mặc định Member
+export const register = async ({
+  fullName,
+  email,
+  phone,
+  password,
+  role = ROLES.MEMBER,
+}) =>
   unwrap(
-    await api.post("/api/auth/register", { fullName, email, phone, password }),
+    await api.post("/api/auth/register", {
+      fullName,
+      email,
+      phone,
+      password,
+      role,
+    }),
   ); // { message }
 
 export const verifyRegisterOtp = async ({ email, otp }) =>
@@ -43,8 +56,11 @@ export function roleFromToken(accessToken) {
 
 // BE chưa có /me chung → tự ghép user từ JWT + /members/me
 export async function getMe() {
-  const role = roleFromToken(await tokenStorage.getAccessToken());
-  if (role !== ROLES.MEMBER) return { role }; // tổ chức: chưa có API thông tin [CHỜ BE]
+  const token = await tokenStorage.getAccessToken();
+  const role = roleFromToken(token);
+  // Tổ chức: chưa có GET /api/organizations/me [CHỜ BE] → tạm lấy email từ JWT (sub)
+  if (role !== ROLES.MEMBER)
+    return { role, email: token ? jwtDecode(token).sub : null };
   const profile = unwrap(await api.get("/members/me")); // không có tiền tố /api
   return { role, ...profile };
 }
