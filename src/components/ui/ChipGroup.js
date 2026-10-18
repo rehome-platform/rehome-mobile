@@ -1,14 +1,17 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 
 // Nhóm nút chọn. multiple=false: value là 1 giá trị; multiple=true: value là mảng
+// horizontal=true: một hàng cuộn ngang (chip danh mục ở trang chủ); contentStyle = lề trong hàng cuộn
 export function ChipGroup({
   options,
   value,
   onChange,
   multiple = false,
+  horizontal = false,
   error,
   style,
+  contentStyle,
 }) {
   const isSelected = (v) =>
     multiple ? (value ?? []).includes(v) : value === v;
@@ -21,30 +24,40 @@ export function ChipGroup({
     );
   };
 
+  const chips = options.map((opt) => {
+    const selected = isSelected(opt.value);
+    return (
+      <Pressable
+        key={opt.value}
+        onPress={() => toggle(opt.value)}
+        accessibilityRole={multiple ? "checkbox" : "radio"}
+        accessibilityState={{ checked: selected }}
+        style={({ pressed }) => [
+          styles.chip,
+          selected && styles.chipSelected,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Text style={[styles.text, selected && styles.textSelected]}>
+          {opt.label}
+        </Text>
+      </Pressable>
+    );
+  });
+
   return (
     <View style={[styles.wrap, style]}>
-      <View style={styles.row}>
-        {options.map((opt) => {
-          const selected = isSelected(opt.value);
-          return (
-            <Pressable
-              key={opt.value}
-              onPress={() => toggle(opt.value)}
-              accessibilityRole={multiple ? "checkbox" : "radio"}
-              accessibilityState={{ checked: selected }}
-              style={({ pressed }) => [
-                styles.chip,
-                selected && styles.chipSelected,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={[styles.text, selected && styles.textSelected]}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {horizontal ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.row, styles.noWrap, contentStyle]}
+        >
+          {chips}
+        </ScrollView>
+      ) : (
+        <View style={styles.row}>{chips}</View>
+      )}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -53,6 +66,7 @@ export function ChipGroup({
 const styles = StyleSheet.create({
   wrap: { gap: spacing.xs },
   row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  noWrap: { flexWrap: "nowrap" },
   chip: {
     minHeight: 40,
     paddingHorizontal: spacing.md,
