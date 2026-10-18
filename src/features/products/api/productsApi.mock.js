@@ -205,3 +205,8 @@ export async function getProduct(id) {
     inspectedAt: p.inspectedAt,
   };
 }
+// [DEV] Giả lập "người khác vừa đặt / đã mua" món này. Chỉ MockStatusPanel gọi (__DEV__ && MOCK.productDetail)
+export async function mockSetStatus(id, status) {
+  const p = products.find((x) => x.id === id);
+  if (p) p.status = status;
+}

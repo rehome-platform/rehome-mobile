@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useAuthStore } from "@/stores/authStore";
+import { takePendingRedirect } from "@/stores/pendingRedirect";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
@@ -18,6 +20,17 @@ export default function ShopHomeScreen() {
   const [categoryId, setCategoryId] = useState(ALL);
   const [showNote, setShowNote] = useState(true); // ẩn trong lúc app còn mở; mở lại app thì hiện lại
   const listRef = useRef(null);
+  const status = useAuthStore((s) => s.status);
+
+  // Đăng nhập xong app về trang chủ → có màn đang chờ (vd chi tiết sản phẩm) thì mở lại
+  useFocusEffect(
+    useCallback(() => {
+      if (status !== "authenticated") return;
+      const href = takePendingRedirect();
+      if (href) router.push(href);
+    }, [status]),
+  );
+
   const categories = useCategoryOptions();
   const query = useProducts({
     categoryId: categoryId === ALL ? undefined : categoryId,

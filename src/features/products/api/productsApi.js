@@ -6,4 +6,5 @@ import * as mock from "./productsApi.mock";
 export const productsApi = {
   getProducts: MOCK.products ? mock.getProducts : real.getProducts,
   getProduct: MOCK.productDetail ? mock.getProduct : real.getProduct, // [CHỜ BE] API 50
+  mockSetStatus: mock.mockSetStatus, // [DEV] chỉ dùng cho MockStatusPanel
 };
