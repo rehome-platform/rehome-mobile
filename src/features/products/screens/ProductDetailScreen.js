@@ -31,6 +31,15 @@ import { SimilarProducts } from "../components/SimilarProducts";
 import { metaLine } from "../components/ProductCard";
 import { setPendingRedirect } from "@/stores/pendingRedirect";
 import { MockStatusPanel } from "../components/MockStatusPanel";
+import { useQueryClient } from "@tanstack/react-query";
+import { showToast } from "@/utils/toast";
+import { CartButton } from "@/features/cart/components/CartButton";
+import {
+  cartItems,
+  useAddToCart,
+  useCart,
+} from "@/features/cart/hooks/useCart";
+import { shopKeys } from "../api/queryKeys";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -54,7 +63,7 @@ const STATE_INFO = {
   },
 };
 
-// [TẠM] Giỏ hàng / đặt hàng làm ở nhánh feature/cart-address
+// [TẠM] Mua ngay → checkout làm ở nhánh feature/checkout-payment
 const comingSoon = () =>
   Alert.alert("Sắp có", "Giỏ hàng và đặt hàng đang được hoàn thiện.");
 
@@ -86,6 +95,10 @@ export default function ProductDetailScreen() {
   const query = useProductDetail(id);
   const product = query.data;
   const similar = useSimilarProducts(product?.categoryId, id);
+  const cart = useCart();
+  const addToCart = useAddToCart();
+  const queryClient = useQueryClient();
+  const inCart = cartItems(cart.data).some((i) => i.product.id === id);
   const scrollRef = useRef(null);
   const similarY = useRef(0);
   const [expanded, setExpanded] = useState(false);
@@ -95,21 +108,27 @@ export default function ProductDetailScreen() {
       title=""
       onBack={goBack}
       right={
-        product ? (
-          <Pressable
-            onPress={() => share(product)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Chia sẻ"
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-          >
-            <Ionicons
-              name="share-social-outline"
-              size={20}
-              color={colors.text}
-            />
-          </Pressable>
-        ) : null
+        <View style={styles.headerActions}>
+          {product ? (
+            <Pressable
+              onPress={() => share(product)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Chia sẻ"
+              style={({ pressed }) => [
+                styles.iconBtn,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name="share-social-outline"
+                size={20}
+                color={colors.text}
+              />
+            </Pressable>
+          ) : null}
+          <CartButton />
+        </View>
       }
     />
   );
@@ -155,18 +174,43 @@ export default function ProductDetailScreen() {
   const scrollToSimilar = () =>
     scrollRef.current?.scrollTo({ y: similarY.current, animated: true });
 
+  const onAdd = () => {
+    if (!isAuthed) return askLogin(`/products/${id}`);
+    addToCart.mutate(id, {
+      onSuccess: () => showToast("Đã thêm vào giỏ"),
+      onError: (e) => {
+        // 409: món vừa bị người khác đặt, hoặc đã có trong giỏ (BE chưa có code để phân biệt) → tải lại món
+        if (e.status === 409) {
+          queryClient.invalidateQueries({ queryKey: shopKeys.product(id) });
+          return showToast(e.message);
+        }
+        Alert.alert("Chưa thêm được vào giỏ", e.message);
+      },
+    });
+  };
+  const onBuyNow = isAuthed ? comingSoon : () => askLogin(`/products/${id}`);
+
   let footer = null;
   if (state === SALE_STATE.ON_SALE) {
-    const onBuy = isAuthed ? comingSoon : () => askLogin(`/products/${id}`);
     footer = (
       <View style={styles.footerRow}>
-        <Button
-          title="Thêm vào giỏ"
-          variant="secondary"
-          onPress={onBuy}
-          style={styles.flex}
-        />
-        <Button title="Mua ngay" onPress={onBuy} style={styles.flex} />
+        {inCart ? (
+          <Button
+            title="Xem giỏ hàng"
+            variant="secondary"
+            onPress={() => router.push("/cart")}
+            style={styles.flex}
+          />
+        ) : (
+          <Button
+            title="Thêm vào giỏ"
+            variant="secondary"
+            loading={addToCart.isPending}
+            onPress={onAdd}
+            style={styles.flex}
+          />
+        )}
+        <Button title="Mua ngay" onPress={onBuyNow} style={styles.flex} />
       </View>
     );
   } else if (info && similar.data?.length) {
@@ -278,6 +322,7 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral,
     borderRadius: radius.input,
   },
+  headerActions: { flexDirection: "row", gap: spacing.sm },
   pressed: { opacity: 0.6 },
   body: { padding: spacing.lg, gap: spacing.lg },
   titleBlock: { gap: spacing.xs },

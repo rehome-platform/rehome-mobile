@@ -25,6 +25,7 @@ export function MockStatusPanel({ productId, status }) {
     await productsApi.mockSetStatus(productId, next);
     // Làm mới chi tiết + danh sách (món rời sàn / quay lại sàn như thật)
     queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.invalidateQueries({ queryKey: ["cart"] }); // món trong giỏ đổi thành không khả dụng
   };
 
   return (
