@@ -80,9 +80,10 @@ export default function LoginScreen() {
   const google = useMutation({
     mutationFn: async () => {
       const idToken = await getGoogleIdToken();
-      if (!idToken) return;
+      if (!idToken) return; // huỷ chọn tài khoản → không làm gì
       await signIn(await authApi.loginWithGoogle({ idToken }));
     },
+
     onError: (e) => setFormError(e), // ACCOUNT_BANNED, GOOGLE_ACCOUNT_CONFLICT, mất mạng… → khung lỗi
   });
 

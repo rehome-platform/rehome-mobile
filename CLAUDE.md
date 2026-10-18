@@ -259,13 +259,14 @@ Phase 2 (20–30/10): Ký gửi phía Member (luồng L-02). Hướng dẫn chi 
 | KG-11, KG-12 Cuối kỳ (nhận lại / ký gửi lại, biên nhận mới) | ✅ mock — PR #7 |
 | Nối API thật (`feature/consign-real-api`): `consignmentApi.real.js`, `catalogApi.real.js`, `upload.real.js`, tắt `MOCK.consignment`/`upload`, timeout axios 60 giây, test với web Moderator | ⏳ chờ BE (dự kiến 28–30/10) |
 
-Phase 3 (làm sớm từ 19/10, kế hoạch 31/10 – 05/11): Mua hàng & thanh toán phía Member (luồng L-03). Hướng dẫn chi tiết: `docs/PHASE3_GUIDE.md` (quyết định + chỗ lệch wireframe: mục 0.4 #1–#20).
+Phase 3 (làm sớm từ 19/10, kế hoạch 31/10 – 05/11): Mua hàng & thanh toán phía Member (luồng L-03). Hướng dẫn chi tiết: `docs/PHASE3_GUIDE.md` (quyết định + chỗ lệch wireframe: mục 0.4 #1–#23). **19/10: xong UI cả Phase 3 (BR-01 → BR-09)**, chỉ địa chỉ gọi thật; còn lại chờ BE.
 
 | Nhánh | Trạng thái (19/10) |
 | ----- | ------------------ |
 | 1 `feature/shop-browse`: BR-01 trang chủ, BR-02/03 tìm kiếm + bộ lọc, BR-04 chi tiết (4 trạng thái + 404), quay lại sau đăng nhập | ✅ mock — PR #10 (`MOCK.products`, `MOCK.productDetail` = true: chờ API 44, API 50) |
 | 2 `feature/cart-address`: BR-05 giỏ (ô tích từng món / kho), BR-06/07 địa chỉ, badge giỏ, thêm vào giỏ ở BR-04, mục "Địa chỉ giao hàng" ở tab Cá nhân | ✅ PR #12 — giỏ **mock** (`MOCK.cart = true`, đi cùng `MOCK.products`; chờ BE tạo sản phẩm mẫu trên Render), địa chỉ **API thật** (đã test 19/10) |
-| 3 `feature/checkout-payment`: BR-08, BR-09, `checkoutStore`, mock thanh toán | ⏳ chờ wireframe BR-08/09 |
+| 3 `feature/checkout-payment`: BR-08 đặt hàng (chọn địa chỉ, tách đơn theo kho, giữ hàng thất bại, Mua ngay), BR-09 chờ thanh toán (đếm ngược theo `paymentDeadline`, kết quả, dải đơn chờ ở giỏ), `checkoutStore` | ✅ PR #14 — **mock** (`MOCK.orders`, `MOCK.payment` = true; `ordersApi.mock` làm giống `OrderServiceImpl`); khung Mock: 409, MoMo thành công / thất bại, còn 30 giây |
+| 3b `feature/shop-real-api`: tắt `MOCK.products/cart/orders`, test với server | ⏳ chờ BE tạo sản phẩm mẫu (+ API 44 cho bộ lọc, API 50 chi tiết) |
 | 4 `feature/payment-momo`: MoMo sandbox (cài `expo-web-browser` + build lại) | ⏳ chờ BE API 60/61 |
 
 Dev build hiện có: `expo-location`, Google Sign-In, `expo-dev-client` (build 17/10). Thêm thư viện native khác → build lại.

@@ -5,7 +5,7 @@
 > Quy ước giữ nguyên như `CLAUDE.md` và PHASE2_GUIDE. File này chỉ ghi phần **mới**.
 > Ký hiệu: **[GIẢ ĐỊNH]** · **[CHỜ BE]** · **[CHỜ LEAD]** · **[KIỂM TRA]** (đối chiếu code BE trước khi dùng).
 > **Trạng thái BE (đã đọc code 19/10 tại `develop` `1852963` — kết quả ở mục 5.2 + 5.2b):** có thật `GET /products` (public), `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{id}`, `GET/POST/PUT/DELETE /addresses`, `POST /orders`. **Chưa có:** `GET /products/{id}` (API 50 — chi tiết sản phẩm!), checkout-preview (58), thanh toán (60), webhook MoMo (61), xem đơn (63). Có mấy điểm BE làm **khác contract** ảnh hưởng luồng giỏ → đặt hàng (mục 5.2b) — đọc trước khi code.
-> **Tiến độ (19/10):** ✅ Nhánh 1 `feature/shop-browse` (BR-01 → BR-04) — PR #10, mock. ✅ Nhánh 2 `feature/cart-address` (BR-05 → BR-07) — PR #12: giỏ **mock** (chờ BE có sản phẩm mẫu), địa chỉ **API thật**. ⏳ Nhánh 3 `feature/checkout-payment` (BR-08, BR-09).
+> **Tiến độ (19/10):** ✅ Nhánh 1 `feature/shop-browse` (BR-01 → BR-04) — PR #10, mock. ✅ Nhánh 2 `feature/cart-address` (BR-05 → BR-07) — PR #12: giỏ **mock** (chờ BE có sản phẩm mẫu), địa chỉ **API thật**. ✅ Nhánh 3 `feature/checkout-payment` (BR-08, BR-09) — PR #14, mock (đặt hàng giống BE, thanh toán giả lập). ⏳ Nhánh 4 `feature/payment-momo` — chờ BE API 60/61/63. → **Phase 3 xong UI**, còn nối thật khi BE có sản phẩm mẫu + API thanh toán (mục 1).
 
 ---
 
@@ -75,6 +75,9 @@ Chạy trên Android thật; phần BE đã có thì gọi thật, phần chưa 
 | 18  | BR-05 nút "Đặt 2 món còn lại", tạm tính theo món còn mua được                          | Giữ ô tích từng món / cả kho; **tạm tính, số đơn, dải "tách n đơn" và nút "Đặt hàng (k)" theo món đang tích**; tiền tự cộng trên app (không dùng `totalAmount` BE) | Có ô tích thì con số phải theo lựa chọn (Shopee); BE đặt được tập con qua `productIds` (5.2b #2)                                                       |
 | 19  | BR-05 dòng "Thương hiệu · Size · Tình trạng"                                           | Chỉ hiện Size (dùng `metaLine` — BE trả thêm thì tự hiện)                                                                        | `GET /cart` chưa trả `brandName`, `condition` (câu 21b)                                                                                               |
 | 20  | BR-07 sửa địa chỉ mặc định                                                             | Ô "mặc định" **khoá** khi đang sửa địa chỉ mặc định (đổi bằng "Đặt làm mặc định" ở địa chỉ khác)                                 | BE cho bỏ cờ mặc định → Member sẽ không còn địa chỉ mặc định nào. (Tỉnh/Phường: xem #5 — từ 01/07/2025 VN bỏ cấp quận/huyện, wireframe còn ô Quận/Huyện) |
+| 21  | BR-08 phí ship từng đơn (GHN 22.000 / 30.000) + nút "Thanh toán qua MoMo · 2.022.000 đ" | Phí ship "Tính khi đặt hàng"; nút **"Đặt hàng · giữ hàng 15 phút"**; phí + tổng thật (từ response `POST /orders`) hiện ở BR-09 **trước khi trả tiền** | Chưa có API 58 → không hiện số mà sau đó trừ số khác. Có API 58 thì hiện phí ở BR-08 và đổi lại nút |
+| 22  | BR-08 "Đặt được 2 trong 3 món… hai món còn lại **đang được giữ** 15 phút"              | "**1 món vừa có người khác mua trước** — chưa đặt đơn nào, chưa có khoản tiền nào bị trừ"; bỏ câu "đang được giữ"; "Đặt k món còn lại" gọi đặt lại | BE 409 cả lần, **không giữ** món nào; BE không nói món nào mất → app tải lại giỏ / món để tìm |
+| 23  | BR-09 không có nút ←, có "Hủy đơn"                                                     | Có ← (và Back Android) hỏi "Rời màn thanh toán? Đơn vẫn được giữ đến hh:mm"; ẩn "Hủy đơn"; nút chính "Thanh toán qua MoMo · tổng" → sau lần đầu "Mở lại MoMo…"; số tiền từng đơn kèm "tiền hàng + phí ship" | Luôn có đường ra (dải ở giỏ để quay lại); chưa có API huỷ đơn chờ (0.4 #8) |
 
 ---
 
@@ -87,7 +90,8 @@ Mỗi việc một nhánh từ `develop`:
 | 0      | —                                    | ✅ Đã đọc code BE, điền mục 5.2 + 5.2b (19/10)      | 19/10        |
 | 1      | `feature/shop-browse`                | ✅ api products (mock), BR-01 → BR-04 — PR #10      | 19/10        |
 | 2      | `feature/cart-address`               | ✅ BR-05 → BR-07, badge giỏ — PR #12                | 19/10        |
-| 3      | `feature/checkout-payment`           | BR-08, BR-09, `checkoutStore`, mock thanh toán      | 24–26/10     |
+| 3      | `feature/checkout-payment`           | ✅ BR-08, BR-09, `checkoutStore`, mock — PR #14     | 19/10        |
+| 3b     | `feature/shop-real-api`              | Đổi `MOCK.products/cart/orders = false` khi BE có sản phẩm mẫu (+ API 44 thì bật bộ lọc), test lại BR-01 → BR-08 với server | khi BE xong  |
 | 4      | `feature/payment-momo`               | MoMo sandbox thật (khi BE có API 60/61)             | khi BE xong  |
 | —      | `feature/consign-real-api` (Phase 2) | nối API ký gửi thật                                 | 28–30/10     |
 
@@ -134,11 +138,13 @@ src/
 │  ├─ schemas.js
 │  ├─ components/ AddressCard.js
 │  └─ screens/ AddressListScreen.js · AddressFormScreen.js (dùng cho cả thêm và sửa)
-└─ features/orders/                  # Phase 4 mở rộng thêm danh sách / chi tiết đơn
-   ├─ api/ ordersApi.js · ordersApi.real.js · ordersApi.mock.js · paymentApi.js · paymentApi.real.js · paymentApi.mock.js
-   ├─ hooks/ useOrderStatusPolling.js
-   ├─ components/ OrderGroupCard.js · CheckoutSummary.js · PaymentCountdown.js
+└─ features/orders/                  # ✅ nhánh 3. Phase 4 mở rộng thêm danh sách / chi tiết đơn
+   ├─ api/ ordersApi.js · ordersApi.real.js · ordersApi.mock.js · paymentApi.js · paymentApi.mock.js (paymentApi.real.js ở nhánh 4) · queryKeys.js
+   ├─ hooks/ useSecondsLeft.js (giây còn lại tới mốc, tính lại từ đồng hồ mỗi giây)
+   ├─ utils/ time.js (toDate: Instant ISO hoặc số giây)
+   ├─ components/ OrderGroupCard.js (+ OrderLine) · PaymentCountdown.js
    └─ screens/ CheckoutScreen.js · PaymentScreen.js
+(features/cart/components/PendingPaymentBanner.js — dải đơn chờ ở giỏ)
 ```
 
 `features/catalog` (danh mục/thương hiệu) đã có từ Phase 2 → dùng lại cho chip danh mục và bộ lọc. Kho cho bộ lọc: dùng danh sách kho của Phase 2 nếu có API công khai [CHỜ BE], chưa có thì ẩn mục Kho.
@@ -217,8 +223,8 @@ export const MOCK = {
   products: true, // ✅ đang dùng. [TẠM] GET /products thật đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → gửi id giả lên BE sẽ lỗi (BE nhận UUID); sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng
   productDetail: true, // ✅ đang dùng. [CHỜ BE] API 50 GET /products/{id}
   cart: true, // ✅ đang dùng. [TẠM] đi CÙNG products: id món mock (sp-001…) gửi lên BE sẽ 404; DB Render chưa có sản phẩm. BE tạo sản phẩm mẫu → đổi products + cart = false cùng lúc
-  orders: false, // nhánh 3: POST /orders thật; getCheckoutPreview / getOrder chưa có → tự tính / mock trong ordersApi (5.2b)
-  payment: true, // API 60/61 chưa có
+  orders: true, // ✅ đang dùng. [TẠM] đi cùng products/cart. ordersApi.real.createOrders (POST /orders) viết sẵn
+  payment: true, // ✅ đang dùng. [CHỜ BE] API 60 thanh toán, 61 webhook, 63 xem đơn (getOrder cũng theo cờ này)
 };
 ```
 
@@ -482,6 +488,15 @@ export const addressSchema = z.object({
 
 ### BR-08 · Đặt hàng (`checkout.js`)
 
+> ✅ **Đã làm (nhánh 3, mock) — khác bản kế hoạch bên dưới ở các điểm:**
+> - Vào từ giỏ `/checkout?ids=sp-001,sp-004` (các món **đang tích**) hoặc Mua ngay `/checkout?buyNow=<id>`. Dòng món dựng từ cache giỏ / chi tiết sản phẩm (không có API 58).
+> - Phí ship "Tính khi đặt hàng", nút **"Đặt hàng · giữ hàng 15 phút"** (0.4 #21). Không có `CheckoutSummary` riêng — footer: Tiền hàng · Vận chuyển n đơn.
+> - **Gửi gì:** đặt đúng **toàn bộ giỏ** (mọi món còn mua được) → **không** gửi `productIds` (BE tự xoá khỏi giỏ); còn lại gửi `productIds` rồi app `Promise.allSettled(removeCartItem…)` (5.2b #2).
+> - Thành công → `setPendingOrders(orders + warehouseName lấy từ dòng món)` → invalidate `cart`, `["products"]` → `router.replace("/payment")`.
+> - 409 → invalidate giỏ / chi tiết → món vừa có `unavailableReason` (hoặc status khác ON_SALE) tự rơi vào khối **Không đặt được** (0.4 #22). Lỗi khác → `ErrorBox`.
+> - Chưa có địa chỉ → khối "Thêm địa chỉ giao hàng" → `/addresses/new`, nút đặt mờ. Chọn địa chỉ: `AddressList ?select=1` → `checkoutStore.setAddressId` → `router.back()`.
+> - Mock (`__DEV__ && MOCK.orders`): nút "lần đặt tới có 1 món bị người khác mua trước" (`mockFailNextOrder`).
+
 Vào từ giỏ (cả giỏ, chỉ món còn mua được) hoặc từ "Mua ngay" (`?productId=`).
 
 - **Giao đến:** thẻ địa chỉ (mặc định chọn sẵn, hoặc địa chỉ trong `checkoutStore`) + nút **Đổi** → `addresses?select=1`. Chưa có địa chỉ nào → thẻ trống "Thêm địa chỉ giao hàng" → `addresses/new?from=checkout`.
@@ -509,6 +524,15 @@ Vào từ giỏ (cả giỏ, chỉ món còn mua được) hoặc từ "Mua ngay
 - Mất hết món → chỉ còn nút quay lại giỏ.
 
 ### BR-09 · Chờ thanh toán (`payment.js`)
+
+> ✅ **Đã làm (nhánh 3, mock):**
+> - Màn **chụp lại** `pendingOrders` lúc mở (state) → kết thúc thì xoá store (dải ở giỏ biến mất) nhưng màn vẫn hiện kết quả.
+> - Trạng thái: `useQuery` gọi `getOrder` cho mọi đơn (`orderKeys.statuses`); hạn thanh toán lấy từ kết quả BE (nếu có) → `useSecondsLeft`. `refetchInterval` 3 giây **chỉ trong 60 giây** sau khi bấm thanh toán / app quay lại `active`. Hết giờ → hỏi BE lần cuối.
+> - Thành công (mọi đơn `PAID`) / Hết hạn (về 0 hoặc có đơn `CANCELLED`) → màn `Result` + "Tiếp tục mua sắm" (`dismissTo("/")`); invalidate `cart`, `["products"]`.
+> - ← / Back Android (`BackHandler`) → "Rời màn thanh toán?…" → "Rời đi" = `router.dismissTo("/cart")`. Nút "Kiểm tra lại" chỉ quay vòng khi người dùng bấm (state `checking`, không dùng `isFetching`).
+> - Chưa có MoMo: `startPayment` trả `payUrl: null` → toast. Mock: MoMo thành công / thất bại / chỉ còn 30 giây (`mockShortenDeadline`).
+> - `PendingPaymentBanner` ở đầu giỏ (kể cả giỏ trống): "Bạn có n đơn chờ thanh toán — còn mm:ss" → `/payment`; hết giờ tự ẩn.
+> - **Nhánh 4 còn làm:** `paymentApi.real.js` (API 60), `expo-web-browser` `openAuthSessionAsync` + `returnUrl`, tự mở MoMo lần đầu, trả lần lượt nếu BE không có API gộp (0.4 #6).
 
 Dữ liệu: `checkoutStore.pendingOrders` (đơn vừa tạo). Không có đơn nào (mở thẳng / reload app) → `Redirect` về giỏ.
 
@@ -548,12 +572,13 @@ Dữ liệu: `checkoutStore.pendingOrders` (đơn vừa tạo). Không có đơn
 
 ## 8. `stores/checkoutStore.js` (zustand, chỉ RAM)
 
+✅ Đã làm:
+
 ```js
-// Hình dạng gợi ý
 {
-  addressId: null,          // địa chỉ đang chọn ở checkout
-  pendingOrders: [],        // [{ id, orderNo, warehouseName, totalAmount, paymentDeadline, status }]
-  setAddressId, setPendingOrders, markPaid(orderId), clear()
+  addressId: null,   // địa chỉ đang chọn ở checkout (null = mặc định)
+  pendingOrders: [], // [{ id, orderNo, warehouseId, warehouseName, subtotal, shippingFee, totalAmount, status, paymentDeadline }]
+  setAddressId, setPendingOrders, updateOrder(id, patch), clear()
 }
 ```
 
@@ -585,13 +610,14 @@ Chạy trên Android thật (dev build cho phần MoMo).
 
 **Đặt hàng và thanh toán**
 
-- [ ] Checkout chọn sẵn địa chỉ mặc định; Đổi địa chỉ → quay lại đúng địa chỉ mới, phí ship tải lại.
-- [ ] Bấm đặt liên tục 3 lần → chỉ tạo 1 nhóm đơn.
-- [ ] Mock 1 món bị mua trước → trạng thái "Đặt được k/m món" → đặt phần còn lại được.
-- [ ] Mua ngay từ chi tiết → checkout chỉ có 1 món.
-- [ ] Màn chờ: đếm ngược đúng theo `paymentDeadline`; Back → hỏi → về giỏ có dải "đơn chờ thanh toán" → bấm quay lại đúng màn.
-- [ ] Mock thành công → màn thành công, giỏ đã làm mới, món biến khỏi sàn.
-- [ ] Mock để hết giờ (sửa mock deadline còn 30 giây) → màn hết hạn.
+- [x] Checkout chọn sẵn địa chỉ mặc định; Đổi địa chỉ → quay lại đúng địa chỉ mới. (mock, 19/10)
+- [x] Bấm đặt liên tục 3 lần → chỉ tạo 1 nhóm đơn.
+- [x] Mock 1 món bị mua trước → "1 món vừa có người khác mua trước" → đặt phần còn lại được.
+- [x] Mua ngay từ chi tiết → checkout chỉ có 1 món.
+- [x] Màn chờ: đếm ngược đúng theo `paymentDeadline`; Back → hỏi → về giỏ có dải "đơn chờ thanh toán" → bấm quay lại đúng màn, đồng hồ chạy tiếp.
+- [x] Mock thành công → màn thành công, giỏ đã làm mới, món biến khỏi sàn.
+- [x] Mock "Chỉ còn 30 giây" → màn hết hạn, món quay lại sàn.
+- [ ] Đặt hàng với BE thật (`MOCK.orders = false`) khi BE có sản phẩm mẫu: kiểm `paymentDeadline` có `Z` (câu 16), giỏ được xoá đúng.
 - [ ] MoMo sandbox thật (khi BE có): mở trang, trả bằng tài khoản thử, quay về app → tự chuyển thành công trong vài giây.
 - [ ] Mất mạng ở trang chủ và ở nút đặt hàng → báo lỗi mạng, thử lại được.
 
