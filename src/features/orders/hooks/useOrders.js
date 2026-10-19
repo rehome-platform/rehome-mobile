@@ -46,3 +46,12 @@ export function useOrderMutation(mutationFn) {
     },
   });
 }
+// Số đơn của một chip (badge "3 đang giao" ở tab Cá nhân). [CHỜ BE] số đếm riêng — tạm lấy totalElements trang đầu
+export function useOrderCount(tab) {
+  return useQuery({
+    queryKey: [...orderKeys.list(tab.key), "count"],
+    queryFn: () =>
+      ordersApi.getOrders({ statuses: tab.statuses, page: 0, size: 1 }),
+    select: (page) => page.totalElements,
+  });
+}
