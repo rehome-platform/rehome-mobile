@@ -11,9 +11,11 @@ import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
 import { ORDER_TABS } from "@/constants/order";
 import { useOrderCount } from "@/features/orders/hooks/useOrders";
+import { WalletCard } from "@/features/wallet/components/WalletCard";
 
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
-// Ví (Phase 4) ẩn hẳn ở Phase 1 — số tiền giả dễ gây hiểu nhầm.
+// Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
+
 const COMING_SOON = [
   { icon: "return-down-back-outline", title: "Yêu cầu trả hàng" },
   { icon: "images-outline", title: "Ảnh thử đồ đã lưu" },
@@ -101,6 +103,7 @@ function MemberAccount() {
           color={colors.textSecondary}
         />
       </Pressable>
+      <WalletCard />
 
       <ListGroup>
         <ListItem

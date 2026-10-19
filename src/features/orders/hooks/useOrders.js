@@ -43,6 +43,7 @@ export function useOrderMutation(mutationFn) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] }); // huỷ đơn → hoàn tiền vào ví
     },
   });
 }

@@ -237,18 +237,28 @@ export default function OrderDetailScreen() {
         onPress={() => router.push(`/orders/${order.id}/rating`)} // nhánh 2: BR-14
       />
     );
-  } else if (
-    order.status === S.CANCELLED &&
-    order.items.length === 1 &&
-    order.items[0].productId
-  ) {
-    footer = (
-      <Button
-        title="Mua lại món này"
-        variant="secondary"
-        onPress={() => router.push(`/products/${order.items[0].productId}`)}
-      />
-    );
+  } else if (order.status === S.CANCELLED) {
+    const rebuyId = order.items.length === 1 ? order.items[0].productId : null;
+    footer =
+      wasRefunded(order) || rebuyId ? (
+        <View style={styles.footerRow}>
+          {wasRefunded(order) ? (
+            <Button
+              title="Xem ví của tôi"
+              onPress={() => router.push("/wallet")}
+              style={styles.flex}
+            />
+          ) : null}
+          {rebuyId ? (
+            <Button
+              title="Mua lại món này"
+              variant="secondary"
+              onPress={() => router.push(`/products/${rebuyId}`)}
+              style={styles.flex}
+            />
+          ) : null}
+        </View>
+      ) : null;
   }
 
   return (
@@ -534,4 +544,5 @@ const styles = StyleSheet.create({
     borderColor: colors.text,
   },
   stars: { fontSize: 28, color: colors.text, letterSpacing: 4 },
+  footerRow: { flexDirection: "row", gap: spacing.md },
 });

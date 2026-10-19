@@ -13,6 +13,7 @@ import {
   mockCartProductIds,
   mockRemoveFromCart,
 } from "@/features/cart/api/cartApi.mock";
+import { mockRefund } from "@/features/wallet/api/walletApi.mock";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 const SHIPPING_FEE = 25000; // giống cấu hình BE app.order.shipping-fee
@@ -447,6 +448,7 @@ export async function cancelOrder(id) {
   o.cancelReason = "BUYER_CANCELLED";
   o.cancelledAt = now();
   o.refundAmount = o.totalAmount; // hoàn 100% gồm phí ship (ví mock nối ở nhánh feature/wallet)
+  mockRefund({ orderId: o.id, orderNo: o.orderNo, amount: o.refundAmount }); // giao dịch REFUND vào ví
   setProductsStatus(o, PRODUCT_STATUS.ON_SALE);
   return { id: o.id, status: o.status };
 }
