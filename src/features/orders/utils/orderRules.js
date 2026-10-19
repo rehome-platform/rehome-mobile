@@ -25,14 +25,14 @@ export const wasRefunded = (o) =>
 export const returnDeadlineOf = (o, days = 3) =>
   o.deliveredAt ? toDate(o.deliveredAt).add(days, "day") : null;
 
-// Chỉ số bước ĐÃ xong trên ORDER_STEPS. Đã huỷ → -1 (không vẽ thanh bước)
+// Chỉ số bước ĐÃ XONG cuối cùng trên ORDER_STEPS (bước kế = đang diễn ra). Đã huỷ → -1 (không vẽ thanh bước)
 export const orderStepOf = (o) =>
   ({
-    PENDING_PAYMENT: 0,
-    PAID: 1,
-    PACKING: 2,
-    SHIPPING: 3,
-    DELIVERED: 3,
+    PENDING_PAYMENT: 0, // xong Đặt hàng → đang chờ Thanh toán
+    PAID: 1, // xong Thanh toán → chờ Kho đóng gói
+    PACKING: 1, // đang Kho đóng gói
+    SHIPPING: 2, // xong đóng gói → đang giao
+    DELIVERED: 3, // đã giao tới nơi → chờ Hoàn thành
     COMPLETED: 4,
   })[o.status] ?? -1;
 
