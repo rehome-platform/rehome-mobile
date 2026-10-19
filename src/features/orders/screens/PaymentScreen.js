@@ -7,8 +7,10 @@ import {
   StyleSheet,
   Text,
   View,
+  ActivityIndicator,
 } from "react-native";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
@@ -33,13 +35,56 @@ import { PaymentCountdown } from "../components/PaymentCountdown";
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 60 * 1000; // chỉ hỏi liên tục 60 giây sau mỗi lần mở MoMo / quay lại app
 
-// BR-09 · Chờ thanh toán → Thành công / Hết hạn
+// BR-09 · Mở từ checkout (đơn trong checkoutStore) hoặc từ đơn hàng: /payment?orderIds=a,b (PHASE4_GUIDE 0.4 #15)
 export default function PaymentScreen() {
+  const { orderIds } = useLocalSearchParams();
   const storeOrders = useCheckoutStore((s) => s.pendingOrders);
+  const ids = String(orderIds ?? "")
+    .split(",")
+    .filter(Boolean);
+  const fetched = useQuery({
+    queryKey: [...orderKeys.statuses(ids), "open"],
+    queryFn: () => Promise.all(ids.map((id) => ordersApi.getOrder(id))),
+    enabled: ids.length > 0,
+  });
+
+  if (!ids.length) return <PaymentView initialOrders={storeOrders} fromStore />;
+  if (fetched.isPending) {
+    return (
+      <Screen
+        header={
+          <AppHeader title="Chờ thanh toán" onBack={() => router.back()} />
+        }
+      >
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      </Screen>
+    );
+  }
+  if (fetched.isError) {
+    return (
+      <Screen
+        header={
+          <AppHeader title="Chờ thanh toán" onBack={() => router.back()} />
+        }
+      >
+        <ErrorBox message={fetched.error.message}>
+          <Button
+            title="Thử lại"
+            variant="secondary"
+            onPress={() => fetched.refetch()}
+          />
+        </ErrorBox>
+      </Screen>
+    );
+  }
+  return <PaymentView initialOrders={fetched.data} />;
+}
+
+function PaymentView({ initialOrders, fromStore = false }) {
   const setPendingOrders = useCheckoutStore((s) => s.setPendingOrders);
   const queryClient = useQueryClient();
   // Chụp lại lúc mở màn: kết thúc thì store bị xoá (dải ở giỏ biến mất) nhưng màn này vẫn hiện kết quả
-  const [orders] = useState(storeOrders);
+  const [orders] = useState(initialOrders);
   const [pollUntil, setPollUntil] = useState(0);
   const [opened, setOpened] = useState(false); // đã bấm thanh toán ít nhất 1 lần
   const [paying, setPaying] = useState(false);
@@ -78,7 +123,9 @@ export default function PaymentScreen() {
   // Kết thúc → xoá đơn chờ khỏi store, làm mới giỏ + sàn (món đã bán / mở bán lại)
   useEffect(() => {
     if (!done) return;
-    setPendingOrders([]);
+    if (fromStore) setPendingOrders([]); // mở từ Đơn hàng thì không đụng đơn chờ của checkout
+    queryClient.invalidateQueries({ queryKey: ["orders"] }); // danh sách / chi tiết đơn đổi trạng thái
+
     queryClient.invalidateQueries({ queryKey: cartKeys.cart });
     queryClient.invalidateQueries({ queryKey: ["products"] });
   }, [done]);
@@ -98,10 +145,14 @@ export default function PaymentScreen() {
     if (done) return router.dismissTo("/");
     Alert.alert(
       "Rời màn thanh toán?",
-      `Đơn vẫn được giữ đến ${dayjs(deadlineMs).format("HH:mm")}. Bạn có thể thanh toán tiếp từ Giỏ hàng.`,
+      `Đơn vẫn được giữ đến ${dayjs(deadlineMs).format("HH:mm")}. Bạn có thể thanh toán tiếp từ Giỏ hàng hoặc Đơn hàng của tôi.`,
       [
         { text: "Ở lại", style: "cancel" },
-        { text: "Rời đi", onPress: () => router.dismissTo("/cart") },
+        {
+          text: "Rời đi",
+          onPress: () =>
+            fromStore ? router.dismissTo("/cart") : router.back(),
+        },
       ],
     );
   }, [done, deadlineMs]);
@@ -278,10 +329,23 @@ function Result({ icon, iconColor, title, description, orders }) {
     <Screen
       header={<AppHeader title="Kết quả thanh toán" />}
       footer={
-        <Button
-          title="Tiếp tục mua sắm"
-          onPress={() => router.dismissTo("/")}
-        />
+        <View style={styles.footerCol}>
+          <Button
+            title="Tiếp tục mua sắm"
+            onPress={() => router.dismissTo("/")}
+          />
+          <Button
+            title="Xem đơn hàng"
+            variant="secondary"
+            onPress={() =>
+              router.replace(
+                orders.length === 1
+                  ? `/orders/${orders[0].id}`
+                  : "/orders?tab=PROCESSING",
+              )
+            }
+          />
+        </View>
       }
     >
       <View style={styles.result}>
@@ -312,6 +376,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
   },
+  loading: { marginTop: spacing.xxl },
+
   holdTitle: {
     ...textStyles.body,
     fontFamily: fonts.semibold,

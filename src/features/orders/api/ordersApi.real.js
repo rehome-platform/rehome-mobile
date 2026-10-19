@@ -15,3 +15,34 @@ export async function createOrders({ shippingAddressId, productIds }) {
 export async function getOrder(id) {
   return unwrap(await api.get(`/orders/${id}`));
 }
+// ===== Phase 4 [CHỜ BE] — theo API_CONTRACT, chưa có trên BE (đọc code 20/10) =====
+
+// API 62. statuses: mảng; [CHỜ BE] cách gửi nhiều trạng thái (câu 4) — tạm nối dấu phẩy
+export async function getOrders({ statuses = [], page = 0, size = 10 }) {
+  const params = {
+    page,
+    size,
+    ...(statuses.length ? { status: statuses.join(",") } : {}),
+  };
+  return unwrap(await api.get("/orders", { params }));
+}
+
+// API 64
+export async function getTracking(id) {
+  return unwrap(await api.get(`/orders/${id}/tracking`));
+}
+
+// API 65 — chỉ PAID; 409 khi kho đã đóng gói
+export async function cancelOrder(id) {
+  return unwrap(await api.post(`/orders/${id}/cancel`));
+}
+
+// API 66 — 409 khi đơn chưa giao
+export async function confirmReceipt(id) {
+  return unwrap(await api.post(`/orders/${id}/confirm-receipt`));
+}
+
+// API 67 — 1..5, chỉ COMPLETED
+export async function rateOrder(id, serviceRating) {
+  return unwrap(await api.post(`/orders/${id}/rating`, { serviceRating }));
+}

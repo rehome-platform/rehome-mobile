@@ -9,18 +9,19 @@ import { Button } from "@/components/ui/Button";
 import { ListGroup, ListItem } from "@/components/ui/ListItem";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
+import { ORDER_TABS } from "@/constants/order";
+import { useOrderCount } from "@/features/orders/hooks/useOrders";
 
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Ví (Phase 4) ẩn hẳn ở Phase 1 — số tiền giả dễ gây hiểu nhầm.
 const COMING_SOON = [
-  { icon: "receipt-outline", title: "Đơn hàng của tôi" },
-  { icon: "cube-outline", title: "Hàng ký gửi" },
   { icon: "return-down-back-outline", title: "Yêu cầu trả hàng" },
   { icon: "images-outline", title: "Ảnh thử đồ đã lưu" },
   { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
   { icon: "chatbubbles-outline", title: "Tin nhắn" },
 ];
 const showComingSoon = (title) => showToast(`${title} sẽ có ở phiên bản sau.`);
+const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
 
 export default function AccountScreen() {
   const status = useAuthStore((s) => s.status);
@@ -64,6 +65,7 @@ function GuestAccount() {
 function MemberAccount() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const shippingCount = useOrderCount(SHIPPING_TAB);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
   const confirmSignOut = () =>
@@ -107,6 +109,20 @@ function MemberAccount() {
           description="Đọc cho nhân viên khi tới kho"
           onPress={() => router.push("/profile/member-code")}
         />
+        <ListItem
+          icon="receipt-outline"
+          title="Đơn hàng của tôi"
+          badge={
+            shippingCount.data ? `${shippingCount.data} đang giao` : undefined
+          }
+          onPress={() => router.push("/orders")}
+        />
+        <ListItem
+          icon="cube-outline"
+          title="Hàng ký gửi"
+          onPress={() => router.push("/consign")}
+        />
+
         <ListItem
           icon="location-outline"
           title="Địa chỉ giao hàng"
