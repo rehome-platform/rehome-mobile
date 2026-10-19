@@ -5,6 +5,7 @@
 > Quy ước giữ nguyên như `CLAUDE.md` và PHASE2/3_GUIDE. File này chỉ ghi phần **mới**.
 > Ký hiệu: **[GIẢ ĐỊNH]** · **[CHỜ BE]** · **[CHỜ LEAD]** · **[KIỂM TRA]**.
 > **Trạng thái BE (đã đọc code 20/10 tại `develop` `2bfc66c`):** **chưa có** API nào của Phase 4 — controller đơn chỉ có `POST /orders`, chưa có controller ví; cũng chưa có API 60/61/63 của Phase 3. Phase 4 làm **toàn bộ bằng mock**, mock phải "sống" và nối với mock Phase 3 (đơn tạo ở BR-08 hiện ở danh sách đơn; huỷ đơn thì ví có giao dịch hoàn tiền). **Entity / enum đã có** (dùng để đặt tên field mock cho khớp) → mục 5.2b. Render vẫn chạy bản BE cũ (chưa deploy `2af9d85`, `2bfc66c`).
+> **✅ XONG Phase 4 (mock) — 5 nhánh, PR #18 → #22, `develop` `dc7efb4`.** Đọc lại BE `develop` `8c1a6b5` (đã deploy Render): **vẫn chưa có** API 62–67, 73–78, thanh toán bằng ví; chưa trả lời câu nào ở mục 11. Mới có MoMo một đơn (`/api/momo/create`, `/api/momo/status/{orderId}`) và tự huỷ đơn quá hạn (F-058) — xem `CLAUDE.md` → "API backend" → Mua hàng. Việc còn lại: nhánh 6 khi BE có API.
 
 ---
 
@@ -82,13 +83,22 @@ Chạy trên Android thật, với mock (`MOCK.orders`, `MOCK.wallet` = true):
 | Thứ tự | Nhánh                                                                       | Nội dung                                                                                                                               | Ngày (gợi ý) |
 | ------ | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | 0      | —                                                                           | ✅ Đã đọc code BE `2bfc66c` (20/10): chưa có API Phase 4; ghi field entity ở mục 5.2b                                                  | 20/10        |
-| 1      | `feature/orders`                                                            | constants, `orderRules`, mock đơn mở rộng, BR-10, BR-11 (7 trạng thái), huỷ đơn, BR-13, mở BR-09 từ danh sách, dòng "Đơn hàng" ở PR-01 | 20–22/10     |
-| 2      | `feature/order-tracking-rating`                                             | BR-12, BR-14                                                                                                                           | 23/10        |
-| 3      | `feature/wallet`                                                            | mock ví, VI-01 → VI-03, thẻ ví ở PR-01                                                                                                 | 24–25/10     |
-| 4      | `feature/payout`                                                            | VI-04, VI-05, danh sách yêu cầu rút                                                                                                    | 26/10        |
-| 5      | `feature/checkout-wallet`                                                   | Ví ReHome ở BR-08/09                                                                                                                   | 27/10        |
-| —      | `feature/consign-real-api`, `feature/shop-real-api`, `feature/payment-momo` | nối thật Phase 2/3 khi BE xong                                                                                                         | 28–30/10     |
-| 6      | `feature/orders-wallet-real-api`                                            | `*.real.js` Phase 4, tắt mock                                                                                                          | khi BE xong  |
+| 1      | `feature/orders`                                                            | ✅ PR #18 — constants, `orderRules`, mock đơn mở rộng, BR-10, BR-11 (7 trạng thái), huỷ đơn, BR-13, mở BR-09 từ danh sách, dòng "Đơn hàng" ở PR-01 | 20–22/10     |
+| 2      | `feature/order-tracking-rating`                                             | ✅ PR #19 — BR-12, BR-14                                                                                                               | 23/10        |
+| 3      | `feature/wallet`                                                            | ✅ PR #20 — mock ví, VI-01 → VI-03, thẻ ví ở PR-01                                                                                     | 24–25/10     |
+| 4      | `feature/payout`                                                            | ✅ PR #21 — VI-04, VI-05, danh sách yêu cầu rút                                                                                        | 26/10        |
+| 5      | `feature/checkout-wallet`                                                   | ✅ PR #22 — Ví ReHome ở BR-08/09                                                                                                       | 27/10        |
+| —      | `feature/consign-real-api`, `feature/shop-real-api`, `feature/payment-momo` | nối thật Phase 2/3 khi BE xong (`8c1a6b5`: Render chưa có sản phẩm; ký gửi thiếu `/uploads` + danh mục; MoMo chỉ một đơn)              | 28–30/10     |
+| 6      | `feature/orders-wallet-real-api`                                            | ⏳ `*.real.js` Phase 4, tắt `MOCK.orderList` / `MOCK.wallet` — chờ BE                                                                  | khi BE xong  |
+
+**Đã làm khác / thêm so với kế hoạch** (đều trong code, ghi để nối API thật cho đúng):
+
+- Cờ mock tách: `MOCK.orders` (API 59 tạo đơn), `MOCK.orderList` (62–67), `MOCK.payment`, `MOCK.wallet` (73–78).
+- `orderStepOf`: bước hiện tại **chưa** tính là xong (PAID/PACKING = bước 1…). BR-12 ưu tiên câu `label`/`description` BE gửi, không có mới dùng `TRACKING_EVENT_LABEL`.
+- Xác nhận đã nhận hàng xong → hỏi luôn "Đánh giá ngay?". Đơn huỷ: chân màn có "Xem ví của tôi" + "Mua lại món này".
+- VI-02 không có API chi tiết → `useTransaction` tìm trong các trang đã tải, không thấy thì tải trang đầu (size 100). VI-05 tự hỏi lại 2 giây/lần, dừng khi Thành công / Thất bại hoặc sau 60 giây.
+- BR-09: `PaymentScreen` nhận `?orderIds=` hoặc lấy `checkoutStore`; mỗi lần trả **một** cách (MoMo **hoặc** ví) cho cả nhóm đơn; xong có nút "Xem đơn hàng".
+- Mock nối nhau: đặt đơn → danh sách đơn; trả ví → trừ số dư + đơn `PAID`; huỷ → giao dịch hoàn tiền; rút tiền → khoá → 2 giây Đang xử lý → 6 giây Thành công / Thất bại. Khung Mock (`__DEV__`): chuyển trạng thái đơn, rút ngắn hạn trả, ví rỗng, lần rút sau thất bại.
 
 ---
 
@@ -522,29 +532,29 @@ Chạy trên Android thật, mock.
 
 **Đơn hàng**
 
-- [ ] PR-01: dòng "Đơn hàng của tôi" mở BR-10; badge đúng số đơn đang giao.
-- [ ] BR-10: 6 chip lọc đúng; thẻ mỗi trạng thái có đúng nút; kéo tải lại; rỗng từng chip.
-- [ ] Đặt hàng ở BR-08 (mock) → đơn hiện ở chip Chờ thanh toán → "Thanh toán" mở BR-09 đúng đơn, đồng hồ đúng; tắt app mở lại vẫn mở được từ danh sách.
-- [ ] Chi tiết 7 trạng thái hiện đúng khối và nút (dùng khung Mock chuyển trạng thái).
-- [ ] Huỷ đơn PAID → hỏi lại → Đã huỷ, ví có thêm giao dịch Hoàn tiền đúng tổng (cả ship); huỷ khi vừa sang PACKING (khung Mock) → 409 → toast + tải lại.
-- [ ] Đang giao: sao chép mã vận đơn; "Xem trên GHN" mở trình duyệt.
-- [ ] Đã giao: đếm "Tự hoàn thành sau …"; xác nhận qua dialog (từ chi tiết và từ danh sách) → Hoàn thành → hỏi đánh giá.
-- [ ] Đánh giá: chưa chọn sao nút mờ; gửi xong mở lại thấy chỉ đọc; danh sách hiện "★ n/5".
-- [ ] Theo dõi: mốc mới nhất trên cùng; đơn có sự cố hiện khối cảnh báo; chưa có mốc.
+- [x] PR-01: dòng "Đơn hàng của tôi" mở BR-10; badge đúng số đơn đang giao.
+- [x] BR-10: 6 chip lọc đúng; thẻ mỗi trạng thái có đúng nút; kéo tải lại; rỗng từng chip.
+- [x] Đặt hàng ở BR-08 (mock) → đơn hiện ở chip Chờ thanh toán → "Thanh toán" mở BR-09 đúng đơn, đồng hồ đúng; tắt app mở lại vẫn mở được từ danh sách.
+- [x] Chi tiết 7 trạng thái hiện đúng khối và nút (dùng khung Mock chuyển trạng thái).
+- [x] Huỷ đơn PAID → hỏi lại → Đã huỷ, ví có thêm giao dịch Hoàn tiền đúng tổng (cả ship); huỷ khi vừa sang PACKING (khung Mock) → 409 → toast + tải lại.
+- [x] Đang giao: sao chép mã vận đơn; "Xem trên GHN" mở trình duyệt.
+- [x] Đã giao: đếm "Tự hoàn thành sau …"; xác nhận qua dialog (từ chi tiết và từ danh sách) → Hoàn thành → hỏi đánh giá.
+- [x] Đánh giá: chưa chọn sao nút mờ; gửi xong mở lại thấy chỉ đọc; danh sách hiện "★ n/5".
+- [x] Theo dõi: mốc mới nhất trên cùng; đơn có sự cố hiện khối cảnh báo; chưa có mốc.
 
 **Ví và rút tiền**
 
-- [ ] PR-01 thẻ ví hiện **khả dụng**; "Rút tiền" mở VI-04.
-- [ ] VI-01: số dư / khả dụng / đang khoá khớp nhau; chip Tiền vào / Tiền ra lọc đúng dấu; rỗng (sửa mock) hiện khối "Tiền vào ví khi nào".
-- [ ] VI-02: giao dịch bán hàng có cách tính đúng (giá − hoa hồng − thuế = vào ví); hoàn tiền mở được đơn.
-- [ ] VI-03: 3 đơn 3 mức hoa hồng khác nhau; tổng "Bạn nhận" đúng.
-- [ ] VI-04: 5.000 đ → lỗi tối thiểu; vượt khả dụng → khối giải thích + "Rút <khả dụng>"; chip Tất cả; rút lần thứ 4 trong ngày → lỗi.
-- [ ] VI-05: tự đổi Đang xử lý → Thành công (số dư giảm, khoá nhả); "Lần rút sau thất bại" → Thất bại, khả dụng trở lại như trước khi rút.
+- [x] PR-01 thẻ ví hiện **khả dụng**; "Rút tiền" mở VI-04.
+- [x] VI-01: số dư / khả dụng / đang khoá khớp nhau; chip Tiền vào / Tiền ra lọc đúng dấu; rỗng (sửa mock) hiện khối "Tiền vào ví khi nào".
+- [x] VI-02: giao dịch bán hàng có cách tính đúng (giá − hoa hồng − thuế = vào ví); hoàn tiền mở được đơn.
+- [x] VI-03: 3 đơn 3 mức hoa hồng khác nhau; tổng "Bạn nhận" đúng.
+- [x] VI-04: 5.000 đ → lỗi tối thiểu; vượt khả dụng → khối giải thích + "Rút <khả dụng>"; chip Tất cả; rút lần thứ 4 trong ngày → lỗi.
+- [x] VI-05: tự đổi Đang xử lý → Thành công (số dư giảm, khoá nhả); "Lần rút sau thất bại" → Thất bại, khả dụng trở lại như trước khi rút.
 
 **Thanh toán bằng ví**
 
-- [ ] Ví đủ tiền → chọn Ví → đặt → trả bằng ví → thành công, số dư giảm đúng tổng.
-- [ ] Ví thiếu → lựa chọn mờ + "Thiếu …".
+- [x] Ví đủ tiền → chọn Ví → đặt → trả bằng ví → thành công, số dư giảm đúng tổng.
+- [x] Ví thiếu → lựa chọn mờ + "Thiếu …".
 
 ---
 
