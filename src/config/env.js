@@ -17,4 +17,5 @@ export const MOCK = {
   cart: true, // [TẠM] đi CÙNG MOCK.products: id món mock (sp-001…) gửi lên BE sẽ 404. BE có sản phẩm mẫu → đổi cả hai sang false
   orders: true, // [TẠM] đi cùng products/cart (sản phẩm, giỏ đang mock). POST /orders thật đã có (ordersApi.real.js)
   payment: true, // [CHỜ BE] API 60 thanh toán, 61 webhook MoMo, 63 xem đơn
+  orderList: true, // [CHỜ BE] API 62–67: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá đơn
 };
