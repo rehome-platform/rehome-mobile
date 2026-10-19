@@ -20,7 +20,7 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { MOCK } from "@/config/env";
-import { ORDER_STATUS } from "@/constants/order";
+import { ORDER_STATUS, PAYMENT_METHOD } from "@/constants/order";
 import { useCheckoutStore } from "@/stores/checkoutStore";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
@@ -31,6 +31,8 @@ import { orderKeys } from "../api/queryKeys";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
 import { toDate } from "../utils/time";
 import { PaymentCountdown } from "../components/PaymentCountdown";
+import { ERROR_CODES } from "@/constants/errorCodes";
+import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
 
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 60 * 1000; // chỉ hỏi liên tục 60 giây sau mỗi lần mở MoMo / quay lại app
@@ -89,6 +91,12 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const [opened, setOpened] = useState(false); // đã bấm thanh toán ít nhất 1 lần
   const [paying, setPaying] = useState(false);
   const [checking, setChecking] = useState(false); // chỉ quay vòng khi người dùng bấm "Kiểm tra lại"
+  const storeMethod = useCheckoutStore((s) => s.paymentMethod);
+  // Mở từ checkout → theo lựa chọn ở BR-08; mở từ Đơn hàng → MoMo, đổi được ngay tại đây
+  const [method, setMethod] = useState(
+    fromStore ? storeMethod : PAYMENT_METHOD.MOMO,
+  );
+  const [paidBy, setPaidBy] = useState(null); // hiện "Đã thanh toán bằng Ví ReHome" ở màn kết quả
 
   const ids = orders.map((o) => o.id);
   // Trạng thái thật luôn hỏi BE — không tin kết quả trên đường quay về từ MoMo (F-057)
@@ -125,9 +133,9 @@ function PaymentView({ initialOrders, fromStore = false }) {
     if (!done) return;
     if (fromStore) setPendingOrders([]); // mở từ Đơn hàng thì không đụng đơn chờ của checkout
     queryClient.invalidateQueries({ queryKey: ["orders"] }); // danh sách / chi tiết đơn đổi trạng thái
-
     queryClient.invalidateQueries({ queryKey: cartKeys.cart });
     queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.invalidateQueries({ queryKey: ["wallet"] }); // trả bằng ví → số dư đổi
   }, [done]);
 
   // Quay lại app (từ MoMo / app khác) → hỏi BE ngay + hỏi tiếp 60 giây
@@ -176,7 +184,11 @@ function PaymentView({ initialOrders, fromStore = false }) {
         icon="checkmark-circle"
         iconColor={colors.success}
         title="Thanh toán thành công"
-        description="Kho sẽ đóng gói và giao hàng cho bạn. Bạn sẽ nhận thông báo khi đơn được gửi đi."
+        description={
+          paidBy === PAYMENT_METHOD.WALLET
+            ? "Đã trừ tiền trong Ví ReHome. Kho sẽ đóng gói và giao hàng cho bạn."
+            : "Kho sẽ đóng gói và giao hàng cho bạn. Bạn sẽ nhận thông báo khi đơn được gửi đi."
+        }
         orders={orders}
       />
     );
@@ -193,14 +205,15 @@ function PaymentView({ initialOrders, fromStore = false }) {
     );
   }
 
-  const pay = async () => {
+  const pendingIds = () =>
+    ids.filter((id) => statusOf(id) === ORDER_STATUS.PENDING_PAYMENT);
+
+  const payWithMomo = async () => {
     setPaying(true);
     try {
-      const pendingIds = ids.filter(
-        (id) => statusOf(id) === ORDER_STATUS.PENDING_PAYMENT,
-      );
       const { payUrl } = await paymentApi.startPayment({
-        orderIds: pendingIds,
+        orderIds: pendingIds(),
+        method: PAYMENT_METHOD.MOMO,
       });
       setOpened(true);
       setPollUntil(Date.now() + POLL_WINDOW_MS);
@@ -213,6 +226,38 @@ function PaymentView({ initialOrders, fromStore = false }) {
       setPaying(false);
     }
   };
+
+  // Ví: trừ tiền + đơn PAID trong một lần gọi → hỏi BE lại là ra màn Thành công
+  const payWithWallet = async () => {
+    setPaying(true);
+    try {
+      await paymentApi.startPayment({
+        orderIds: pendingIds(),
+        method: PAYMENT_METHOD.WALLET,
+      });
+      setPaidBy(PAYMENT_METHOD.WALLET);
+      await status.refetch();
+    } catch (e) {
+      showToast(e.message);
+      if (e.code === ERROR_CODES.INSUFFICIENT_BALANCE)
+        setMethod(PAYMENT_METHOD.MOMO); // số dư vừa đổi
+    } finally {
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      setPaying(false);
+    }
+  };
+
+  const pay = () =>
+    method === PAYMENT_METHOD.WALLET
+      ? Alert.alert(
+          `Trả ${formatVnd(total)} bằng Ví ReHome?`,
+          "Tiền được trừ ngay trong ví.",
+          [
+            { text: "Huỷ", style: "cancel" },
+            { text: "Thanh toán", onPress: payWithWallet },
+          ],
+        )
+      : payWithMomo();
 
   const check = async () => {
     setChecking(true);
@@ -241,19 +286,23 @@ function PaymentView({ initialOrders, fromStore = false }) {
         <View style={styles.footerCol}>
           <Button
             title={
-              opened
-                ? "Mở lại MoMo để thanh toán"
-                : `Thanh toán qua MoMo · ${formatVnd(total)}`
+              method === PAYMENT_METHOD.WALLET
+                ? `Trả bằng Ví ReHome · ${formatVnd(total)}`
+                : opened
+                  ? "Mở lại MoMo để thanh toán"
+                  : `Thanh toán qua MoMo · ${formatVnd(total)}`
             }
-            loading={checking}
+            loading={paying}
             onPress={pay}
           />
-          <Button
-            title="Tôi đã thanh toán — kiểm tra lại"
-            variant="secondary"
-            loading={status.isFetching && !paying}
-            onPress={check}
-          />
+          {method === PAYMENT_METHOD.MOMO ? (
+            <Button
+              title="Tôi đã thanh toán — kiểm tra lại"
+              variant="secondary"
+              loading={checking}
+              onPress={check}
+            />
+          ) : null}
         </View>
       }
     >
@@ -287,6 +336,14 @@ function PaymentView({ initialOrders, fromStore = false }) {
           <Text style={styles.rowTitle}>Tổng thanh toán</Text>
           <Text style={styles.total}>{formatVnd(total)}</Text>
         </View>
+      </View>
+      <View style={styles.methodBox}>
+        <Text style={styles.methodTitle}>PHƯƠNG THỨC</Text>
+        <PaymentMethodPicker
+          value={method}
+          onChange={setMethod}
+          amount={total}
+        />
       </View>
 
       <NoteBox>
@@ -366,6 +423,8 @@ function Result({ icon, iconColor, title, description, orders }) {
 
 const styles = StyleSheet.create({
   content: { gap: spacing.lg },
+  methodBox: { gap: spacing.sm },
+  methodTitle: { ...textStyles.label, color: colors.textSecondary },
   text: { ...textStyles.body, color: colors.text },
   footerCol: { gap: spacing.sm },
   holdBox: {

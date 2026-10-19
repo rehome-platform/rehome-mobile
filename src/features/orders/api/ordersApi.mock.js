@@ -491,8 +491,8 @@ export async function rateOrder(id, serviceRating) {
 
 // ---------- [DEV] dùng trong khung Mock ----------
 
-// paymentApi.mock gọi: MoMo báo thành công → PAID, món thành SOLD
-export const mockMarkPaid = (orderIds) =>
+/// paymentApi.mock gọi: MoMo báo thành công / trả bằng ví → PAID, món thành SOLD
+export const mockMarkPaid = (orderIds, method = "MOMO") =>
   orders
     .filter((o) => orderIds.includes(o.id))
     .forEach((o) => {
@@ -500,9 +500,19 @@ export const mockMarkPaid = (orderIds) =>
       if (o.status !== S.PENDING_PAYMENT) return;
       o.status = S.PAID;
       o.paidAt = now();
-      o.paymentMethod = "MOMO";
+      o.paymentMethod = method;
       setProductsStatus(o, PRODUCT_STATUS.SOLD);
     });
+
+// paymentApi.mock gọi trước khi trừ ví: các đơn còn chờ thanh toán (đã kiểm hết hạn) + số tiền
+export const mockPendingOrders = (orderIds) =>
+  orders
+    .filter((o) => orderIds.includes(o.id))
+    .filter((o) => {
+      expireIfLate(o);
+      return o.status === S.PENDING_PAYMENT;
+    })
+    .map((o) => ({ id: o.id, orderNo: o.orderNo, totalAmount: o.totalAmount }));
 
 // Rút ngắn hạn thanh toán còn 30 giây để test hết giờ
 export const mockShortenDeadline = (orderIds) =>

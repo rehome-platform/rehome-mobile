@@ -13,7 +13,7 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
-import { RadioCard } from "@/components/ui/RadioCard";
+import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -89,6 +89,9 @@ export default function CheckoutScreen() {
   const addresses = useAddresses();
   const storeAddressId = useCheckoutStore((s) => s.addressId);
   const setPendingOrders = useCheckoutStore((s) => s.setPendingOrders);
+  const paymentMethod = useCheckoutStore((s) => s.paymentMethod);
+  const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
+
   const [ids, setIds] = useState(() =>
     buyNowId
       ? [buyNowId]
@@ -324,11 +327,11 @@ export default function CheckoutScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>THANH TOÁN</Text>
-        {/* Phase 3 chỉ MoMo (PHASE3_GUIDE 0.4 #7). Phase 4 thêm "Ví ReHome" */}
-        <RadioCard
-          title="Ví MoMo"
-          description="Trả trong 15 phút sau khi đặt"
-          selected
+        <PaymentMethodPicker
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          amount={sum(okLines)}
+          isSubtotal
         />
       </View>
 

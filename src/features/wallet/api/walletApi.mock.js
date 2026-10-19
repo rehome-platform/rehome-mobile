@@ -292,3 +292,25 @@ export async function createPayout(amount) {
 
   return { id: p.id, amount, status: p.status };
 }
+// [MOCK] paymentApi.mock gọi khi trả đơn bằng ví: đủ khả dụng thì trừ số dư,
+// mỗi đơn một giao dịch "Thanh toán đơn hàng" (âm). Thiếu → 409 INSUFFICIENT_BALANCE (như contract API 60)
+export function mockPayWithWallet(orders) {
+  const total = orders.reduce((s, o) => s + o.totalAmount, 0);
+  if (total > wallet.balance - wallet.lockedBalance) {
+    throw conflict(
+      ERROR_CODES.INSUFFICIENT_BALANCE,
+      "Số dư ví không đủ để thanh toán.",
+    );
+  }
+  orders.forEach((o) => {
+    wallet.balance -= o.totalAmount;
+    transactions.push(
+      tx(T.ORDER_PAYMENT, -o.totalAmount, {
+        relatedOrderId: o.id,
+        relatedOrderNo: o.orderNo,
+        note: "Thanh toán đơn hàng",
+        balanceAfter: wallet.balance,
+      }),
+    );
+  });
+}
