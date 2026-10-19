@@ -55,3 +55,11 @@ export function useOrderCount(tab) {
     select: (page) => page.totalElements,
   });
 }
+// Hành trình GHN (API 64) — chỉ gọi khi đơn đã có mã vận đơn
+export function useTracking(id, enabled = true) {
+  return useQuery({
+    queryKey: orderKeys.tracking(id),
+    queryFn: () => ordersApi.getTracking(id),
+    enabled: !!id && enabled,
+  });
+}

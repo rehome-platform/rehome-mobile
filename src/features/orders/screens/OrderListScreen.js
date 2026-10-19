@@ -18,6 +18,7 @@ import { ORDER_TABS } from "@/constants/order";
 import { useAuthStore } from "@/stores/authStore";
 import { useOrders } from "../hooks/useOrders";
 import { OrderCard } from "../components/OrderCard";
+import { ConfirmReceiptDialog } from "../components/ConfirmReceiptDialog";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/account");
@@ -33,6 +34,7 @@ export default function OrderListScreen() {
   const tab = ORDER_TABS.find((t) => t.key === tabKey);
   const query = useOrders(tab);
   const listRef = useRef(null);
+  const [confirmOrder, setConfirmOrder] = useState(null); // đơn đang mở dialog BR-13
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -104,7 +106,7 @@ export default function OrderListScreen() {
               })
             }
             onTrack={() => openDetail(item)} // [TẠM] nhánh 2: /orders/[id]/tracking
-            onConfirm={() => openDetail(item)} // [TẠM] bước 3: dialog BR-13 ngay tại danh sách
+            onConfirm={() => setConfirmOrder(item)}
             onRate={() => openDetail(item)} // [TẠM] nhánh 2: /orders/[id]/rating
           />
         )}
@@ -129,6 +131,12 @@ export default function OrderListScreen() {
           />
         }
       />
+      {confirmOrder ? (
+        <ConfirmReceiptDialog
+          order={confirmOrder}
+          onClose={() => setConfirmOrder(null)}
+        />
+      ) : null}
     </Screen>
   );
 }
