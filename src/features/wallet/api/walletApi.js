@@ -8,4 +8,5 @@ export const walletApi = {
   // [DEV] chỉ dùng trong khung Mock (__DEV__)
   mockSetEmpty: mock.mockSetEmpty,
   mockIsEmpty: mock.mockIsEmpty,
+  mockNextPayoutFails: mock.mockNextPayoutFails,
 };

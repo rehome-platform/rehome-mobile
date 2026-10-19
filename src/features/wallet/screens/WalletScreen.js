@@ -66,7 +66,7 @@ function Balance({ w }) {
         <Button
           title="Rút tiền"
           disabled={!canWithdraw}
-          onPress={() => {}} // nhánh 4 feature/payout: /wallet/withdraw
+          onPress={() => router.push("/wallet/withdraw")}
           style={styles.flex}
         />
         {w.balance > 0 ? (
@@ -78,6 +78,14 @@ function Balance({ w }) {
           />
         ) : null}
       </View>
+      {w.balance > 0 ? (
+        <Button
+          title="Xem các yêu cầu rút tiền"
+          variant="text"
+          onPress={() => router.push("/wallet/payouts")}
+        />
+      ) : null}
+
       {!canWithdraw && w.balance > 0 ? (
         <Text style={styles.hint}>
           Rút tối thiểu {formatVnd(WALLET_LIMITS.MIN_PAYOUT)}.

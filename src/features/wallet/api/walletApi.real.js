@@ -1,4 +1,5 @@
 import { api, unwrap } from "@/lib/api/client";
+import { WALLET_LIMITS } from "@/constants/wallet";
 
 // API 73–78 theo API_CONTRACT [CHỜ BE] — BE chưa có controller ví (đọc code 20/10)
 
@@ -34,4 +35,17 @@ export async function getPayouts({ page = 0, size = 20 } = {}) {
 
 export async function getPayout(id) {
   return unwrap(await api.get(`/wallet/payout-requests/${id}`));
+}
+// API 76 — 409: BELOW_MIN_PAYOUT / INSUFFICIENT_BALANCE / DAILY_PAYOUT_LIMIT_REACHED [CHỜ BE đưa vào field code]
+export async function createPayout(amount) {
+  return unwrap(await api.post("/wallet/payout-requests", { amount })); // {id, amount, status: "PENDING"}
+}
+
+// [CHỜ BE câu 16] chưa có API cấu hình ví → dùng mặc định, chưa biết số lượt đã dùng hôm nay
+export async function getWalletConfig() {
+  return {
+    minPayout: WALLET_LIMITS.MIN_PAYOUT,
+    maxPayoutsPerDay: WALLET_LIMITS.MAX_PAYOUTS_PER_DAY,
+    usedToday: null,
+  };
 }

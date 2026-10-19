@@ -17,4 +17,7 @@ export const ERROR_CODES = {
   ORGANIZATION_NOT_REJECTED: "ORGANIZATION_NOT_REJECTED", // tổ chức: chỉ nộp lại khi bị từ chối (403)
   CANNOT_CANCEL_AFTER_PACKING: "CANNOT_CANCEL_AFTER_PACKING", // huỷ đơn: kho đã đóng gói (API 65, 409) — BE đang để trong message [CHỜ BE]
   ORDER_NOT_DELIVERED: "ORDER_NOT_DELIVERED", // xác nhận nhận hàng khi đơn chưa giao (API 66, 409) [GIẢ ĐỊNH tên mã]
+  BELOW_MIN_PAYOUT: "BELOW_MIN_PAYOUT", // rút tiền: dưới mức tối thiểu (API 76, 409) — BE đang để trong message [CHỜ BE]
+  INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE", // rút tiền / trả bằng ví: không đủ số dư khả dụng (409)
+  DAILY_PAYOUT_LIMIT_REACHED: "DAILY_PAYOUT_LIMIT_REACHED", // rút tiền: hết lượt trong ngày (409)
 };
