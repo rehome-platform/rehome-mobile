@@ -45,3 +45,15 @@ export function formatTimeLeft(v) {
   if (h > 0) return `${h} giờ`;
   return `${Math.max(1, Math.floor(s / 60))} phút`;
 }
+// [KIỂM TRA] trang tra cứu công khai của GHN (PHASE4_GUIDE câu 7)
+export const ghnTrackingUrl = (code) =>
+  `https://donhang.ghn.vn/?order_code=${encodeURIComponent(code)}`;
+
+// "Hôm nay 08:15" / "Hôm qua 22:10" / "08/10 16:30" — thời điểm của mốc hành trình
+export function formatEventTime(v) {
+  const t = toDate(v);
+  if (t.isSame(dayjs(), "day")) return `Hôm nay ${t.format("HH:mm")}`;
+  if (t.isSame(dayjs().subtract(1, "day"), "day"))
+    return `Hôm qua ${t.format("HH:mm")}`;
+  return t.format("DD/MM HH:mm");
+}

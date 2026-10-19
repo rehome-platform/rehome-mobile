@@ -105,9 +105,9 @@ export default function OrderListScreen() {
                 params: { orderIds: item.id },
               })
             }
-            onTrack={() => openDetail(item)} // [TẠM] nhánh 2: /orders/[id]/tracking
+            onTrack={() => router.push(`/orders/${item.id}/tracking`)}
             onConfirm={() => setConfirmOrder(item)}
-            onRate={() => openDetail(item)} // [TẠM] nhánh 2: /orders/[id]/rating
+            onRate={() => router.push(`/orders/${item.id}/rating`)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.gap} />}
