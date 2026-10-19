@@ -95,6 +95,12 @@ export default function TransactionDetailScreen() {
             variant="secondary"
             onPress={() => router.push(`/orders/${tx.relatedOrderId}`)}
           />
+        ) : tx.payoutId ? (
+          <Button
+            title="Xem yêu cầu rút"
+            variant="secondary"
+            onPress={() => router.push(`/wallet/payouts/${tx.payoutId}`)}
+          />
         ) : null
       }
     >

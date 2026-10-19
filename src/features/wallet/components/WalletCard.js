@@ -34,7 +34,7 @@ export function WalletCard() {
         title="Rút tiền"
         variant="secondary"
         disabled={!w || w.availableBalance < WALLET_LIMITS.MIN_PAYOUT}
-        onPress={() => router.push("/wallet")} // nhánh 4: /wallet/withdraw
+        onPress={() => router.push("/wallet/withdraw")}
         style={styles.btn}
       />
     </Pressable>

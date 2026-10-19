@@ -3,7 +3,13 @@
 // payoutId, balanceAfter, productName, commissionRate, termNo. Reload app → về dữ liệu mẫu
 import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
-import { TX_STATUS, WALLET_TX_TYPE as T } from "@/constants/wallet";
+import {
+  TX_STATUS,
+  WALLET_LIMITS,
+  WALLET_TX_TYPE as T,
+} from "@/constants/wallet";
+import { ERROR_CODES } from "@/constants/errorCodes";
+import { formatVnd } from "@/utils/money";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => dayjs().toISOString();
@@ -13,7 +19,7 @@ const year = dayjs().year();
 const orderNo = (n) => `OD-${year}-${String(n).padStart(6, "0")}`;
 const desc = (key) => (a, b) => dayjs(b[key]).diff(a[key]);
 const paginate = (items, page, size) => ({
-  content: items.slice(page * size, (page + 1) * size),
+  content: items.slice(page * size, (page + 1) * size).map((i) => ({ ...i })), // bản sao: mock sửa tại chỗ
   page,
   size,
   totalElements: items.length,
@@ -177,7 +183,7 @@ export async function getPayout(id) {
       code: "HTTP_404",
       message: "Không tìm thấy yêu cầu rút.",
     });
-  return p;
+  return { ...p };
 }
 
 // [MOCK] ordersApi.mock gọi khi huỷ đơn đã thanh toán: hoàn 100% vào ví
@@ -198,3 +204,91 @@ export function mockSetEmpty(value) {
   emptyMode = value;
 }
 export const mockIsEmpty = () => emptyMode;
+// ---------- Nhánh 4: rút tiền ----------
+let failNextPayout = false;
+// [DEV] lần rút kế tiếp sẽ thất bại (test VI-05 Thất bại)
+export const mockNextPayoutFails = () => {
+  failNextPayout = true;
+};
+
+const conflict = (code, message) =>
+  new ApiError({ status: 409, code, message });
+const payoutsToday = () =>
+  payouts.filter((p) => dayjs(p.createdAt).isSame(dayjs(), "day")).length;
+
+export async function getWalletConfig() {
+  await delay(300);
+  return {
+    minPayout: WALLET_LIMITS.MIN_PAYOUT,
+    maxPayoutsPerDay: WALLET_LIMITS.MAX_PAYOUTS_PER_DAY,
+    usedToday: payoutsToday(),
+  };
+}
+
+// Như BE: kiểm tối thiểu / khả dụng / lượt trong ngày → PENDING, KHOÁ tiền ngay.
+// Giả lập chi tiền: ~2 giây PROCESSING, ~6 giây SUCCESS (trừ số dư) hoặc FAILED (nhả khoá)
+export async function createPayout(amount) {
+  await delay(700);
+  const available = wallet.balance - wallet.lockedBalance;
+  if (!amount || amount < WALLET_LIMITS.MIN_PAYOUT) {
+    throw conflict(
+      ERROR_CODES.BELOW_MIN_PAYOUT,
+      `Số tiền rút tối thiểu là ${formatVnd(WALLET_LIMITS.MIN_PAYOUT)}.`,
+    );
+  }
+  if (amount > available) {
+    throw conflict(
+      ERROR_CODES.INSUFFICIENT_BALANCE,
+      "Số dư khả dụng không đủ.",
+    );
+  }
+  if (payoutsToday() >= WALLET_LIMITS.MAX_PAYOUTS_PER_DAY) {
+    throw conflict(
+      ERROR_CODES.DAILY_PAYOUT_LIMIT_REACHED,
+      "Bạn đã hết lượt rút tiền hôm nay.",
+    );
+  }
+
+  const no = 88 + payouts.length;
+  const p = {
+    id: `po-${no}`,
+    code: `RT-${String(no).padStart(5, "0")}`,
+    amount,
+    status: TX_STATUS.PENDING,
+    failureReason: null,
+    createdAt: nowIso(),
+    processedAt: null,
+  };
+  payouts.push(p);
+  wallet.lockedBalance += amount;
+  const t = tx(T.WITHDRAWAL, -amount, {
+    status: TX_STATUS.PENDING,
+    payoutId: p.id,
+    note: `Yêu cầu ${p.code}`,
+  });
+  transactions.push(t);
+
+  const willFail = failNextPayout;
+  failNextPayout = false;
+  setTimeout(() => {
+    p.status = TX_STATUS.PROCESSING;
+    t.status = TX_STATUS.PROCESSING;
+  }, 2000);
+  setTimeout(() => {
+    p.processedAt = nowIso();
+    wallet.lockedBalance -= amount; // nhả khoá dù thành công hay thất bại
+    if (willFail) {
+      p.status = TX_STATUS.FAILED;
+      p.failureReason =
+        "Cổng chi tiền từ chối giao dịch. Đây là lỗi phía hệ thống, không phải do tài khoản của bạn.";
+      t.status = TX_STATUS.FAILED;
+    } else {
+      p.status = TX_STATUS.SUCCESS;
+      wallet.balance -= amount;
+      t.status = TX_STATUS.SUCCESS;
+      t.balanceAfter = wallet.balance;
+    }
+  }, 6000);
+
+  return { id: p.id, amount, status: p.status };
+}
