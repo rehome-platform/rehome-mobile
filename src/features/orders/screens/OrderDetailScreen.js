@@ -37,6 +37,7 @@ import {
   formatTimeLeft,
   orderStepOf,
   wasRefunded,
+  ghnTrackingUrl,
 } from "../utils/orderRules";
 import { OrderStatusBadge } from "../components/OrderStatusBadge";
 import { OrderStepper } from "../components/OrderStepper";
@@ -47,9 +48,7 @@ import { OrderMockPanel } from "../components/OrderMockPanel";
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/orders");
 const fmt = (v) => (v ? toDate(v).format("DD/MM/YYYY HH:mm") : "");
-// [KIỂM TRA] trang tra cứu công khai của GHN (PHASE4_GUIDE câu 7)
-const ghnUrl = (code) =>
-  `https://donhang.ghn.vn/?order_code=${encodeURIComponent(code)}`;
+
 const CHECKLIST = [
   "Đúng món, đúng size như mô tả",
   "Tình trạng khớp với kết luận kiểm định",
@@ -220,7 +219,7 @@ export default function OrderDetailScreen() {
       <Button
         title="Xem trên GHN"
         variant="secondary"
-        onPress={() => Linking.openURL(ghnUrl(order.ghnTrackingCode))}
+        onPress={() => Linking.openURL(ghnTrackingUrl(order.ghnTrackingCode))}
       />
     );
   } else if (canConfirm(order)) {
@@ -303,6 +302,12 @@ export default function OrderDetailScreen() {
               />
             </View>
           ) : null}
+          <Button
+            title="Xem tất cả hành trình"
+            variant="text"
+            onPress={() => router.push(`/orders/${order.id}/tracking`)}
+          />
+
           <Section title="HÀNH TRÌNH">
             {(tracking.data?.events ?? []).slice(0, 3).map((e, i) => (
               <View key={`${e.timestamp}-${i}`} style={styles.event}>

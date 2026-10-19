@@ -1,10 +1,11 @@
-import { Modal, StyleSheet, Text, View } from "react-native";
+import { Modal, StyleSheet, Text, View, Alert } from "react-native";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Button } from "@/components/ui/Button";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import { ordersApi } from "../api/ordersApi";
 import { useOrderMutation } from "../hooks/useOrders";
+import { router } from "expo-router";
 
 const POINTS = [
   "Đơn chuyển sang Hoàn thành ngay lập tức.",
@@ -23,8 +24,21 @@ export function ConfirmReceiptDialog({ order, onClose }) {
     confirm.mutate(order.id, {
       onSuccess: () => {
         onClose();
-        showToast("Đã xác nhận nhận hàng"); // nhánh 2: hỏi luôn "Chấm dịch vụ của kho?"
+        showToast("Đã xác nhận nhận hàng");
+        // Hỏi ngay lúc trải nghiệm còn mới (thông lệ Shopee) — không bắt buộc
+        Alert.alert(
+          "Chấm dịch vụ của kho?",
+          "Mất vài giây, giúp kho đóng gói và giao tốt hơn.",
+          [
+            { text: "Để sau", style: "cancel" },
+            {
+              text: "Đánh giá",
+              onPress: () => router.push(`/orders/${order.id}/rating`),
+            },
+          ],
+        );
       },
+
       onError: (e) => {
         onClose(); // 409: đơn đã tự hoàn thành / chưa giao → màn tự tải lại
         showToast(e.message);

@@ -71,3 +71,21 @@ export const unavailableLabel = (reason) =>
   CART_UNAVAILABLE_LABEL[reason] ?? "Không còn khả dụng";
 
 export const ADDRESS_LIMIT = 5; // BR-06 — BE không giới hạn → app tự chặn
+// API 64 events[].status [CHỜ BE danh sách đủ — câu 7]. Không có trong bảng → dùng chữ BE trả (label/description)
+export const TRACKING_EVENT_LABEL = {
+  PICKED_UP: "GHN đã lấy hàng",
+  SORTED: "Đã rời kho phân loại",
+  DELIVERING: "Đang giao đến bạn",
+  FAILED_DELIVERY: "Giao không thành công",
+  DELIVERED: "Giao thành công",
+  RETURNING: "Đang trả hàng về kho",
+};
+
+// BR-14: chữ đi kèm số sao [GIẢ ĐỊNH]
+export const RATING_LABEL = {
+  1: "Rất tệ",
+  2: "Tệ",
+  3: "Bình thường",
+  4: "Tốt",
+  5: "Rất tốt",
+};
