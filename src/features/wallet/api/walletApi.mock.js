@@ -186,14 +186,19 @@ export async function getPayout(id) {
   return { ...p };
 }
 
-// [MOCK] ordersApi.mock gọi khi huỷ đơn đã thanh toán: hoàn 100% vào ví
-export function mockRefund({ orderId, orderNo: no, amount }) {
+// [MOCK] ordersApi.mock gọi khi huỷ đơn đã thanh toán, returnsApi.mock gọi khi trả hàng hợp lệ / thất lạc: hoàn 100% vào ví
+export function mockRefund({
+  orderId,
+  orderNo: no,
+  amount,
+  note = "Hoàn tiền huỷ đơn",
+}) {
   wallet.balance += amount;
   transactions.push(
     tx(T.REFUND, amount, {
       relatedOrderId: orderId,
       relatedOrderNo: no,
-      note: "Hoàn tiền huỷ đơn",
+      note,
       balanceAfter: wallet.balance,
     }),
   );

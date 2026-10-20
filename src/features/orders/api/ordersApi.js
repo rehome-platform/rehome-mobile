@@ -17,4 +17,5 @@ export const ordersApi = {
   mockFailNextOrder: mock.mockFailNextOrder,
   mockShortenDeadline: mock.mockShortenDeadline,
   mockAdvanceOrder: mock.mockAdvanceOrder,
+  mockExpireReturnWindow: mock.mockExpireReturnWindow,
 };

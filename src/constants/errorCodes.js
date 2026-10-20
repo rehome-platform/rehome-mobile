@@ -20,4 +20,7 @@ export const ERROR_CODES = {
   BELOW_MIN_PAYOUT: "BELOW_MIN_PAYOUT", // rút tiền: dưới mức tối thiểu (API 76, 409) — BE đang để trong message [CHỜ BE]
   INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE", // rút tiền / trả bằng ví: không đủ số dư khả dụng (409)
   DAILY_PAYOUT_LIMIT_REACHED: "DAILY_PAYOUT_LIMIT_REACHED", // rút tiền: hết lượt trong ngày (409)
+  RETURN_WINDOW_EXPIRED: "RETURN_WINDOW_EXPIRED", // trả hàng: quá 3 ngày kể từ lúc giao (API 79, 409) — contract để trong message [CHỜ BE]
+  RETURN_ALREADY_EXISTS: "RETURN_ALREADY_EXISTS", // trả hàng: đơn đã có yêu cầu (API 79, 409) [GIẢ ĐỊNH tên mã]
+  RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) [GIẢ ĐỊNH tên mã]
 };

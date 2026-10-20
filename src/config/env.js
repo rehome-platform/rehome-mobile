@@ -19,4 +19,5 @@ export const MOCK = {
   payment: true, // [CHỜ BE] API 60 thanh toán, 61 webhook MoMo, 63 xem đơn
   orderList: true, // [CHỜ BE] API 62–67: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá đơn
   wallet: true, // [CHỜ BE] API 73–78: ví, lịch sử giao dịch, doanh thu, rút tiền
+  returns: true, // [CHỜ BE] API 79–82: trả hàng (Phase 5)
 };
