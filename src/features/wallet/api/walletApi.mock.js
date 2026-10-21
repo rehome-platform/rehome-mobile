@@ -10,6 +10,11 @@ import {
 } from "@/constants/wallet";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { formatVnd } from "@/utils/money";
+import { mockNotify } from "@/features/notifications/api/notificationApi.mock";
+import {
+  NOTIFICATION_TARGET as NT,
+  NOTIFICATION_TYPE as NN,
+} from "@/constants/notification";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => dayjs().toISOString();
@@ -194,6 +199,12 @@ export function mockRefund({
   note = "Hoàn tiền huỷ đơn",
 }) {
   wallet.balance += amount;
+  mockNotify({
+    type: NN.WALLET_EVENT,
+    title: "Đã hoàn tiền vào ví",
+    body: `${formatVnd(amount)} đã hoàn vào ví ReHome (${note.toLowerCase()} ${no ?? ""}).`,
+    targetType: NT.WALLET,
+  });
   transactions.push(
     tx(T.REFUND, amount, {
       relatedOrderId: orderId,
@@ -293,6 +304,15 @@ export async function createPayout(amount) {
       t.status = TX_STATUS.SUCCESS;
       t.balanceAfter = wallet.balance;
     }
+    mockNotify({
+      type: NN.WALLET_EVENT,
+      title: willFail ? "Rút tiền thất bại" : "Rút tiền thành công",
+      body: willFail
+        ? `Yêu cầu ${p.code} thất bại, ${formatVnd(amount)} đã trả lại số dư khả dụng.`
+        : `${formatVnd(amount)} đã chuyển tới tài khoản ngân hàng của bạn (${p.code}).`,
+      targetType: NT.PAYOUT,
+      targetId: p.id,
+    });
   }, 6000);
 
   return { id: p.id, amount, status: p.status };

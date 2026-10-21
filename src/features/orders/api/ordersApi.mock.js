@@ -14,6 +14,11 @@ import {
   mockRemoveFromCart,
 } from "@/features/cart/api/cartApi.mock";
 import { mockRefund } from "@/features/wallet/api/walletApi.mock";
+import { mockNotify } from "@/features/notifications/api/notificationApi.mock";
+import {
+  NOTIFICATION_TARGET as NT,
+  NOTIFICATION_TYPE as NN,
+} from "@/constants/notification";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 const SHIPPING_FEE = 25000; // giống cấu hình BE app.order.shipping-fee
@@ -578,10 +583,37 @@ export async function mockAdvanceOrder(id) {
     o.status = S.COMPLETED;
     o.completedAt = now();
   }
+  // Phase 6: đơn đổi trạng thái → thông báo
+  const TEXT = {
+    [S.PACKING]: [
+      "Kho đang đóng gói đơn",
+      `Đơn ${o.orderNo} đang được đóng gói, không huỷ được nữa.`,
+    ],
+    [S.SHIPPING]: [
+      "Đơn đang được giao",
+      `Đơn ${o.orderNo} đã rời kho, GHN sẽ giao trong 1–3 ngày.`,
+    ],
+    [S.DELIVERED]: [
+      "Đơn đã giao thành công",
+      `Kiểm tra hàng rồi xác nhận đã nhận cho đơn ${o.orderNo}.`,
+    ],
+    [S.COMPLETED]: [
+      "Đơn đã hoàn thành",
+      `Đơn ${o.orderNo} đã hoàn thành. Chấm điểm dịch vụ của kho nhé.`,
+    ],
+  };
+  if (TEXT[o.status]) {
+    mockNotify({
+      type: NN.ORDER_UPDATE,
+      title: TEXT[o.status][0],
+      body: TEXT[o.status][1],
+      targetType: NT.ORDER,
+      targetId: o.id,
+    });
+  }
   return toDetail(o);
 }
 // ---------- Phase 5 ----------
-
 // returnsApi.mock dùng: lấy đơn THẬT trong RAM (sửa trực tiếp returnRequestId)
 export const mockFindOrder = (id) => orders.find((o) => o.id === id) ?? null;
 

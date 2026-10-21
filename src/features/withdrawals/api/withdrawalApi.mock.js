@@ -20,6 +20,11 @@ import {
   mockChargeWithdrawalFee,
 } from "@/features/wallet/api/walletApi.mock";
 import { canWithdraw, freeWindowOf, splitFee } from "../utils/withdrawalRules";
+import { mockNotify } from "@/features/notifications/api/notificationApi.mock";
+import {
+  NOTIFICATION_TARGET as NT,
+  NOTIFICATION_TYPE as NN,
+} from "@/constants/notification";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => dayjs().toISOString();
@@ -209,5 +214,17 @@ export async function mockWithdrawalAction(id, key) {
     w.pickupDeadline = ago(1, "minute");
     expireIfLate(w);
   }
+  // Phase 6: kết quả rút hàng → thông báo
+  mockNotify({
+    type: NN.TERM_EXPIRY,
+    title:
+      key === "HAND_OVER" ? "Đã nhận lại hàng" : "Yêu cầu rút hàng đã quá hạn",
+    body:
+      key === "HAND_OVER"
+        ? `Bạn đã nhận lại ${w.productName} tại ${w.warehouseName}.`
+        : `Quá hạn đến kho — ${w.productName} đã được đăng bán lại, phí không hoàn.`,
+    targetType: NT.WITHDRAWAL,
+    targetId: w.id,
+  });
   return toView(w);
 }
