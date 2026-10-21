@@ -54,6 +54,7 @@ const blank = () => ({
   cancelReason: null,
   cancelledAt: null,
   refundAmount: null,
+  returnRequestId: null, // [CHỜ BE PHASE5_GUIDE câu 3] — có thì BR-11 hiện dòng "Yêu cầu trả hàng"
 });
 
 // ---------- Dữ liệu mẫu: mỗi trạng thái ít nhất 1 đơn ----------
@@ -100,6 +101,19 @@ function seed({ status, warehouseId, items, createdHoursAgo, ...rest }) {
     ...rest,
   };
 }
+// Phase 5: đơn đã có yêu cầu trả (id yêu cầu khớp returnsApi.mock: rr-seed-<n> ↔ od-seed-<10+n>)
+const returned = (n, it, deliveredHoursAgo) =>
+  seed({
+    status: S.COMPLETED,
+    warehouseId: "wh-q1",
+    items: [it],
+    createdHoursAgo: deliveredHoursAgo + 48,
+    paidAt: ago(deliveredHoursAgo + 48, "hour"),
+    ghnTrackingCode: `GHN8R${n}K2M`,
+    deliveredAt: ago(deliveredHoursAgo, "hour"),
+    completedAt: ago(deliveredHoursAgo - 1, "hour"),
+    returnRequestId: `rr-seed-${n}`,
+  });
 
 let orders = [
   seed({
@@ -243,6 +257,25 @@ let orders = [
     cancelReason: "PAYMENT_EXPIRED",
     cancelledAt: ago(299, "hour"),
   }),
+  // od-seed-11 → 16: có yêu cầu trả (Phase 5)
+  returned(
+    1,
+    item("Quần jeans ống rộng", 420000, "Levi's", "29", "Tốt", "rt1"),
+    20,
+  ),
+  returned(2, item("Áo khoác dạ dài", 680000, "Zara", "L", "Tốt", "rt2"), 40),
+  returned(
+    3,
+    item("Áo thun cổ tròn", 150000, "Uniqlo", "M", "Khá", "rt3"),
+    100,
+  ),
+  returned(4, item("Chân váy xếp ly", 390000, "Mango", "S", "Tốt", "rt4"), 200),
+  returned(5, item("Áo blazer kẻ", 520000, "H&M", "M", "Tốt", "rt5"), 150),
+  returned(
+    6,
+    item("Đầm suông lụa", 610000, "Zara", "M", "Như mới", "rt6"),
+    300,
+  ),
 ];
 
 let failNext = false;
@@ -278,6 +311,7 @@ const toSummary = (o) => ({
   autoCompleteDeadline: o.autoCompleteDeadline,
   serviceRating: o.serviceRating,
   refundAmount: o.refundAmount,
+  returnRequestId: o.returnRequestId,
   itemCount: o.items.length,
   firstItem: o.items[0] ?? null,
 });
@@ -544,5 +578,17 @@ export async function mockAdvanceOrder(id) {
     o.status = S.COMPLETED;
     o.completedAt = now();
   }
+  return toDetail(o);
+}
+// ---------- Phase 5 ----------
+
+// returnsApi.mock dùng: lấy đơn THẬT trong RAM (sửa trực tiếp returnRequestId)
+export const mockFindOrder = (id) => orders.find((o) => o.id === id) ?? null;
+
+// [DEV] Đẩy mốc giao lùi lại → hạn trả hàng còn 1 phút (test nút Trả hàng biến mất / RT-01 Quá hạn)
+export async function mockExpireReturnWindow(id) {
+  await delay(300);
+  const o = findOrder(id);
+  o.deliveredAt = dayjs().subtract(3, "day").add(1, "minute").toISOString();
   return toDetail(o);
 }

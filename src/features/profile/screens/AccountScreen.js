@@ -12,18 +12,20 @@ import { showToast } from "@/utils/toast";
 import { ORDER_TABS } from "@/constants/order";
 import { useOrderCount } from "@/features/orders/hooks/useOrders";
 import { WalletCard } from "@/features/wallet/components/WalletCard";
+import { RETURN_TABS } from "@/constants/returns";
+import { useReturnCount } from "@/features/returns/hooks/useReturns";
 
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 
 const COMING_SOON = [
-  { icon: "return-down-back-outline", title: "Yêu cầu trả hàng" },
   { icon: "images-outline", title: "Ảnh thử đồ đã lưu" },
   { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
   { icon: "chatbubbles-outline", title: "Tin nhắn" },
 ];
 const showComingSoon = (title) => showToast(`${title} sẽ có ở phiên bản sau.`);
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
+const RETURN_ACTION_TAB = RETURN_TABS.find((t) => t.key === "ACTION");
 
 export default function AccountScreen() {
   const status = useAuthStore((s) => s.status);
@@ -68,6 +70,7 @@ function MemberAccount() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const shippingCount = useOrderCount(SHIPPING_TAB);
+  const returnActionCount = useReturnCount(RETURN_ACTION_TAB);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
   const confirmSignOut = () =>
@@ -120,6 +123,17 @@ function MemberAccount() {
           }
           onPress={() => router.push("/orders")}
         />
+        <ListItem
+          icon="return-down-back-outline"
+          title="Yêu cầu trả hàng"
+          badge={
+            returnActionCount.data
+              ? `${returnActionCount.data} cần bạn làm`
+              : undefined
+          }
+          onPress={() => router.push("/returns")}
+        />
+
         <ListItem
           icon="cube-outline"
           title="Hàng ký gửi"

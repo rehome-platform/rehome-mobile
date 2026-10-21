@@ -3,6 +3,7 @@ import { colors, spacing, textStyles } from "@/theme";
 import { MOCK } from "@/config/env";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
+import { canRequestReturn } from "@/features/returns/utils/returnRules";
 import { ordersApi } from "../api/ordersApi";
 import { useOrderMutation } from "../hooks/useOrders";
 
@@ -17,19 +18,30 @@ const NEXT_STEP = {
 // [DEV] chỉ hiện ở bản dev + khi đơn còn mock
 export function OrderMockPanel({ order }) {
   const advance = useOrderMutation(ordersApi.mockAdvanceOrder);
-  if (!__DEV__ || !MOCK.orderList || !NEXT_STEP[order.status]) return null;
+  const expireReturn = useOrderMutation(ordersApi.mockExpireReturnWindow);
+  const next = NEXT_STEP[order.status];
+  const returnable = canRequestReturn(order);
+  if (!__DEV__ || !MOCK.orderList || (!next && !returnable)) return null;
   return (
     <NoteBox>
       <View style={styles.wrap}>
-        <Text style={styles.title}>
-          Mock (chỉ bản dev): đẩy đơn sang bước kế
-        </Text>
-        <Button
-          title={NEXT_STEP[order.status]}
-          variant="text"
-          loading={advance.isPending}
-          onPress={() => advance.mutate(order.id)}
-        />
+        <Text style={styles.title}>Mock (chỉ bản dev)</Text>
+        {next ? (
+          <Button
+            title={next}
+            variant="text"
+            loading={advance.isPending}
+            onPress={() => advance.mutate(order.id)}
+          />
+        ) : null}
+        {returnable ? (
+          <Button
+            title="Rút hạn trả hàng còn 1 phút"
+            variant="text"
+            loading={expireReturn.isPending}
+            onPress={() => expireReturn.mutate(order.id)}
+          />
+        ) : null}
       </View>
     </NoteBox>
   );

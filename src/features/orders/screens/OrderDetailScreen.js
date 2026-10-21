@@ -38,12 +38,17 @@ import {
   orderStepOf,
   wasRefunded,
   ghnTrackingUrl,
+  returnDeadlineOf,
 } from "../utils/orderRules";
 import { OrderStatusBadge } from "../components/OrderStatusBadge";
 import { OrderStepper } from "../components/OrderStepper";
 import { OrderItemRow } from "../components/OrderItemRow";
 import { ConfirmReceiptDialog } from "../components/ConfirmReceiptDialog";
 import { OrderMockPanel } from "../components/OrderMockPanel";
+import { ListGroup, ListItem } from "@/components/ui/ListItem";
+import { RETURN_STATUS_LABEL } from "@/constants/returns";
+import { canRequestReturn } from "@/features/returns/utils/returnRules";
+import { useReturn } from "@/features/returns/hooks/useReturns";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/orders");
@@ -122,6 +127,7 @@ export default function OrderDetailScreen() {
   const addresses = useAddresses();
   const cancel = useOrderMutation(ordersApi.cancelOrder);
   const [confirming, setConfirming] = useState(false);
+  const returnReq = useReturn(order?.returnRequestId); // đơn đã có yêu cầu trả → lấy trạng thái cho dòng lối vào
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -420,6 +426,43 @@ export default function OrderDetailScreen() {
           ) : null}
         </>
       ) : null}
+      {/* Phase 5: trả hàng — theo MỐC giao, kể cả khi đơn đã Hoàn thành */}
+      {canRequestReturn(order) ? (
+        <View style={styles.returnBox}>
+          <View style={styles.flex}>
+            <Text style={styles.strong}>Hàng có vấn đề?</Text>
+            <Text style={styles.muted}>
+              Còn {formatTimeLeft(returnDeadlineOf(order))} để yêu cầu trả hàng
+              (hạn {returnDeadlineOf(order).format("DD/MM HH:mm")})
+            </Text>
+          </View>
+          <Button
+            title="Trả hàng"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: "/returns/new",
+                params: { orderId: order.id },
+              })
+            }
+            style={styles.smallBtn}
+          />
+        </View>
+      ) : null}
+      {order.returnRequestId ? (
+        <ListGroup>
+          <ListItem
+            icon="return-down-back-outline"
+            title="Yêu cầu trả hàng"
+            description={
+              returnReq.data
+                ? RETURN_STATUS_LABEL[returnReq.data.status]
+                : undefined
+            }
+            onPress={() => router.push(`/returns/${order.returnRequestId}`)}
+          />
+        </ListGroup>
+      ) : null}
 
       {/* ---- Phần chung ---- */}
       <Section title="SẢN PHẨM">
@@ -530,6 +573,16 @@ const styles = StyleSheet.create({
   },
   code: { ...textStyles.title, letterSpacing: 1, color: colors.text },
   smallBtn: { minHeight: 36, paddingHorizontal: spacing.md },
+  returnBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
   event: { flexDirection: "row", gap: spacing.md },
   eventDot: {
     width: 12,

@@ -149,6 +149,9 @@ export function OrderCard({ order, onPress, ...actions }) {
           </View>
         </View>
       ) : null}
+      {order.returnRequestId ? (
+        <Text style={styles.muted}>↩ Có yêu cầu trả hàng</Text>
+      ) : null}
 
       {order.itemCount > 1 ? (
         <Text style={styles.total}>Tổng {formatVnd(order.totalAmount)}</Text>

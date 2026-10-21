@@ -14,7 +14,16 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 const COLUMNS = 4;
 
 // Lưới ảnh sản phẩm. value: mảng uri (ảnh mới trong máy) hoặc url (ảnh đã upload). Hết chỗ thì ẩn ô "+"
-export function PhotoPicker({ value = [], onChange, max, error }) {
+export function PhotoPicker({
+  value = [],
+  onChange,
+  max,
+  error,
+  label = "Ảnh sản phẩm",
+  helper = "Cần ảnh mặt trước, mặt sau, nhãn mác và tem thương hiệu. Ảnh càng rõ, kho duyệt càng nhanh.",
+  pickTitle = "Thêm ảnh sản phẩm",
+  pickMessage = "Chụp rõ, đủ sáng, thấy được nhãn mác và tem thương hiệu.",
+}) {
   const { width } = useWindowDimensions();
   const size = (width - spacing.lg * 2 - spacing.sm * (COLUMNS - 1)) / COLUMNS; // trừ lề màn + khoảng cách
   const remaining = max - value.length;
@@ -51,8 +60,9 @@ export function PhotoPicker({ value = [], onChange, max, error }) {
 
   const choose = () =>
     Alert.alert(
-      "Thêm ảnh sản phẩm",
-      "Chụp rõ, đủ sáng, thấy được nhãn mác và tem thương hiệu.",
+      pickTitle,
+      pickMessage,
+
       [
         { text: "Huỷ", style: "cancel" },
         { text: "Chọn từ thư viện", onPress: fromLibrary },
@@ -63,7 +73,7 @@ export function PhotoPicker({ value = [], onChange, max, error }) {
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>
-        Ảnh sản phẩm{" "}
+        {label}{" "}
         <Text style={styles.count}>
           ({value.length} / {max})
         </Text>
@@ -107,10 +117,7 @@ export function PhotoPicker({ value = [], onChange, max, error }) {
       {error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
-        <Text style={styles.helper}>
-          Cần ảnh mặt trước, mặt sau, nhãn mác và tem thương hiệu. Ảnh càng rõ,
-          kho duyệt càng nhanh.
-        </Text>
+        <Text style={styles.helper}>{helper}</Text>
       )}
     </View>
   );
