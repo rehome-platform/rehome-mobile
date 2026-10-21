@@ -313,7 +313,7 @@ Phase 5 (làm sớm từ 20/10, kế hoạch 12/11 – 17/11): Trả hàng, rút
 
 | Nhánh | Trạng thái |
 | ----- | ---------- |
-| 1 `feature/returns`: RT-01, RT-02, danh sách yêu cầu trả, bật nút Trả hàng ở BR-11, dòng PR-01 | ⏳ |
+| 1 `feature/returns`: RT-01, RT-02, danh sách yêu cầu trả, bật nút Trả hàng ở BR-11, dòng PR-01 | ✅ PR #25 — `MOCK.returns`; route `(member)/returns/index · new (?orderId=) · [id]/index`; `features/returns/{api, hooks, utils/returnRules, schemas, components, screens}`; khung Mock ở RT-02 và BR-11 ("Rút hạn trả hàng còn 1 phút"). Chi tiết chỗ làm khác: PHASE5_GUIDE mục 1 |
 | 2 `feature/return-invalid-choice`: RT-04 | ⏳ |
 | 3 `feature/item-withdrawal`: KG-13/14/15, bật nút KG-09 | ⏳ |
 | 4 `feature/degraded-item`: KG-16, dải nhắc tab Ký gửi | ⏳ |
