@@ -156,9 +156,9 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | 1 | `feature/tryon` | ✅ PR #33 — constants, `tryonRules`, mock thử đồ, `tryonJobStore`, AI-01 → AI-04, bật nút ở BR-04 | 22–23/10 |
 | 2 | `feature/tryon-collection` | ✅ PR #34 — AI-05, AI-06, dòng "Ảnh thử đồ đã lưu" ở PR-01 | 24/10 |
 | 3 | `feature/community` | ✅ PR #35 — mock cộng đồng, tab Cộng đồng CD-01, CD-02, CD-03, CD-04, theo dõi, "Tổ chức đang theo dõi" ở PR-01 | 24–26/10 |
-| 4 | `feature/community-nearby-report` | CD-05, CD-06 | 27/10 |
-| 5 | `feature/chat` | mock chat, CH-01, CH-02 (dùng chung cho tổ chức), bật **mọi nút "Nhắn cho kho / Nhắn tin"** đã ẩn từ Phase 2–5 | 28–29/10 |
-| 6 | `feature/notifications` | mock thông báo (sinh từ các mock khác), PR-05, chuông + badge | 30/10 |
+| 4 | `feature/community-nearby-report` | ✅ PR #36 — CD-05, CD-06 | 27/10 |
+| 5 | `feature/chat` | ✅ PR #37 — mock chat, CH-01, CH-02 (dùng chung cho tổ chức), bật **mọi nút "Nhắn cho kho / Nhắn tin"** đã ẩn từ Phase 2–5 | 28–29/10 |
+| 6 | `feature/notifications` | ✅ PR #38 — mock thông báo (sinh từ các mock khác), PR-05, chuông + badge | 30/10 |
 | 7 | `feature/org-shell` | (cần `GET /api/organizations/me` hoặc mock) màn trạng thái OA-06, khung 4 tab, OP-01 | 31/10 |
 | 8 | `feature/org-campaigns` | OC-01 → OC-04 | 01–02/11 |
 | 9 | `feature/org-posts` | OB-01 → OB-05 | 03/11 |
@@ -187,6 +187,28 @@ Nhánh 7 trùng việc với `feature/org-real-api` (Phase 1, bước 4, 7, 8, 9
 - Thích **lạc quan** sửa cache theo tiền tố `["community","feed"]` (gồm cả bài của một tổ chức `orgPosts`) + `post(id)`; theo dõi lạc quan ở `org(id)` + bài viết của tổ chức. Bình luận gửi xong tải lại bình luận + số bình luận.
 - `PostPhotos` lưới dùng `width: "49.3%"` + `aspectRatio` (đừng dùng `flexBasis` % + `aspectRatio` — ô bị rộng 0).
 - CD-03 tab Bài viết tải từng trang bằng nút "Xem thêm bài viết" (màn cuộn ScrollView, không lồng FlatList).
+
+**Nhánh 4 (CD-05, CD-06) đã làm khác / thêm:**
+
+- `utils/location.js` `getCoords()` → `{lat, lng}` · `{denied: true}` · `null` (lỗi GPS) — dùng lại được (KG-03 Phase 2 vẫn giữ hàm riêng, chưa gộp). Android chỉ hỏi quyền **một lần** cho app; đã cho từ Phase 1/2 thì không hỏi lại.
+- CD-05 danh sách sắp theo khoảng cách (mock tính haversine, bán kính 5 km [KIỂM TRA]); **không bản đồ** — **hoãn theo quyết định 22/10** (cần lead chốt + Google Maps API key cho Android + build lại; xem 0.5 A13). Khung Mock "Dùng vị trí mẫu (Quận 1)" khi máy test ở xa.
+- CD-06 route `report.js?targetType=&targetId=` một màn cho 3 loại; khối tóm tắt lấy từ cache bài viết / chiến dịch / tổ chức; "Lý do khác" bắt buộc ≥ 10 ký tự [GIẢ ĐỊNH]; gửi xong màn "Đã gửi" + Đóng.
+
+**Nhánh 5 (chat) đã làm khác / thêm:**
+
+- Route `messages/index.js`, `messages/[id].js?draft=`; `ConversationListScreen` / `ChatRoomScreen` nhận `viewer` để phía tổ chức dùng lại (nhánh 10).
+- Hộp thư kho = **mỗi kho một hội thoại** (A21), ghim đầu danh sách; tên = tên kho. Nhãn "Hộp thư kho" / "Đã xác minh"; giờ tin cuối `formatChatTime` ("HH:mm / Hôm qua / T.x / dd/MM").
+- Gửi **lạc quan** (id tạm, "Đang gửi…" → giờ; lỗi → "Chưa gửi được · Gửi lại"); phòng đang mở hỏi lại **3 giây** (`useFocusEffect` bật / tắt), danh sách + badge tab Cá nhân **30 giây**; có tin mới của đối tác khi đang mở → `markRead` [CHỜ BE API đánh dấu đã đọc].
+- `useOpenConversation({type, counterpartId, draft, from})`: tạo / lấy hội thoại (API 111) rồi vào phòng; câu soạn sẵn **không tự gửi**; Guest → hỏi đăng nhập. Mock thêm hội thoại vào danh sách ngay khi mở (kể cả chưa gửi tin) — BE quyết định cách hiện.
+- Nút đã bật: CD-03 / CD-04 **Nhắn tin**; `MessageWarehouseButton` "**Nhắn cho kho**" ở chi tiết đơn (BR-11), yêu cầu trả hàng (RT-02 — không hợp lệ thì "Khiếu nại kết luận / nhắn cho kho"), sản phẩm ký gửi (KG-09). Cần `warehouseId` ở đơn / yêu cầu trả / sản phẩm ký gửi [CHỜ BE — API 63, 80, 22 chưa trả]; mock trả kèm. Chưa bật: KG-12 Phase 2, VI-05 "Nhắn hỗ trợ" (chưa rõ gửi về kho nào — câu 27).
+- Tab Cá nhân bỏ hẳn nhóm "Sắp có" (mục cuối là Tin nhắn); dòng **Tin nhắn · n chưa đọc**.
+- Chỉ tin chữ (A17); bàn phím không che ô nhập trên máy test → **chưa cần** `react-native-keyboard-controller`.
+
+**Nhánh 6 (thông báo) đã làm khác / thêm:**
+
+- Loại theo enum `NotificationType` của BE (`ORDER_UPDATE`, `WALLET_EVENT`, `TERM_EXPIRY`, `VERIFICATION_RESULT`, `QUEUE_TASK`); icon theo loại. Đích `targetType/targetId` (mock có) [CHỜ BE câu 17].
+- `mockNotify` (trong `notificationApi.mock`, không import mock khác) được gọi từ: `ordersApi.mock.mockAdvanceOrder` (đóng gói / đang giao / đã giao / hoàn thành), `walletApi.mock.mockRefund` + kết quả `createPayout`, `returnsApi.mock.mockReturnAction`, `withdrawalApi.mock.mockWithdrawalAction`. **Thử đồ xong không sinh thông báo** (BE không có loại tương ứng; app đã có hộp "Ảnh thử đồ đã xong").
+- Chuông `BellButton` (header tab Cá nhân, cạnh ⚙): số chưa đọc hỏi lại 60 giây + mỗi lần tab được mở lại. Màn `NotificationListScreen` (`SectionList` Hôm nay / Trước đó) nhận `viewer`, `backHref` cho phía tổ chức.
 
 ---
 
@@ -768,15 +790,15 @@ Một `CampaignForm` cho cả hai (như `ConsignFormFields`):
 - [ ] Thích → số tăng ngay; tắt mạng rồi thích → số trả lại + toast lỗi.
 - [x] CD-02: bình luận → hiện ngay, số bình luận tăng ở cả feed; bàn phím không che ô nhập.
 - [x] Theo dõi ở CD-02 / CD-03 → chip Đang theo dõi có bài của tổ chức đó.
-- [x] CD-04: Chỉ đường mở Google Maps đúng điểm; (nhánh 5) Nhắn tin mở đúng hội thoại (bấm 2 lần không tạo 2 hội thoại).
-- [ ] CD-05: cho / từ chối quyền vị trí; danh sách sắp theo khoảng cách.
-- [ ] CD-06: chưa chọn lý do không gửi được; "Lý do khác" bắt buộc mô tả; Đã gửi → Đóng về đúng màn.
+- [x] CD-04: Chỉ đường mở Google Maps đúng điểm; Nhắn tin mở đúng hội thoại (bấm 2 lần không tạo 2 hội thoại).
+- [x] CD-05: cho / từ chối quyền vị trí; danh sách sắp theo khoảng cách.
+- [x] CD-06: chưa chọn lý do không gửi được; "Lý do khác" bắt buộc mô tả; Đã gửi → Đóng về đúng màn.
 
 **Chat & thông báo**
-- [ ] CH-01 badge chưa đọc; mở phòng → badge giảm.
-- [ ] CH-02: gửi → bong bóng hiện ngay; mock tự trả lời sau vài giây → tự hiện (không cần kéo); tắt mạng gửi → "Gửi lại".
-- [ ] Mở chat từ BR-11, RT-02, KG-10/12 → đúng kho của đơn / món, ô nhập có tin soạn sẵn.
-- [ ] Bấm Khung Mock ở BR-11 (giao hàng) → chuông có thông báo mới → bấm mở đúng đơn; Đánh dấu đã đọc.
+- [x] CH-01 badge chưa đọc; mở phòng → badge giảm.
+- [x] CH-02: gửi → bong bóng hiện ngay; mock tự trả lời sau vài giây → tự hiện (không cần kéo); gửi lỗi (Khung Mock "lỗi lần gửi sau" thay cho tắt mạng) → "Gửi lại".
+- [x] Mở chat từ BR-11, RT-02, KG-10/12 → đúng kho của đơn / món, ô nhập có tin soạn sẵn.
+- [x] Bấm Khung Mock ở BR-11 (giao hàng) → chuông có thông báo mới → bấm mở đúng đơn; Đánh dấu đã đọc.
 
 **Tổ chức**
 - [ ] Đăng nhập tổ chức PENDING / REJECTED / VERIFIED (Khung Mock) → đúng màn.
