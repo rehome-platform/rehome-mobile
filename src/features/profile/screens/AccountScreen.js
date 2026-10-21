@@ -14,12 +14,12 @@ import { useOrderCount } from "@/features/orders/hooks/useOrders";
 import { WalletCard } from "@/features/wallet/components/WalletCard";
 import { RETURN_TABS } from "@/constants/returns";
 import { useReturnCount } from "@/features/returns/hooks/useReturns";
+import { useTryonJobStore } from "@/stores/tryonJobStore";
 
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 
 const COMING_SOON = [
-  { icon: "images-outline", title: "Ảnh thử đồ đã lưu" },
   { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
   { icon: "chatbubbles-outline", title: "Tin nhắn" },
 ];
@@ -71,6 +71,7 @@ function MemberAccount() {
   const signOut = useAuthStore((s) => s.signOut);
   const shippingCount = useOrderCount(SHIPPING_TAB);
   const returnActionCount = useReturnCount(RETURN_ACTION_TAB);
+  const hasNewTryon = useTryonJobStore((s) => s.hasNew);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
   const confirmSignOut = () =>
@@ -132,6 +133,12 @@ function MemberAccount() {
               : undefined
           }
           onPress={() => router.push("/returns")}
+        />
+        <ListItem
+          icon="images-outline"
+          title="Ảnh thử đồ đã lưu"
+          badge={hasNewTryon ? "Mới" : undefined}
+          onPress={() => router.push("/tryon/collection")}
         />
 
         <ListItem

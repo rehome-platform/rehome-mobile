@@ -155,7 +155,20 @@ export default function TryonRoomScreen() {
   }
 
   // ----- AI-01 -----
-  const header = <AppHeader title="Phòng thử đồ" onBack={goBack} />;
+  const header = (
+    <AppHeader
+      title="Phòng thử đồ"
+      onBack={goBack}
+      right={
+        <Button
+          title="Bộ sưu tập"
+          variant="text"
+          onPress={() => router.push("/tryon/collection")}
+        />
+      }
+    />
+  );
+
   if (!product) {
     return (
       <Screen header={header}>
