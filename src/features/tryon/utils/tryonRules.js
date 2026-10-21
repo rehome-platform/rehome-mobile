@@ -33,3 +33,15 @@ export const buildTryonPayload = ({ modelType, top, bottom, dress }) =>
   dress
     ? { modelType, dressProductId: dress.id }
     : { modelType, topProductId: top.id, bottomProductId: bottom.id };
+// ---------- Bộ sưu tập (AI-05/06) ----------
+// Số món trong ảnh đã không còn bán (nhãn "1 MÓN ĐÃ BÁN")
+export const soldCount = (img) =>
+  (img.items ?? []).filter((i) => i.status !== PRODUCT_STATUS.ON_SALE).length;
+
+// Nhãn MỚI: ảnh tạo trong 24 giờ [GIẢ ĐỊNH]
+export const isNewImage = (img) =>
+  Date.now() - new Date(img.createdAt).getTime() < 24 * 3600 * 1000;
+
+// "Áo khoác dạ + Quần jeans" — lấy 2 chữ đầu tên mỗi món cho gọn
+export const shortTitle = (items = []) =>
+  items.map((i) => i.name.split(" ").slice(0, 2).join(" ")).join(" + ");
