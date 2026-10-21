@@ -326,9 +326,10 @@ Phase 6 (làm sớm từ 22/10, kế hoạch 18/11 – 23/11): Thử đồ AI ·
 | 1 `feature/tryon`: AI-01 → AI-04, bật nút ở BR-04 | ✅ PR #33 — `MOCK.tryon`; route `(member)/tryon/index · pick · result/[id]`; `tryonJobStore` (chạy nền), `tryonDraftStore` |
 | 2 `feature/tryon-collection`: AI-05, AI-06 | ✅ PR #34 — route `tryon/collection/index · [id]`; dòng "Ảnh thử đồ đã lưu" (badge Mới) ở PR-01 |
 | 3 `feature/community`: CD-01 → CD-04 | ✅ PR #35 — `MOCK.community`; route `(tabs)/community`, `posts/[id]`, `organizations/[id] · following`, `campaigns/[id]`; `utils/askLogin.js`, `formatRelative` |
-| 4 `feature/community-nearby-report`: CD-05, CD-06 | ⏳ |
-| 5 `feature/chat`: CH-01, CH-02, bật các nút "Nhắn cho kho" | ⏳ |
-| 6 `feature/notifications`: PR-05, chuông + badge | ⏳ |
+| 4 `feature/community-nearby-report`: CD-05, CD-06 | ✅ PR #36 — route `organizations/nearby`, `report` (dùng chung 3 loại đối tượng); `utils/location.js` (`getCoords`); danh sách + Chỉ đường, chưa bản đồ (A13) |
+| 5 `feature/chat`: CH-01, CH-02, bật các nút "Nhắn cho kho" | ✅ PR #37 — `MOCK.chat`; route `messages/index · [id]?draft=`; `useOpenConversation`, `MessageWarehouseButton`; tự hỏi lại 3 giây (phòng) / 30 giây (danh sách) |
+| 6 `feature/notifications`: PR-05, chuông + badge | ✅ PR #38 — `MOCK.notifications`; route `notifications`; `notificationRoute`; `mockNotify` gọi từ mock đơn / ví / trả hàng / rút hàng |
+| **Phần A (Member) xong 22/10** — thử đồ, cộng đồng, chat, thông báo (PR #33 → #38). Chi tiết chỗ làm khác: PHASE6_GUIDE mục 1 | ✅ |
 | 7–10 tổ chức: `org-shell`, `org-campaigns`, `org-posts`, `org-messages-profile` | ⏳ |
 
 Dev build hiện có: `expo-location`, Google Sign-In, `expo-dev-client` (build 17/10). Thêm thư viện native khác → build lại.
