@@ -149,3 +149,37 @@ export function useToggleFollow() {
     },
   });
 }
+// CD-03
+export function useOrganization(id) {
+  return useQuery({
+    queryKey: communityKeys.org(id),
+    queryFn: () => communityApi.getOrganization(id),
+    enabled: !!id,
+  });
+}
+
+// CD-03 tab Chiến dịch
+export function useOrgCampaigns(orgId) {
+  return useQuery({
+    queryKey: communityKeys.orgCampaigns(orgId),
+    queryFn: () => communityApi.getOrgCampaigns(orgId),
+    enabled: !!orgId,
+  });
+}
+
+// CD-04
+export function useCampaign(id) {
+  return useQuery({
+    queryKey: communityKeys.campaign(id),
+    queryFn: () => communityApi.getCampaign(id),
+    enabled: !!id,
+  });
+}
+
+// PR-01 "Tổ chức đang theo dõi" [CHỜ BE câu 14]
+export function useMyFollowing() {
+  return useQuery({
+    queryKey: communityKeys.following,
+    queryFn: communityApi.getMyFollowing,
+  });
+}

@@ -34,3 +34,5 @@ export const mapsUrl = ({ latitude, longitude, address }) =>
   latitude != null && longitude != null
     ? `geo:${latitude},${longitude}?q=${latitude},${longitude}`
     : `geo:0,0?q=${encodeURIComponent(address ?? "")}`;
+// [Nhánh 5 chat sẽ thay] Nhắn tin với tổ chức — tạm báo "sắp có"
+export const MESSAGE_SOON = "Nhắn tin với tổ chức sẽ có ở bản cập nhật tới.";
