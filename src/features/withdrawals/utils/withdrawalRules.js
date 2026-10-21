@@ -49,3 +49,9 @@ export function nextFreeWindow(p) {
     nextRate: commissionRates(p)[p.currentTerm], // hoa hồng kỳ sau
   };
 }
+// ---------- Hàng xuống cấp (KG-16) ----------
+// Đền đủ = compensationAmount; nhận lại hàng = compensationAmount × tỷ lệ biên nhận, làm tròn xuống đồng
+export const degradedAmount = (c, fullChoice) =>
+  fullChoice
+    ? c.compensationAmount
+    : Math.floor(c.compensationAmount * (c.degradedCompensationRate ?? 0));
