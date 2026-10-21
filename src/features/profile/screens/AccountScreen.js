@@ -8,19 +8,16 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ListGroup, ListItem } from "@/components/ui/ListItem";
 import { useAuthStore } from "@/stores/authStore";
-import { showToast } from "@/utils/toast";
 import { ORDER_TABS } from "@/constants/order";
 import { useOrderCount } from "@/features/orders/hooks/useOrders";
 import { WalletCard } from "@/features/wallet/components/WalletCard";
 import { RETURN_TABS } from "@/constants/returns";
 import { useReturnCount } from "@/features/returns/hooks/useReturns";
 import { useTryonJobStore } from "@/stores/tryonJobStore";
+import { useConversations } from "@/features/chat/hooks/useChat";
+import { unreadTotal } from "@/features/chat/utils/chatRules";
 
-// Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
-
-const COMING_SOON = [{ icon: "chatbubbles-outline", title: "Tin nhắn" }];
-const showComingSoon = (title) => showToast(`${title} sẽ có ở phiên bản sau.`);
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
 const RETURN_ACTION_TAB = RETURN_TABS.find((t) => t.key === "ACTION");
 
@@ -69,6 +66,8 @@ function MemberAccount() {
   const shippingCount = useOrderCount(SHIPPING_TAB);
   const returnActionCount = useReturnCount(RETURN_ACTION_TAB);
   const hasNewTryon = useTryonJobStore((s) => s.hasNew);
+  const chats = useConversations({ poll: true }); // badge "n chưa đọc" — hỏi lại 30 giây/lần
+  const unread = unreadTotal(chats.data);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
   const confirmSignOut = () =>
@@ -142,7 +141,12 @@ function MemberAccount() {
           title="Tổ chức đang theo dõi"
           onPress={() => router.push("/organizations/following")}
         />
-
+        <ListItem
+          icon="chatbubbles-outline"
+          title="Tin nhắn"
+          badge={unread ? `${unread} chưa đọc` : undefined}
+          onPress={() => router.push("/messages")}
+        />
         <ListItem
           icon="cube-outline"
           title="Hàng ký gửi"
@@ -155,19 +159,6 @@ function MemberAccount() {
           description="Nơi nhận hàng khi mua đồ"
           onPress={() => router.push("/addresses")}
         />
-      </ListGroup>
-
-      <ListGroup title="Sắp có">
-        {COMING_SOON.map((item) => (
-          <ListItem
-            key={item.title}
-            icon={item.icon}
-            title={item.title}
-            badge="Sắp có"
-            muted
-            onPress={() => showComingSoon(item.title)}
-          />
-        ))}
       </ListGroup>
 
       <ListGroup>
