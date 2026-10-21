@@ -16,6 +16,7 @@ import { useReturnCount } from "@/features/returns/hooks/useReturns";
 import { useTryonJobStore } from "@/stores/tryonJobStore";
 import { useConversations } from "@/features/chat/hooks/useChat";
 import { unreadTotal } from "@/features/chat/utils/chatRules";
+import { BellButton } from "@/features/notifications/components/BellButton";
 
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
@@ -80,7 +81,17 @@ function MemberAccount() {
     <Screen
       scroll
       edges={["top"]}
-      header={<AppHeader title="Cá nhân" right={<SettingsButton />} />}
+      header={
+        <AppHeader
+          title="Cá nhân"
+          right={
+            <View style={styles.headerActions}>
+              <BellButton />
+              <SettingsButton />
+            </View>
+          }
+        />
+      }
       contentStyle={styles.content}
     >
       {/* Thẻ đầu trang → PR-02. BE chưa có createdAt nên chưa hiện "tham gia MM/YYYY" [CHỜ BE] */}
@@ -225,6 +236,11 @@ const styles = StyleSheet.create({
   profileTexts: { flex: 1, gap: 2 },
   name: { ...textStyles.heading, color: colors.text },
   code: { ...textStyles.body, color: colors.textSecondary },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
   iconButton: {
     width: 40,
     height: 40,
