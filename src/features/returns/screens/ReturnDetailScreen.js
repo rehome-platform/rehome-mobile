@@ -36,6 +36,7 @@ import { ReturnStatusBadge } from "../components/ReturnStatusBadge";
 import { ReturnStatusTimeline } from "../components/ReturnStatusTimeline";
 import { PhotoThumbs } from "../components/PhotoThumbs";
 import { ReturnMockPanel } from "../components/ReturnMockPanel";
+import { MessageWarehouseButton } from "@/features/chat/components/MessageWarehouseButton";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/returns");
@@ -401,6 +402,21 @@ export default function ReturnDetailScreen() {
           onPress={() => router.push(`/orders/${r.orderId}`)}
         />
       ) : null}
+      <MessageWarehouseButton
+        warehouseId={r.warehouseId}
+        warehouseName={r.warehouseName}
+        title={
+          r.status === R.INVALID
+            ? "Khiếu nại kết luận / nhắn cho kho"
+            : "Nhắn cho kho"
+        }
+        draft={
+          r.status === R.INVALID
+            ? `Mình muốn khiếu nại kết luận yêu cầu trả hàng ${r.code ?? ""}: `
+            : `Cho mình hỏi về yêu cầu trả hàng ${r.code ?? ""} (đơn ${r.orderNo ?? ""}): `
+        }
+        from={`/returns/${r.id}`}
+      />
 
       {refunded ? (
         <NoteBox>

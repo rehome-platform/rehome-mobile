@@ -147,6 +147,7 @@ const withOrder = (r) => {
     resolutionPhotoUrls: [...r.resolutionPhotoUrls],
     orderNo: o?.orderNo ?? null,
     warehouseName: o?.warehouseName ?? null,
+    warehouseId: o?.warehouseId ?? null, // Phase 6: mở hộp thư kho [CHỜ BE]
     // RT-04 cần địa chỉ / giờ mở cửa kho đang giữ hàng [CHỜ BE câu 6]
     warehouseAddress:
       WAREHOUSES.find((w) => w.id === o?.warehouseId)?.address ?? null,

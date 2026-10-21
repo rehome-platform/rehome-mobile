@@ -555,3 +555,7 @@ export async function report({ targetType, targetId, reason }) {
   reports.push(r);
   return { id: r.id, status: r.status };
 }
+// ---------- [MOCK] dùng chung ----------
+// chatApi.mock dùng: thông tin tổ chức để làm đối tác hội thoại
+export const mockFindOrg = (id) =>
+  organizations.find((o) => o.id === id) ?? null;

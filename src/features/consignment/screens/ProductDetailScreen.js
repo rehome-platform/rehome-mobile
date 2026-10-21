@@ -40,6 +40,7 @@ import { PayoutBreakdown } from "@/features/consignment/components/PayoutBreakdo
 import { TermProgress } from "@/features/consignment/components/TermProgress";
 import { PickupInfo } from "@/features/consignment/components/PickupInfo";
 import { freeWindowOf } from "@/features/withdrawals/utils/withdrawalRules";
+import { MessageWarehouseButton } from "@/features/chat/components/MessageWarehouseButton";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
@@ -494,6 +495,12 @@ export default function ProductDetailScreen() {
         {view === PRODUCT_VIEW.ENDED ? (
           <NoteBox>{`Sản phẩm đã kết thúc ký gửi: ${PRODUCT_ENDED_LABEL[product.status] ?? product.status}.`}</NoteBox>
         ) : null}
+        <MessageWarehouseButton
+          warehouseId={product.warehouseId}
+          warehouseName={product.warehouseName}
+          draft={`Cho mình hỏi về món ký gửi ${product.name} (SKU ${product.id}): `}
+          from={`/my-products/${product.id}`}
+        />
       </ScrollView>
     </Screen>
   );
