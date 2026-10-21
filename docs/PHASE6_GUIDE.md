@@ -126,6 +126,8 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | A18 | Chat realtime (CLAUDE.md: STOMP/WebSocket "theo web") | Phase 6: **REST + tự hỏi lại** (3 giây khi đang mở phòng, 30 giây ở danh sách, khi app quay lại); STOMP làm nhánh riêng khi BE gửi địa chỉ + topic (mục 2) | API 113 ghi REST là nơi lưu chính và là đường dự phòng |
 | A19 | PR-05 bấm thông báo "mở thẳng màn liên quan" | Một hàm `notificationRoute(n)` duy nhất; thông báo thiếu đích thì chỉ đánh dấu đã đọc | Bảng Notification **không có** `targetType/targetId` [CHỜ BE] |
 | A20 | CD-06 lý do = danh sách + mô tả | Gửi BE **một chuỗi** `reason` = "<lý do>: <mô tả>" (như trả hàng Phase 5) | API 109 chỉ có `reason` |
+| A22 | AI-02 gợi ý "Chân váy chữ A" ở tab **quần** | Mock xếp theo **danh mục**: "Váy đầm" = slot ĐẦM → chân váy không vào tab quần | Chân váy thuộc slot BOTTOM hay DRESS tuỳ BE đặt `Category.tryonSlot` [CHỜ BE] |
+| A23 | CD-03 / CD-04 nút **Nhắn tin** mở hội thoại | Tạm toast "sắp có" (`MESSAGE_SOON` trong `communityRules`) — nhánh 5 thay bằng `useOpenConversation` | Chat làm ở nhánh 5 |
 | A21 | Hộp thư kho "Kho ReHome" (một hộp) | Mỗi **kho** là một hội thoại (`MEMBER_WAREHOUSE` + `warehouseId`), tên "Kho Quận 7"; mở từ đơn / ký gửi thì đúng kho đó; từ CH-01 nút "Hỏi kho" chọn kho [GIẢ ĐỊNH] | Bảng Conversation: `counterpart_id` = `Warehouse.id` [CHỜ LEAD/BE] |
 
 **Phần B**
@@ -151,9 +153,9 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | Thứ tự | Nhánh | Nội dung | Ngày (gợi ý) |
 |---|---|---|---|
 | 0 | — | ✅ Đã đọc BE `a0c6abe` (21/10): chưa có API 96–126, `/uploads`, `GET /api/organizations/me`, STOMP; entity khớp guide; điền mục 5.2 | 21/10 |
-| 1 | `feature/tryon` | constants, `tryonRules`, mock thử đồ, `tryonJobStore`, AI-01 → AI-04, bật nút ở BR-04 | 22–23/10 |
-| 2 | `feature/tryon-collection` | AI-05, AI-06, dòng "Ảnh thử đồ đã lưu" ở PR-01 | 24/10 |
-| 3 | `feature/community` | mock cộng đồng, tab Cộng đồng CD-01, CD-02, CD-03, CD-04, theo dõi, "Tổ chức đang theo dõi" ở PR-01 | 24–26/10 |
+| 1 | `feature/tryon` | ✅ PR #33 — constants, `tryonRules`, mock thử đồ, `tryonJobStore`, AI-01 → AI-04, bật nút ở BR-04 | 22–23/10 |
+| 2 | `feature/tryon-collection` | ✅ PR #34 — AI-05, AI-06, dòng "Ảnh thử đồ đã lưu" ở PR-01 | 24/10 |
+| 3 | `feature/community` | ✅ PR #35 — mock cộng đồng, tab Cộng đồng CD-01, CD-02, CD-03, CD-04, theo dõi, "Tổ chức đang theo dõi" ở PR-01 | 24–26/10 |
 | 4 | `feature/community-nearby-report` | CD-05, CD-06 | 27/10 |
 | 5 | `feature/chat` | mock chat, CH-01, CH-02 (dùng chung cho tổ chức), bật **mọi nút "Nhắn cho kho / Nhắn tin"** đã ẩn từ Phase 2–5 | 28–29/10 |
 | 6 | `feature/notifications` | mock thông báo (sinh từ các mock khác), PR-05, chuông + badge | 30/10 |
@@ -166,6 +168,25 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | — | `feature/community-map` (tuỳ chọn) | bản đồ thật ở CD-05 nếu lead muốn | khi lead chốt |
 
 Nhánh 7 trùng việc với `feature/org-real-api` (Phase 1, bước 4, 7, 8, 9): **làm trên nhánh mới từ `develop`**, nhánh cũ đã merge thì không làm tiếp (quy ước Git trong CLAUDE.md).
+
+**Nhánh 1–2 (thử đồ) đã làm khác / thêm:**
+
+- Route: `tryon/index.js?productId=` (AI-01 + AI-03 **cùng một màn** — job đang chạy thì hiện màn chờ / lỗi), `tryon/pick.js?slot=&excludeId=`, `tryon/result/[id].js`, `tryon/collection/index.js`, `tryon/collection/[id].js`.
+- `stores/tryonJobStore.js`: một việc tạo ảnh chạy ngoài màn (`AbortController` ngoài state). Đang mở phòng thử đồ (`watching`) → xong tự `replace` sang kết quả; đã rời → hộp **"Ảnh thử đồ đã xong" [Để sau] [Xem]** (Alert thay toast vì Toast Android không có nút) + `hasNew` → badge "Mới" ở PR-01 tới khi mở bộ sưu tập. Huỷ → không báo lỗi. `authStore.signOut` gọi `reset()`.
+- `features/tryon/store/tryonDraftStore.js`: bộ đồ AI-01 ↔ AI-02 + người mẫu đã chọn (RAM); mở phòng với món khác → bộ mới.
+- Slot lấy từ `product.tryonSlot` (mock thêm `tryonSlot` vào `CATEGORIES` của `catalogApi.mock` và `toSummary` của `productsApi.mock`) [CHỜ BE câu 5]. Ảnh người mẫu chưa có → khung + icon (A8).
+- Mock: chờ 5–10 giây, lỗi 502 **chỉ** qua Khung Mock "Lần tạo ảnh sau bị lỗi"; "Áo len cổ lọ" (`sp-004`) → không có gợi ý; 4 ảnh mẫu (1 ảnh có món đã bán `sp-sold`). Ảnh kết quả là ảnh ngẫu nhiên (picsum).
+- AI-04 "Thêm cả outfit vào giỏ": app **tự lọc trước** món đã có trong giỏ / không còn bán (BE chưa có `code` phân biệt 2 lỗi 409), thêm lần lượt; còn lỗi thì tính "không còn bán". Hết món để thêm → nút **Xem giỏ hàng**. Câu "tách thành n đơn" khi khác kho. **Tạo lại** = gọi lại API 97 cùng bộ đồ rồi về phòng thử đồ.
+- AI-05: nhãn MỚI (24 giờ) / "n MÓN ĐÃ BÁN"; đang tạo → ô đầu "Đang tạo…". AI-06: Thêm giỏ / Mua ngay / ĐÃ BÁN; xoá có hỏi.
+
+**Nhánh 3 (cộng đồng) đã làm khác / thêm:**
+
+- Route: `(tabs)/community.js`, `posts/[id].js`, `organizations/[id].js`, `organizations/following.js` (PR-01 "Tổ chức đang theo dõi"), `campaigns/[id].js`. Nút header CD-01 là **"Gần bạn"** (→ CD-05) thay "Bản đồ".
+- `utils/askLogin.js` (hỏi đăng nhập + `pendingRedirect`, dùng chung); `utils/format.js` thêm `formatRelative` ("n phút / giờ / ngày trước", "Hôm qua").
+- Mock dữ liệu chung cho phía tổ chức (nhánh 7–10): 4 tổ chức (Member theo dõi 2), 5 chiến dịch (1 CLOSED), 7 bài viết, bình luận mẫu, báo cáo; field mock chưa có ở BE: `organization` trong bài / chiến dịch, `title`, `coverUrl`, `address`, `receivingHours` (chiến dịch), `photoUrls`, `likeCount`, `likedByMe`, `commentCount`, `logoUrl`, `orgTypeLabel`, `operationScopeLabel`, `donationPoint`, `followerCount`, `isFollowing`, `isMine` (bình luận).
+- Thích **lạc quan** sửa cache theo tiền tố `["community","feed"]` (gồm cả bài của một tổ chức `orgPosts`) + `post(id)`; theo dõi lạc quan ở `org(id)` + bài viết của tổ chức. Bình luận gửi xong tải lại bình luận + số bình luận.
+- `PostPhotos` lưới dùng `width: "49.3%"` + `aspectRatio` (đừng dùng `flexBasis` % + `aspectRatio` — ô bị rộng 0).
+- CD-03 tab Bài viết tải từng trang bằng nút "Xem thêm bài viết" (màn cuộn ScrollView, không lồng FlatList).
 
 ---
 
@@ -735,19 +756,19 @@ Một `CampaignForm` cho cả hai (như `ConsignFormFields`):
 ## 9. Tự kiểm tra trước khi push
 
 **Thử đồ**
-- [ ] BR-04: món áo / quần / đầm có nút Thử đồ; món không thử được không có nút; Guest → đăng nhập → quay lại đúng món.
-- [ ] AI-01: thiếu quần → nút mờ + câu nhắc; chọn quần ở AI-02 (gợi ý / tất cả) → đủ bộ; đầm → chỉ một ô, bấm được ngay; đổi Nữ / Nam.
-- [ ] AI-02 món "không có gợi ý" → tự sang tab Tất cả + câu giải thích.
-- [ ] AI-03: đồng hồ "Đã chờ n giây" chạy; **Chạy nền** → đi xem màn khác → toast "Ảnh thử đồ đã xong · Xem" → mở đúng ảnh; **Huỷ** → về AI-01; Khung Mock "Lần sau lỗi" → khối lỗi + Thử lại.
-- [ ] AI-04: Thêm cả outfit → giỏ có 2 món (badge tăng), lần 2 → "Xem giỏ hàng"; một món đã bán (Khung Mock Phase 3) → báo, chỉ thêm món còn bán.
-- [ ] AI-05/06: ảnh mới lên đầu; nhãn "1 MÓN ĐÃ BÁN"; xoá có hỏi, xoá xong biến khỏi lưới.
+- [x] BR-04: món áo / quần / đầm có nút Thử đồ; món không thử được không có nút; Guest → đăng nhập → quay lại đúng món.
+- [x] AI-01: thiếu quần → nút mờ + câu nhắc; chọn quần ở AI-02 (gợi ý / tất cả) → đủ bộ; đầm → chỉ một ô, bấm được ngay; đổi Nữ / Nam.
+- [x] AI-02 món "không có gợi ý" → tự sang tab Tất cả + câu giải thích.
+- [x] AI-03: đồng hồ "Đã chờ n giây" chạy; **Chạy nền** → đi xem màn khác → toast "Ảnh thử đồ đã xong · Xem" → mở đúng ảnh; **Huỷ** → về AI-01; Khung Mock "Lần sau lỗi" → khối lỗi + Thử lại.
+- [x] AI-04: Thêm cả outfit → giỏ có 2 món (badge tăng), lần 2 → "Xem giỏ hàng"; một món đã bán (Khung Mock Phase 3) → báo, chỉ thêm món còn bán.
+- [x] AI-05/06: ảnh mới lên đầu; nhãn "1 MÓN ĐÃ BÁN"; xoá có hỏi, xoá xong biến khỏi lưới.
 
 **Cộng đồng**
-- [ ] Tab Cộng đồng: 3 chip; Guest không có Đang theo dõi; kéo tải lại; cuộn vô hạn.
+- [x] Tab Cộng đồng: 3 chip; Guest không có Đang theo dõi; kéo tải lại; cuộn vô hạn.
 - [ ] Thích → số tăng ngay; tắt mạng rồi thích → số trả lại + toast lỗi.
-- [ ] CD-02: bình luận → hiện ngay, số bình luận tăng ở cả feed; bàn phím không che ô nhập.
-- [ ] Theo dõi ở CD-02 / CD-03 → chip Đang theo dõi có bài của tổ chức đó.
-- [ ] CD-04: Chỉ đường mở Google Maps đúng điểm; Nhắn tin mở đúng hội thoại (bấm 2 lần không tạo 2 hội thoại).
+- [x] CD-02: bình luận → hiện ngay, số bình luận tăng ở cả feed; bàn phím không che ô nhập.
+- [x] Theo dõi ở CD-02 / CD-03 → chip Đang theo dõi có bài của tổ chức đó.
+- [x] CD-04: Chỉ đường mở Google Maps đúng điểm; (nhánh 5) Nhắn tin mở đúng hội thoại (bấm 2 lần không tạo 2 hội thoại).
 - [ ] CD-05: cho / từ chối quyền vị trí; danh sách sắp theo khoảng cách.
 - [ ] CD-06: chưa chọn lý do không gửi được; "Lý do khác" bắt buộc mô tả; Đã gửi → Đóng về đúng màn.
 

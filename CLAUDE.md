@@ -323,9 +323,9 @@ Phase 6 (làm sớm từ 22/10, kế hoạch 18/11 – 23/11): Thử đồ AI ·
 
 | Nhánh | Trạng thái |
 | ----- | ---------- |
-| 1 `feature/tryon`: AI-01 → AI-04, bật nút ở BR-04 | ⏳ |
-| 2 `feature/tryon-collection`: AI-05, AI-06 | ⏳ |
-| 3 `feature/community`: CD-01 → CD-04 | ⏳ |
+| 1 `feature/tryon`: AI-01 → AI-04, bật nút ở BR-04 | ✅ PR #33 — `MOCK.tryon`; route `(member)/tryon/index · pick · result/[id]`; `tryonJobStore` (chạy nền), `tryonDraftStore` |
+| 2 `feature/tryon-collection`: AI-05, AI-06 | ✅ PR #34 — route `tryon/collection/index · [id]`; dòng "Ảnh thử đồ đã lưu" (badge Mới) ở PR-01 |
+| 3 `feature/community`: CD-01 → CD-04 | ✅ PR #35 — `MOCK.community`; route `(tabs)/community`, `posts/[id]`, `organizations/[id] · following`, `campaigns/[id]`; `utils/askLogin.js`, `formatRelative` |
 | 4 `feature/community-nearby-report`: CD-05, CD-06 | ⏳ |
 | 5 `feature/chat`: CH-01, CH-02, bật các nút "Nhắn cho kho" | ⏳ |
 | 6 `feature/notifications`: PR-05, chuông + badge | ⏳ |
