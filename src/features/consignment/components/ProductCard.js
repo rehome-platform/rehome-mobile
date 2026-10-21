@@ -37,6 +37,17 @@ function Detail({ product, view }) {
       </Text>
     );
   }
+  if (view === PRODUCT_VIEW.WITHDRAWING) {
+    const due = product.withdrawalPickupDeadline;
+    return (
+      <Text style={styles.sub}>
+        Đến {product.warehouseName} lấy hàng
+        {due ? ` trước ${dayjs(due).format("DD/MM")}` : ""} · đọc mã Member tại
+        quầy
+      </Text>
+    );
+  }
+
   if (view === PRODUCT_VIEW.REPRICING) {
     return (
       <Text style={styles.sub}>

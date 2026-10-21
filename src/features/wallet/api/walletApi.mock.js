@@ -319,3 +319,21 @@ export function mockPayWithWallet(orders) {
     );
   });
 }
+// ---------- Phase 5 ----------
+// withdrawalApi.mock dùng: số dư khả dụng để chia phí (ví trước, thiếu MoMo)
+export const mockAvailableBalance = () =>
+  emptyMode ? 0 : wallet.balance - wallet.lockedBalance;
+
+// Trừ phần phí rút hàng trả bằng ví → giao dịch WITHDRAWAL_FEE (âm)
+export function mockChargeWithdrawalFee({ amount, note }) {
+  if (amount > mockAvailableBalance()) {
+    throw conflict(
+      ERROR_CODES.INSUFFICIENT_BALANCE,
+      "Số dư ví không đủ để trả phí rút hàng.",
+    );
+  }
+  wallet.balance -= amount;
+  transactions.push(
+    tx(T.WITHDRAWAL_FEE, -amount, { note, balanceAfter: wallet.balance }),
+  );
+}
