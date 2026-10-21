@@ -19,10 +19,7 @@ import { useTryonJobStore } from "@/stores/tryonJobStore";
 // Mục của phase sau: hiện mờ + nhãn "Sắp có". Phase nào xong thì bật onPress + thay nhãn bằng số đếm thật.
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 
-const COMING_SOON = [
-  { icon: "heart-outline", title: "Tổ chức đang theo dõi" },
-  { icon: "chatbubbles-outline", title: "Tin nhắn" },
-];
+const COMING_SOON = [{ icon: "chatbubbles-outline", title: "Tin nhắn" }];
 const showComingSoon = (title) => showToast(`${title} sẽ có ở phiên bản sau.`);
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
 const RETURN_ACTION_TAB = RETURN_TABS.find((t) => t.key === "ACTION");
@@ -139,6 +136,11 @@ function MemberAccount() {
           title="Ảnh thử đồ đã lưu"
           badge={hasNewTryon ? "Mới" : undefined}
           onPress={() => router.push("/tryon/collection")}
+        />
+        <ListItem
+          icon="heart-outline"
+          title="Tổ chức đang theo dõi"
+          onPress={() => router.push("/organizations/following")}
         />
 
         <ListItem
