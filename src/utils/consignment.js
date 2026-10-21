@@ -4,6 +4,7 @@ import {
   PRODUCT_STATUS,
   PRODUCT_VIEW,
 } from "@/constants/consignment";
+import { DEGRADED_CHOICE } from "@/constants/withdrawal";
 
 // Tiền Member nhận = giá × (1 − hoa hồng), làm tròn xuống đồng. rate dạng 0.1
 export const calcPayout = (price, rate) => Math.floor(price * (1 - rate));
@@ -28,6 +29,11 @@ export const commissionRates = (receipt) =>
 // Quy đổi dữ liệu sản phẩm → trạng thái hiển thị. BE chưa chốt cách báo "chờ xử lý cuối kỳ"
 // → mọi chỗ khác chỉ gọi hàm này; BE chốt thì chỉ sửa ở đây [CHỜ BE]
 export function getProductView(p) {
+  // Phase 5: ca hàng xuống cấp [CHỜ BE câu 13] tên field. Xét trước status vì món đã bán rồi bị trả về
+  const dc = p.degradedCase;
+  if (dc && !dc.choice) return PRODUCT_VIEW.DEGRADED_DECISION;
+  if (dc?.choice === DEGRADED_CHOICE.PARTIAL_WITH_ITEM_BACK)
+    return PRODUCT_VIEW.PICKUP; // nhận lại món hỏng — dùng chung màn "Chờ nhận lại"
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
   if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
   if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING; // Phase 5 [CHỜ BE câu 13] field liên kết
@@ -43,6 +49,7 @@ export function getProductView(p) {
 
 // Thứ tự trên danh sách: việc cần Member làm lên đầu
 export const PRODUCT_VIEW_ORDER = [
+  PRODUCT_VIEW.DEGRADED_DECISION,
   PRODUCT_VIEW.AWAITING_DECISION,
   PRODUCT_VIEW.REPRICING,
   PRODUCT_VIEW.PICKUP,

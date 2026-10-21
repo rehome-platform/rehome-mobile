@@ -15,6 +15,7 @@ const TONE = {
   [PRODUCT_VIEW.ENDED]: { bg: colors.neutral, fg: colors.textSecondary },
   [PRODUCT_VIEW.PICKUP]: { bg: colors.accent, fg: colors.onPrimary },
   [PRODUCT_VIEW.WITHDRAWING]: { bg: colors.accent, fg: colors.onPrimary },
+  [PRODUCT_VIEW.DEGRADED_DECISION]: { bg: colors.error, fg: colors.onPrimary },
 };
 
 export function ProductBadge({ product }) {

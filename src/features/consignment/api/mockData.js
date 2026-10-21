@@ -217,6 +217,33 @@ export const seedProducts = () => {
       order: null,
       endOfTermDecision: null,
     },
+    {
+      id: "Q1-AB-000419",
+      name: "Áo khoác bomber",
+      brandName: "Zara",
+      size: "M",
+      warehouseName: "Kho Quận 1",
+      photoUrl: photo("rh-bomber"),
+      status: "SOLD", // đã bán, người mua trả về → hỏng trên đường về kho
+      ...RECEIPT_TERMS,
+      agreedPrice: 520000,
+      floorPrice: 260000,
+      currentPrice: 520000,
+      currentTerm: 2,
+      termStartedAt: iso(now.subtract(12, "day")),
+      endOfTermDeadline: iso(now.add(18, "day")),
+      lastPriceChangedAt: null,
+      priceChanges: [],
+      order: null,
+      endOfTermDecision: null,
+      // Phase 5 [CHỜ BE câu 13] — id khớp degradedApi.mock
+      degradedCase: {
+        id: "dg-seed-1",
+        choice: null,
+        decisionDeadline: iso(now.add(6, "day")),
+        pickupDeadline: null,
+      },
+    },
 
     {
       id: "Q1-QJ-000712",

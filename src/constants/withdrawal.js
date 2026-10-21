@@ -33,3 +33,19 @@ export const WITHDRAWAL_EVENT_LABEL = {
 
 // [GIẢ ĐỊNH theo F-034] chỉ mock dùng — màn hình lấy hạn BE trả (pickupDeadline)
 export const WITHDRAWAL_LIMITS = { PICKUP_DAYS: 7 };
+// ---------- Hàng xuống cấp (KG-16) — enum DegradedItemChoice của BE ----------
+export const DEGRADED_CHOICE = {
+  FULL_COMPENSATION: "FULL_COMPENSATION", // nhận đền đủ, món thuộc về kho
+  PARTIAL_WITH_ITEM_BACK: "PARTIAL_WITH_ITEM_BACK", // nhận lại hàng + đền một phần
+};
+export const DEGRADED_CHOICE_LABEL = {
+  FULL_COMPENSATION: "Nhận tiền đền",
+  PARTIAL_WITH_ITEM_BACK: "Nhận lại hàng kèm đền một phần",
+};
+// [CHỜ BE câu 12] bảng DegradedItemCase chưa có cột status — chỉ mock dùng
+export const DEGRADED_STATUS = {
+  PENDING_DECISION: "PENDING_DECISION",
+  DECIDED: "DECIDED",
+};
+// [GIẢ ĐỊNH theo wireframe KG-16] chỉ mock dùng — màn hình lấy hạn BE trả
+export const DEGRADED_LIMITS = { DECISION_DAYS: 7, PICKUP_DAYS: 30 };

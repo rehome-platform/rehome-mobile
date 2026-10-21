@@ -337,3 +337,10 @@ export function mockChargeWithdrawalFee({ amount, note }) {
     tx(T.WITHDRAWAL_FEE, -amount, { note, balanceAfter: wallet.balance }),
   );
 }
+// degradedApi.mock dùng: tiền đền hàng xuống cấp → giao dịch DEGRADED_COMPENSATION (dương), vào ví ngay
+export function mockCompensate({ amount, note }) {
+  wallet.balance += amount;
+  transactions.push(
+    tx(T.DEGRADED_COMPENSATION, amount, { note, balanceAfter: wallet.balance }),
+  );
+}
