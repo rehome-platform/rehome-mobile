@@ -309,14 +309,14 @@ Phase 4 (làm sớm từ 20/10, kế hoạch 06/11 – 11/11): Đơn hàng, hoà
 | 5 `feature/checkout-wallet`: Ví ReHome ở BR-08/09 (`PaymentMethodPicker`, trả bằng ví trừ số dư), nút "Xem đơn hàng" sau khi trả | ✅ PR #22 |
 | 6 `feature/orders-wallet-real-api`: `*.real.js`, tắt `MOCK.orderList` / `MOCK.wallet` | ⏳ BE `2c3b597` có 62, 63, 65–67, 74 (chưa deploy; còn thiếu 64, 73, 75–78) → làm một phần khi Render deploy + có sản phẩm mẫu. Nhớ: đổi `ORDER_NOT_DELIVERED` → `ORDER_NOT_DELIVERED_YET`, thêm `ORDER_NOT_COMPLETED`, `ORDER_NOT_PAID_YET`, `ORDER_ALREADY_CANCELLED`, `ADDRESS_IN_USE`; danh sách đơn bọc trong `orders` + `statusCounts`; địa chỉ đơn là 3 trường phẳng; BR-14 có thể thêm ô nhận xét |
 
-Phase 5 (làm sớm từ 20/10, kế hoạch 12/11 – 17/11): Trả hàng, rút lại hàng ký gửi, hàng xuống cấp (L-05, L-06). Hướng dẫn chi tiết: `docs/PHASE5_GUIDE.md` (lệch wireframe: mục 0.4 #1–#13). **Toàn bộ mock** (`MOCK.returns`, `MOCK.withdrawals`) — BE `2c3b597` mới có entity/enum, chưa có API 79–95.
+Phase 5 (làm sớm từ 20/10, kế hoạch 12/11 – 17/11): Trả hàng, rút lại hàng ký gửi, hàng xuống cấp (L-05, L-06). Hướng dẫn chi tiết: `docs/PHASE5_GUIDE.md` (lệch wireframe: mục 0.4 #1–#17). **Xong UI cả Phase 5 (21/10) — toàn bộ mock** (`MOCK.returns`, `MOCK.withdrawals`) — BE `2c3b597` mới có entity/enum, chưa có API 79–95.
 
 | Nhánh | Trạng thái |
 | ----- | ---------- |
 | 1 `feature/returns`: RT-01, RT-02, danh sách yêu cầu trả, bật nút Trả hàng ở BR-11, dòng PR-01 | ✅ PR #25 — `MOCK.returns`; route `(member)/returns/index · new (?orderId=) · [id]/index`; `features/returns/{api, hooks, utils/returnRules, schemas, components, screens}`; khung Mock ở RT-02 và BR-11 ("Rút hạn trả hàng còn 1 phút"). Chi tiết chỗ làm khác: PHASE5_GUIDE mục 1 |
 | 2 `feature/return-invalid-choice`: RT-04 | ✅ PR #27 — route `returns/[id]/pickup-choice`; "Kho gửi lại" mờ (chưa có API trả phí) |
 | 3 `feature/item-withdrawal`: KG-13/14/15, bật nút KG-09 | ✅ PR #28 — `MOCK.withdrawals`; route `(member)/withdrawals/new (?productId=) · [id]`; `features/withdrawals/{api, hooks, utils/withdrawalRules, screens}`; `PRODUCT_VIEW.WITHDRAWING`; phí MIXED (ví trước, thiếu MoMo — mock MoMo bằng hộp chọn). Chi tiết: PHASE5_GUIDE mục 1 |
-| 4 `feature/degraded-item`: KG-16, dải nhắc tab Ký gửi | ⏳ |
+| 4 `feature/degraded-item`: KG-16, dải nhắc tab Ký gửi | ✅ PR #30 — route `(member)/degraded-cases/[id]`; `PRODUCT_VIEW.DEGRADED_DECISION` (field `product.degradedCase`); chọn nhận lại hàng → view PICKUP; tiền đền vào ví mock (DEGRADED_COMPENSATION) |
 
 Dev build hiện có: `expo-location`, Google Sign-In, `expo-dev-client` (build 17/10). Thêm thư viện native khác → build lại.
 

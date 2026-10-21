@@ -82,7 +82,7 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 | 1 | `feature/returns` | ✅ PR #25 — constants, `returnRules`, mock trả hàng (nối kho mock đơn + ví), RT-01, RT-02 (mọi trạng thái), danh sách, bật nút ở BR-11, dòng PR-01 | 20–21/10 |
 | 2 | `feature/return-invalid-choice` | ✅ PR #27 — RT-04 | 21/10 |
 | 3 | `feature/item-withdrawal` | ✅ PR #28 — `withdrawalRules`, mock rút hàng, KG-13/14/15, bật nút KG-09, trạng thái mới ở KG-08/09 | 21/10 |
-| 4 | `feature/degraded-item` | KG-16, dải nhắc tab Ký gửi | 27/10 |
+| 4 | `feature/degraded-item` | ✅ PR #30 — KG-16, dải nhắc tab Ký gửi, nhãn + nút ở KG-08/09 | 21/10 |
 | — | nối thật Phase 2/3/4 | khi BE xong | 28–30/10 |
 | 5 | `feature/returns-withdrawal-real-api` | `*.real.js`, tắt mock Phase 5 | khi BE xong |
 
@@ -111,6 +111,14 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 - KG-15 dòng thời gian từ `events` [{type, at}] (mock tự ghi: REQUESTED, REMOVED, HANDED_OVER, EXPIRED, RELISTED) [CHỜ BE câu 10 lịch sử trạng thái]; đang chờ → thêm mốc "Chờ bạn đến kho · còn n ngày". Response mock kèm thông tin món + kho (`productName`, `photoUrl`, `warehouseAddress`, `warehouseOpeningHours`…), `feeFromWallet`, `feeFromMomo`.
 - Ví mock: `mockAvailableBalance`, `mockChargeWithdrawalFee` (giao dịch WITHDRAWAL_FEE "Phí rút lại hàng · SKU …"). Ký gửi mock: `mockFindMyProduct`, `mockPatchProduct`. Khung Mock KG-15: Kho bàn giao tại quầy (→ COMPLETED, sản phẩm WITHDRAWN) / Quá hạn đến kho (→ EXPIRED, sản phẩm đăng bán lại, phí không hoàn).
 - Mã lỗi: `PRODUCT_ALREADY_ORDERED` (API 90, theo contract — đang trong message [CHỜ BE]).
+
+**Nhánh 4 (hàng xuống cấp) đã làm khác / thêm:**
+
+- Route `degraded-cases/[id].js`; API ở `features/withdrawals/api/degradedApi*` (cùng cờ `MOCK.withdrawals`), hook `useDegradedCases`. Tiền đền tính ở `withdrawalRules.degradedAmount` (một phần = `compensationAmount × degradedCompensationRate`, làm tròn xuống).
+- Sản phẩm mang `degradedCase: {id, choice, decisionDeadline, pickupDeadline}` [CHỜ BE câu 13]; `getProductView` xét **trước status** (món đã bán rồi bị trả về): chưa chọn → `DEGRADED_DECISION` ("Bị hỏng — cần bạn chọn", viền đỏ, đầu danh sách); chọn nhận lại hàng → `PICKUP` (dùng chung "Chờ nhận lại" + `PickupInfo` của Phase 2); chọn đền đủ → theo status (mock để SOLD → kết thúc).
+- Lối vào (0.4 #13): dải nhắc đỏ đầu tab Ký gửi (`getMyDegradedCases` — API liệt kê [CHỜ BE câu 13]), khối + nút "Chọn cách đền" ở KG-09.
+- KG-16 chọn sẵn "Nhận tiền đền" (= mặc định hệ thống khi quá hạn — khác RT-04 vì lựa chọn này không tốn tiền). Mock: hạn chọn 7 ngày, hạn nhận lại 30 ngày, quá hạn → tự chọn đền đủ (`autoDecided`) [GIẢ ĐỊNH theo wireframe, CHỜ BE + LEAD câu 12, 21]. Field mock chưa có ở BE: `status`, `decisionDeadline`, `pickupDeadline`, `paidAmount`, `decidedAt`, `description`, `damagePhotoUrls`, `receivedAt`, thông tin món + kho.
+- Ví mock: `mockCompensate` (giao dịch DEGRADED_COMPENSATION "Đền bù hàng xuống cấp · SKU …"). Khung Mock KG-16: "Quá hạn chọn → hệ thống tự chọn".
 
 ---
 
@@ -507,8 +515,8 @@ Chạy trên Android thật, mock.
 - [x] Khung Mock: Kho bàn giao → Đã bàn giao; Quá hạn → Hết hạn, món quay lại sàn, phí không hoàn.
 
 **Hàng hỏng**
-- [ ] Tab Ký gửi có dải nhắc; KG-08/09 nhãn "BỊ HỎNG".
-- [ ] KG-16: đổi lựa chọn → số tiền nút đổi; xác nhận → ví có giao dịch "Đền bù hàng xuống cấp" đúng số; chọn nhận lại hàng → có hạn + Mã Member; mở lại → chỉ đọc.
+- [x] Tab Ký gửi có dải nhắc; KG-08/09 nhãn "BỊ HỎNG".
+- [x] KG-16: đổi lựa chọn → số tiền nút đổi; xác nhận → ví có giao dịch "Đền bù hàng xuống cấp" đúng số; chọn nhận lại hàng → có hạn + Mã Member; mở lại → chỉ đọc.
 
 ---
 
