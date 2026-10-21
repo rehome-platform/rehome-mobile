@@ -397,3 +397,12 @@ export async function mockProposeNewPrice(productId) {
       : x,
   );
 }
+// ---------- Phase 5 (rút hàng) ----------
+// withdrawalApi.mock dùng: đọc / sửa sản phẩm trong RAM (mảng products được thay mới mỗi lần sửa)
+export const mockFindMyProduct = (id) => {
+  const p = products.find((x) => x.id === id);
+  return p ? { ...p } : null;
+};
+export const mockPatchProduct = (id, patch) => {
+  products = products.map((x) => (x.id === id ? { ...x, ...patch } : x));
+};

@@ -30,6 +30,7 @@ export const commissionRates = (receipt) =>
 export function getProductView(p) {
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
   if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
+  if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING; // Phase 5 [CHỜ BE câu 13] field liên kết
   const decision = p.endOfTermDecision;
   if (decision?.decision === END_OF_TERM_DECISION.TAKE_BACK)
     return PRODUCT_VIEW.PICKUP;
@@ -45,6 +46,7 @@ export const PRODUCT_VIEW_ORDER = [
   PRODUCT_VIEW.AWAITING_DECISION,
   PRODUCT_VIEW.REPRICING,
   PRODUCT_VIEW.PICKUP,
+  PRODUCT_VIEW.WITHDRAWING,
   PRODUCT_VIEW.SELLING,
   PRODUCT_VIEW.HAS_ORDER,
   PRODUCT_VIEW.ENDED,

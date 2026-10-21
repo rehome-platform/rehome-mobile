@@ -167,6 +167,8 @@ export const seedProducts = () => {
     commissionRateTerm1: 0.1,
     commissionRateTerm2: 0.15,
     commissionRateTerm3: 0.2,
+    freeWithdrawalWindowDays: 7, // Phase 5: rút hàng miễn phí 7 ngày đầu mỗi kỳ
+    withdrawalFee: 50000, // phí rút ngoài cửa sổ (theo wireframe KG-13)
   };
   return [
     {
@@ -195,6 +197,27 @@ export const seedProducts = () => {
       order: null,
       endOfTermDecision: null,
     },
+    {
+      id: "Q1-CV-000921",
+      name: "Chân váy xếp ly",
+      brandName: "Mango",
+      size: "S",
+      warehouseName: "Kho Quận 1",
+      photoUrl: photo("rh-skirt"),
+      status: "ON_SALE",
+      ...RECEIPT_TERMS,
+      agreedPrice: 450000,
+      floorPrice: 225000,
+      currentPrice: 450000,
+      currentTerm: 2, // ngày 4 của kỳ 2 → còn trong 7 ngày rút miễn phí
+      termStartedAt: iso(now.subtract(3, "day")),
+      endOfTermDeadline: iso(now.add(27, "day")),
+      lastPriceChangedAt: null,
+      priceChanges: [],
+      order: null,
+      endOfTermDecision: null,
+    },
+
     {
       id: "Q1-QJ-000712",
       name: "Quần jeans ống rộng",
