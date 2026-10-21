@@ -11,6 +11,7 @@ import {
   RETURN_STATUS as R,
 } from "@/constants/returns";
 import { mockFindOrder } from "@/features/orders/api/ordersApi.mock";
+import { WAREHOUSES } from "@/features/consignment/api/mockData";
 import { mockRefund } from "@/features/wallet/api/walletApi.mock";
 import { canRequestReturn } from "../utils/returnRules";
 
@@ -146,6 +147,13 @@ const withOrder = (r) => {
     resolutionPhotoUrls: [...r.resolutionPhotoUrls],
     orderNo: o?.orderNo ?? null,
     warehouseName: o?.warehouseName ?? null,
+    // RT-04 cần địa chỉ / giờ mở cửa kho đang giữ hàng [CHỜ BE câu 6]
+    warehouseAddress:
+      WAREHOUSES.find((w) => w.id === o?.warehouseId)?.address ?? null,
+    warehouseOpeningHours:
+      WAREHOUSES.find((w) => w.id === o?.warehouseId)?.openingHours ?? null,
+    shipBackFee: 30000, // [CHỜ BE câu 9] phí kho gửi lại — số theo wireframe
+
     items: o?.items ?? [],
     subtotal: o?.subtotal ?? null,
     shippingFee: o?.shippingFee ?? null,

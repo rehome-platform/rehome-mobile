@@ -1,4 +1,11 @@
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  View,
+  Linking,
+} from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
@@ -317,7 +324,27 @@ export default function ReturnDetailScreen() {
               strong
               title={`Bạn đã chọn: ${INVALID_RETURN_CHOICE_LABEL[r.invalidReturnChoice] ?? r.invalidReturnChoice}`}
             >
-              {`Đến ${r.warehouseName ?? "kho"} trước ${fmt(r.pickupDeadline)}, đọc mã Member tại quầy để nhận lại hàng.`}
+              <Text style={styles.text}>
+                Đến {r.warehouseName ?? "kho"} trước{" "}
+                <Text style={styles.strong}>{fmt(r.pickupDeadline)}</Text>, đọc
+                mã Member tại quầy để nhận lại hàng.
+              </Text>
+              {r.warehouseAddress ? (
+                <Text style={styles.muted}>{r.warehouseAddress}</Text>
+              ) : null}
+              {r.warehouseAddress ? (
+                <Text
+                  style={styles.link}
+                  accessibilityRole="link"
+                  onPress={() =>
+                    Linking.openURL(
+                      `geo:0,0?q=${encodeURIComponent(r.warehouseAddress)}`,
+                    )
+                  }
+                >
+                  Chỉ đường
+                </Text>
+              ) : null}
             </InfoBox>
           )}
         </>
@@ -367,7 +394,6 @@ export default function ReturnDetailScreen() {
           </Text>
         </Section>
       ) : null}
-
       {r.orderId ? (
         <Button
           title={`Xem đơn hàng ${r.orderNo ?? ""}`}
@@ -401,6 +427,11 @@ const styles = StyleSheet.create({
   text: { ...textStyles.body, color: colors.text },
   muted: { flexShrink: 1, ...textStyles.body, color: colors.textSecondary },
   caption: { ...textStyles.caption, color: colors.textSecondary },
+  link: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+  },
   strong: {
     ...textStyles.body,
     fontFamily: fonts.semibold,
