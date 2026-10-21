@@ -39,6 +39,7 @@ import { ProductBadge } from "@/features/consignment/components/ProductBadge";
 import { PayoutBreakdown } from "@/features/consignment/components/PayoutBreakdown";
 import { TermProgress } from "@/features/consignment/components/TermProgress";
 import { PickupInfo } from "@/features/consignment/components/PickupInfo";
+import { freeWindowOf } from "@/features/withdrawals/utils/withdrawalRules";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
@@ -71,6 +72,25 @@ function ProductHead({ product }) {
     </View>
   );
 }
+// Phase 5: rút hàng về miễn phí hay mất phí (cửa sổ 7 ngày đầu mỗi kỳ — số lấy từ biên nhận)
+function WithdrawWindow({ product }) {
+  if (product.freeWithdrawalWindowDays == null) return null;
+  const w = freeWindowOf(product);
+  return (
+    <View style={styles.infoBox}>
+      <Text style={styles.boxTitle}>
+        {w.isFree
+          ? `Rút hàng miễn phí — còn ${w.daysLeft} ngày`
+          : `Rút hàng mất phí ${formatVnd(product.withdrawalFee)}`}
+      </Text>
+      <Text style={styles.body}>
+        {w.isFree
+          ? `${w.windowDays} ngày đầu mỗi kỳ bạn rút hàng về không mất phí (đến ${w.endsAt.format("DD/MM")}).`
+          : `Đã qua ${w.windowDays} ngày rút miễn phí đầu kỳ ${product.currentTerm}.`}
+      </Text>
+    </View>
+  );
+}
 
 // ĐANG BÁN (kỳ thường + kỳ cuối)
 function SellingBody({ product }) {
@@ -80,6 +100,7 @@ function SellingBody({ product }) {
   return (
     <>
       <TermProgress product={product} />
+      <WithdrawWindow product={product} />
       {t.isLastTerm ? null : (
         <NoteBox>
           {`Hết kỳ ${product.currentTerm} mà chưa bán, hệ thống tự gia hạn sang kỳ ${product.currentTerm + 1}` +
@@ -255,14 +276,38 @@ function AwaitingBody({ product }) {
 function Footer({ product, view }) {
   const base = `/my-products/${product.id}`;
   if (view === PRODUCT_VIEW.SELLING) {
-    // "Rút hàng về" ẩn — Phase 5
+    return (
+      <View style={styles.footerRow}>
+        <Button
+          title="Rút hàng về"
+          variant="secondary"
+          style={styles.flex}
+          onPress={() =>
+            router.push({
+              pathname: "/withdrawals/new",
+              params: { productId: product.id },
+            })
+          }
+        />
+        <Button
+          title="Giảm giá bán"
+          style={styles.flex}
+          onPress={() => router.push(`${base}/reduce-price`)}
+        />
+      </View>
+    );
+  }
+  if (view === PRODUCT_VIEW.WITHDRAWING) {
     return (
       <Button
-        title="Giảm giá bán"
-        onPress={() => router.push(`${base}/reduce-price`)}
+        title="Xem yêu cầu rút hàng"
+        onPress={() =>
+          router.push(`/withdrawals/${product.activeWithdrawalId}`)
+        }
       />
     );
   }
+
   if (view === PRODUCT_VIEW.AWAITING_DECISION) {
     return (
       <View style={styles.footerRow}>
@@ -398,6 +443,19 @@ export default function ProductDetailScreen() {
           <AwaitingBody product={product} />
         ) : null}
         {view === PRODUCT_VIEW.PICKUP ? <PickupInfo product={product} /> : null}
+        {view === PRODUCT_VIEW.WITHDRAWING ? (
+          <View style={styles.attention}>
+            <Text style={styles.boxTitle}>Chờ bạn đến kho lấy hàng</Text>
+            <Text style={styles.body}>
+              Sản phẩm đã gỡ khỏi sàn. Đến {product.warehouseName}
+              {product.withdrawalPickupDeadline
+                ? ` trước ${fmtDate(product.withdrawalPickupDeadline)}`
+                : ""}
+              , đọc mã Member tại quầy để nhận lại hàng.
+            </Text>
+          </View>
+        ) : null}
+
         {view === PRODUCT_VIEW.REPRICING ? (
           <View style={styles.infoBox}>
             <Text style={styles.boxTitle}>Đang chờ kho đề xuất giá mới</Text>
