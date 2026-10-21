@@ -23,4 +23,5 @@ export const MOCK = {
   withdrawals: true, // [CHỜ BE] API 90–92 rút lại hàng + 94–95 hàng xuống cấp (Phase 5)
   tryon: true, // [CHỜ BE] API 96–99: thử đồ AI (Phase 6)
   community: true, // [CHỜ BE] API 100–109: tổ chức, chiến dịch, bài viết, bình luận, theo dõi, báo cáo (Phase 6)
+  chat: true, // [CHỜ BE] API 110–113: hội thoại, tin nhắn (Phase 6)
 };
