@@ -183,3 +183,18 @@ export function useMyFollowing() {
     queryFn: communityApi.getMyFollowing,
   });
 }
+// CD-05 · chỉ gọi khi đã có toạ độ (API 101 bắt buộc lat/lng)
+export function useNearbyOrganizations(coords) {
+  return useQuery({
+    queryKey: communityKeys.nearby(coords?.lat, coords?.lng),
+    queryFn: () => communityApi.getNearbyOrganizations(coords),
+    enabled: !!coords?.lat,
+  });
+}
+
+// CD-06 · gửi báo cáo
+export function useReport() {
+  return useMutation({
+    mutationFn: (body) => communityApi.report(body),
+  });
+}
