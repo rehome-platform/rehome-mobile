@@ -16,6 +16,18 @@ import { ProductBadge } from "./ProductBadge";
 
 // Dòng thông tin theo trạng thái
 function Detail({ product, view }) {
+  if (view === PRODUCT_VIEW.DEGRADED_DECISION) {
+    const due = product.degradedCase?.decisionDeadline;
+    return (
+      <>
+        <Text style={styles.urgent}>
+          Bị hỏng khi trả về kho
+          {due ? ` · còn ${Math.max(0, daysLeft(due))} ngày để chọn` : ""}
+        </Text>
+        <Text style={styles.sub}>Không phải lỗi của bạn · kho đền bù</Text>
+      </>
+    );
+  }
   if (view === PRODUCT_VIEW.AWAITING_DECISION) {
     return (
       <>
@@ -28,7 +40,9 @@ function Detail({ product, view }) {
     );
   }
   if (view === PRODUCT_VIEW.PICKUP) {
-    const due = product.endOfTermDecision?.pickupDeadline;
+    const due =
+      product.endOfTermDecision?.pickupDeadline ??
+      product.degradedCase?.pickupDeadline;
     return (
       <Text style={styles.sub}>
         Đến {product.warehouseName} nhận lại hàng
@@ -98,7 +112,9 @@ export function ProductCard({ product, onPress }) {
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
-        view === PRODUCT_VIEW.AWAITING_DECISION && styles.attention,
+        (view === PRODUCT_VIEW.AWAITING_DECISION ||
+          view === PRODUCT_VIEW.DEGRADED_DECISION) &&
+          styles.attention,
         view === PRODUCT_VIEW.ENDED && styles.faded,
         pressed && styles.pressed,
       ]}

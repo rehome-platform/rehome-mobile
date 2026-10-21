@@ -10,6 +10,7 @@ export function PickupInfo({ product }) {
   const d = product.endOfTermDecision;
   const due =
     d?.pickupDeadline ??
+    product.degradedCase?.pickupDeadline ?? // Phase 5: nhận lại món hỏng
     (d?.decidedAt ? dayjs(d.decidedAt).add(7, "day").toISOString() : null);
   const left = due ? daysLeft(due) : null;
   return (

@@ -12,6 +12,8 @@ import { CONSIGN_LIMITS } from "@/constants/consignment";
 import { FormListSection } from "@/features/consignment/components/FormListSection";
 import { ProductListSection } from "@/features/consignment/components/ProductListSection";
 import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
+import { Ionicons } from "@expo/vector-icons";
+import { usePendingDegradedCases } from "@/features/withdrawals/hooks/useDegradedCases";
 
 const SECTIONS = [
   { value: "forms", label: "Form ký gửi" },
@@ -55,11 +57,33 @@ function MemberConsign() {
         />
       }
     >
+      <DegradedBanner />
       <View style={styles.segment}>
         <ChipGroup options={SECTIONS} value={section} onChange={setSection} />
       </View>
       {section === "forms" ? <FormListSection /> : <ProductListSection />}
     </Screen>
+  );
+}
+// Phase 5 (0.4 #13): có món bị hỏng chờ chọn cách đền → dải nhắc đầu tab
+function DegradedBanner() {
+  const query = usePendingDegradedCases();
+  const list = query.data ?? [];
+  if (!list.length) return null;
+  return (
+    <Pressable
+      onPress={() => router.push(`/degraded-cases/${list[0].id}`)}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.alert, pressed && styles.pressed]}
+    >
+      <Ionicons name="alert-circle" size={20} color={colors.error} />
+      <Text style={styles.alertText}>
+        {list.length > 1
+          ? `${list.length} món của bạn bị hỏng khi trả về kho — chọn cách đền`
+          : `${list[0].productName} bị hỏng khi trả về kho — chọn cách đền`}
+      </Text>
+      <Ionicons name="chevron-forward" size={18} color={colors.text} />
+    </Pressable>
   );
 }
 
@@ -101,4 +125,22 @@ const styles = StyleSheet.create({
     color: colors.onPrimary,
   },
   pressed: { opacity: 0.8 },
+  alert: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.error,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  alertText: {
+    flex: 1,
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
 });

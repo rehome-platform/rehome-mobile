@@ -307,6 +307,16 @@ function Footer({ product, view }) {
       />
     );
   }
+  if (view === PRODUCT_VIEW.DEGRADED_DECISION) {
+    return (
+      <Button
+        title="Chọn cách đền"
+        onPress={() =>
+          router.push(`/degraded-cases/${product.degradedCase.id}`)
+        }
+      />
+    );
+  }
 
   if (view === PRODUCT_VIEW.AWAITING_DECISION) {
     return (
@@ -443,6 +453,21 @@ export default function ProductDetailScreen() {
           <AwaitingBody product={product} />
         ) : null}
         {view === PRODUCT_VIEW.PICKUP ? <PickupInfo product={product} /> : null}
+        {view === PRODUCT_VIEW.DEGRADED_DECISION ? (
+          <View style={styles.attention}>
+            <Text style={styles.boxTitle}>Hàng bị hỏng khi trả về kho</Text>
+            <Text style={styles.body}>
+              Người mua đã trả món này và hàng bị hỏng trên đường về kho.{" "}
+              <Text style={styles.bold}>Không phải lỗi của bạn</Text> — kho đền
+              bù. Bạn chọn nhận tiền đền hoặc nhận lại hàng kèm đền một phần
+              {product.degradedCase?.decisionDeadline
+                ? ` trước ${fmtDate(product.degradedCase.decisionDeadline)}`
+                : ""}
+              .
+            </Text>
+          </View>
+        ) : null}
+
         {view === PRODUCT_VIEW.WITHDRAWING ? (
           <View style={styles.attention}>
             <Text style={styles.boxTitle}>Chờ bạn đến kho lấy hàng</Text>

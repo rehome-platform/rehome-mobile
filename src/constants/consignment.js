@@ -39,6 +39,7 @@ export const PRODUCT_VIEW = {
   REPRICING: "REPRICING", // đã chọn RE_CONSIGN, chờ Moderator chốt giá
   PICKUP: "PICKUP", // đã chọn nhận lại, chờ Member đến kho lấy
   WITHDRAWING: "WITHDRAWING", // đã gửi yêu cầu rút hàng (Phase 5), chờ Member đến kho lấy
+  DEGRADED_DECISION: "DEGRADED_DECISION", // hàng trả về bị hỏng, chờ Member chọn cách đền (Phase 5)
   ENDED: "ENDED", // SOLD / WITHDRAWN / UNCLAIMED / DONATED / DESTROYED
 };
 
@@ -55,6 +56,7 @@ export const PRODUCT_VIEW_LABEL = {
   REPRICING: "Chờ chốt giá",
   PICKUP: "Chờ nhận lại",
   WITHDRAWING: "Chờ đến kho lấy",
+  DEGRADED_DECISION: "Bị hỏng — cần bạn chọn",
 };
 
 export const PRODUCT_ENDED_LABEL = {
