@@ -14,6 +14,11 @@ import { mockFindOrder } from "@/features/orders/api/ordersApi.mock";
 import { WAREHOUSES } from "@/features/consignment/api/mockData";
 import { mockRefund } from "@/features/wallet/api/walletApi.mock";
 import { canRequestReturn } from "../utils/returnRules";
+import { mockNotify } from "@/features/notifications/api/notificationApi.mock";
+import {
+  NOTIFICATION_TARGET as NT,
+  NOTIFICATION_TYPE as NN,
+} from "@/constants/notification";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => dayjs().toISOString();
@@ -377,6 +382,35 @@ export async function mockReturnAction(id, key) {
       r.resolutionPhotoUrls = [photo(`${r.id}k1`), photo(`${r.id}k2`)];
       r.pickupDeadline = later(RETURN_LIMITS.PICKUP_DAYS, "day");
       break;
+  }
+  // Phase 6: kết quả từ kho → thông báo
+  const TEXT = {
+    APPROVE: [
+      "Yêu cầu trả hàng đã được duyệt",
+      `Giao hàng cho shipper trước hạn để kho nhận lại (${r.code}).`,
+    ],
+    REJECT: [
+      "Yêu cầu trả hàng bị từ chối",
+      `Kho từ chối yêu cầu ${r.code}. Xem lý do trong chi tiết.`,
+    ],
+    VALID: [
+      "Đã hoàn tiền trả hàng",
+      `Kho xác nhận hợp lệ, tiền đã hoàn vào ví (${r.code}).`,
+    ],
+    INVALID: [
+      "Yêu cầu trả hàng không hợp lệ",
+      `Chọn cách nhận lại hàng trong 7 ngày (${r.code}).`,
+    ],
+    LOST: ["Hàng trả bị thất lạc", `ReHome vẫn hoàn tiền cho bạn (${r.code}).`],
+  };
+  if (TEXT[key]) {
+    mockNotify({
+      type: NN.ORDER_UPDATE,
+      title: TEXT[key][0],
+      body: TEXT[key][1],
+      targetType: NT.RETURN_REQUEST,
+      targetId: r.id,
+    });
   }
   return withOrder(r);
 }
