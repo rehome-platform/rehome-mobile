@@ -69,6 +69,8 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 | 13 | Lối vào KG-16 (người ký gửi biết món bị hỏng) không vẽ | Dải nhắc ở **tab Ký gửi** + trạng thái mới ở KG-08/09 "Bị hỏng — cần bạn chọn" | Không có thông báo đẩy; Member phải có đường vào màn quyết định |
 | 14 | **RT-02** Không hợp lệ: nút "So sánh với ảnh kiểm định lúc nhập kho" | **Ẩn** | Người mua chưa có API xem ảnh kiểm định của món đã mua [CHỜ BE] |
 | 15 | **RT-02** Đã hoàn tiền: nút "Rút tiền" | Nút **"Xem ví"** + thẻ "Số dư ví hiện tại" | Member thấy giao dịch Hoàn tiền trước; rút tiền mở từ ví |
+| 16 | **RT-04** "Kho gửi lại · 30.000 đ" đặt trên và **chọn sẵn** | "Đến kho lấy" (miễn phí) lên đầu, **chọn sẵn**; "Kho gửi lại" mờ + nhãn "Sắp có", vẫn hiện phí; thêm "Chỉ đường" tới kho | Không chọn sẵn lựa chọn mất tiền; chưa có API trả phí gửi lại (#8) |
+| 17 | **KG-13** khối "Có thể chờ để khỏi mất phí" luôn hiện | Chỉ hiện khi **còn kỳ sau** | Kỳ cuối không còn cửa sổ miễn phí nào để chờ |
 
 ---
 
@@ -78,8 +80,8 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 |---|---|---|---|
 | 0 | — | ✅ Đã đọc BE `2c3b597` (20/10): chưa có API 79–95, `/uploads`, MoMo cho phí; entity/enum khớp guide; điền mục 5.2 | 20/10 |
 | 1 | `feature/returns` | ✅ PR #25 — constants, `returnRules`, mock trả hàng (nối kho mock đơn + ví), RT-01, RT-02 (mọi trạng thái), danh sách, bật nút ở BR-11, dòng PR-01 | 20–21/10 |
-| 2 | `feature/return-invalid-choice` | RT-04 | 24/10 |
-| 3 | `feature/item-withdrawal` | `withdrawalRules`, mock rút hàng, KG-13/14/15, bật nút KG-09, trạng thái mới ở KG-08/09 | 25–26/10 |
+| 2 | `feature/return-invalid-choice` | ✅ PR #27 — RT-04 | 21/10 |
+| 3 | `feature/item-withdrawal` | ✅ PR #28 — `withdrawalRules`, mock rút hàng, KG-13/14/15, bật nút KG-09, trạng thái mới ở KG-08/09 | 21/10 |
 | 4 | `feature/degraded-item` | KG-16, dải nhắc tab Ký gửi | 27/10 |
 | — | nối thật Phase 2/3/4 | khi BE xong | 28–30/10 |
 | 5 | `feature/returns-withdrawal-real-api` | `*.real.js`, tắt mock Phase 5 | khi BE xong |
@@ -96,6 +98,19 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 - Mock nối: đơn mẫu `od-seed-11 … 16` ↔ yêu cầu `rr-seed-1 … 6` (đủ 6 trạng thái); kết luận hợp lệ / thất lạc → `mockRefund` ghi giao dịch REFUND "Hoàn tiền trả hàng". Khung Mock RT-02: Kho duyệt / từ chối / quá hạn bàn giao / hàng về kho / thất lạc / hợp lệ / không hợp lệ. Khung Mock BR-11: "Rút hạn trả hàng còn 1 phút" (`mockExpireReturnWindow`).
 - `PhotoPicker` (Phase 2) thêm prop `label`, `helper`, `pickTitle`, `pickMessage` (mặc định giữ chữ ký gửi) — dùng lại ở RT-01, chưa chuyển ra `components/ui`.
 - Thành phần mới dùng lại được: `PhotoThumbs` (hàng ảnh nhỏ, bấm xem to), `ReturnStatusTimeline` (dựa trên `StatusTimeline`).
+
+**Nhánh 2 (RT-04):** route `returns/[id]/pickup-choice.js`; đã chọn / không còn ở bước chọn → tự `Redirect` về RT-02. RT-02 sau khi chọn hiện hạn + địa chỉ kho + "Chỉ đường" + nút Mã Member. Mock `withOrder` thêm `warehouseAddress`, `warehouseOpeningHours`, `shipBackFee: 30000` [CHỜ BE câu 6, 9].
+
+**Nhánh 3 (rút hàng) đã làm khác / thêm:**
+
+- Route `withdrawals/new.js?productId=` (KG-13/14, cùng một màn: `stage` form → momo → momoFailed) và `withdrawals/[id].js` (KG-15). Rút hàng đặt ở `features/withdrawals` (hàng hỏng sẽ cùng chỗ).
+- `getProductView` thêm `WITHDRAWING` (nhãn "Chờ đến kho lấy") theo field `product.activeWithdrawalId` [CHỜ BE câu 13]; thẻ KG-08 hiện hạn từ `withdrawalPickupDeadline`. KG-09 đang bán: khối "Rút hàng miễn phí — còn n ngày" / "Rút hàng mất phí …" + 2 nút **Rút hàng về** | Giảm giá bán; đang rút → khối "Chờ bạn đến kho lấy hàng" + nút **Xem yêu cầu rút hàng**.
+- Cửa sổ miễn phí tính từ `termStartedAt` (đầu kỳ đang chạy) + `freeWithdrawalWindowDays`; mock sản phẩm thêm `freeWithdrawalWindowDays: 7`, `withdrawalFee: 50000` (theo wireframe; biên nhận mock cũ ghi 30.000) + sản phẩm mẫu mới **Chân váy xếp ly** (ngày 4 kỳ 2 → miễn phí). Áo khoác dạ nữ (ngày 9 kỳ 1) → có phí.
+- Trả phí MIXED: `createWithdrawal` → `payWithdrawalFee` (ví đủ → trừ luôn; thiếu → trả `{fromWallet, fromMomo}`, **chưa trừ ví**) → màn "Ví không đủ số dư" → MoMo (mock: hộp chọn Thành công / Thất bại; bản thật mở `payUrl` ở nhánh `feature/payment-momo`). MoMo thất bại → ví giữ nguyên, Thử lại dùng lại yêu cầu cũ.
+- Yêu cầu tạo rồi mà **chưa trả phí**: mock để `status = null`, chưa gỡ sản phẩm; tạo lại cho cùng món thì dùng lại yêu cầu đó [CHỜ BE câu 10]. Không làm dòng "Chưa trả phí · Tiếp tục" ở KG-09.
+- KG-15 dòng thời gian từ `events` [{type, at}] (mock tự ghi: REQUESTED, REMOVED, HANDED_OVER, EXPIRED, RELISTED) [CHỜ BE câu 10 lịch sử trạng thái]; đang chờ → thêm mốc "Chờ bạn đến kho · còn n ngày". Response mock kèm thông tin món + kho (`productName`, `photoUrl`, `warehouseAddress`, `warehouseOpeningHours`…), `feeFromWallet`, `feeFromMomo`.
+- Ví mock: `mockAvailableBalance`, `mockChargeWithdrawalFee` (giao dịch WITHDRAWAL_FEE "Phí rút lại hàng · SKU …"). Ký gửi mock: `mockFindMyProduct`, `mockPatchProduct`. Khung Mock KG-15: Kho bàn giao tại quầy (→ COMPLETED, sản phẩm WITHDRAWN) / Quá hạn đến kho (→ EXPIRED, sản phẩm đăng bán lại, phí không hoàn).
+- Mã lỗi: `PRODUCT_ALREADY_ORDERED` (API 90, theo contract — đang trong message [CHỜ BE]).
 
 ---
 
@@ -481,15 +496,15 @@ Chạy trên Android thật, mock.
 - [x] RT-01: bỏ trống hết bấm gửi → lỗi lý do / mô tả / ảnh; 6 ảnh bị chặn; gửi xong sang RT-02 Chờ duyệt; danh sách + PR-01 badge cập nhật.
 - [x] RT-01 mở khi đã quá hạn → màn Quá hạn, không có nút gửi.
 - [x] RT-02 qua khung Mock: Chờ duyệt → Chờ bàn giao (mã vận đơn sao chép được, đếm ngược) → bấm "Tôi đã giao hàng cho shipper" → Đang về kho → Kết luận hợp lệ → **ví có giao dịch Hoàn tiền đúng tổng đơn**.
-- [ ] (nhánh 2) Kết luận không hợp lệ → RT-04 → Đến kho lấy → RT-02 hiện hạn + nút Mã Member. Gửi lại: mờ / có phí tuỳ mock.
+- [x] Kết luận không hợp lệ → RT-04 → Đến kho lấy → RT-02 hiện hạn + nút Mã Member. Gửi lại: mờ / có phí tuỳ mock.
 - [x] Thất lạc → hoàn tiền; Quá hạn bàn giao → Đã huỷ.
 
 **Rút hàng**
-- [ ] KG-09 Đang bán trong 7 ngày đầu kỳ → nút Rút hàng về "Miễn phí — còn n ngày"; ngoài cửa sổ → "Phí 50.000 đ"; Đã có đơn / Chờ cuối kỳ → không có nút.
-- [ ] Miễn phí → gửi → KG-15 Chờ đến kho; món biến khỏi sàn (BR-01); KG-08 hiện "Chờ bạn đến kho lấy".
-- [ ] Có phí, ví đủ → trừ ví, ví có giao dịch "Phí rút lại hàng".
-- [ ] Có phí, ví thiếu → hiện chia "Trừ ví … · MoMo …" → Mock MoMo thất bại → ví chưa bị trừ, Thử lại được → Mock thành công → KG-15.
-- [ ] Khung Mock: Kho bàn giao → Đã bàn giao; Quá hạn → Hết hạn, món quay lại sàn, phí không hoàn.
+- [x] KG-09 Đang bán trong 7 ngày đầu kỳ → nút Rút hàng về "Miễn phí — còn n ngày"; ngoài cửa sổ → "Phí 50.000 đ"; Đã có đơn / Chờ cuối kỳ → không có nút.
+- [x] Miễn phí → gửi → KG-15 Chờ đến kho; KG-08 hiện "Chờ đến kho lấy" (BR-01 sàn mua là mock riêng của Phase 3, không nối — kiểm khi có API thật).
+- [x] Có phí, ví đủ → trừ ví, ví có giao dịch "Phí rút lại hàng".
+- [x] Có phí, ví thiếu → hiện chia "Trừ ví … · MoMo …" → Mock MoMo thất bại → ví chưa bị trừ, Thử lại được → Mock thành công → KG-15.
+- [x] Khung Mock: Kho bàn giao → Đã bàn giao; Quá hạn → Hết hạn, món quay lại sàn, phí không hoàn.
 
 **Hàng hỏng**
 - [ ] Tab Ký gửi có dải nhắc; KG-08/09 nhãn "BỊ HỎNG".
