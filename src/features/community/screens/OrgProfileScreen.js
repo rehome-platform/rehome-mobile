@@ -17,7 +17,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
-import { showToast } from "@/utils/toast";
 import { REPORT_TARGET } from "@/constants/community";
 import {
   useFeed,
@@ -26,7 +25,9 @@ import {
   useToggleFollow,
   useToggleLike,
 } from "../hooks/useCommunity";
-import { MESSAGE_SOON, mapsUrl, orgSubtitle } from "../utils/communityRules";
+import { mapsUrl, orgSubtitle } from "../utils/communityRules";
+import { CONVERSATION_TYPE } from "@/constants/chat";
+import { useOpenConversation } from "@/features/chat/hooks/useChat";
 import { CampaignCard } from "../components/CampaignCard";
 import { PostCard } from "../components/PostCard";
 import { VerifiedBadge } from "../components/VerifiedBadge";
@@ -43,6 +44,7 @@ export default function OrgProfileScreen() {
   const posts = useFeed(null, { orgId: id });
   const toggleFollow = useToggleFollow();
   const toggleLike = useToggleLike();
+  const { open: openChat } = useOpenConversation();
   const [tab, setTab] = useState("CAMPAIGNS");
   const o = query.data;
   const here = `/organizations/${id}`;
@@ -150,7 +152,13 @@ export default function OrgProfileScreen() {
         <Button
           title="Nhắn tin"
           variant="secondary"
-          onPress={() => (isAuthed ? showToast(MESSAGE_SOON) : needLogin())}
+          onPress={() =>
+            openChat({
+              type: CONVERSATION_TYPE.MEMBER_ORGANIZATION,
+              counterpartId: id,
+              from: here,
+            })
+          }
           style={styles.flex}
         />
       </View>

@@ -49,6 +49,7 @@ import { ListGroup, ListItem } from "@/components/ui/ListItem";
 import { RETURN_STATUS_LABEL } from "@/constants/returns";
 import { canRequestReturn } from "@/features/returns/utils/returnRules";
 import { useReturn } from "@/features/returns/hooks/useReturns";
+import { MessageWarehouseButton } from "@/features/chat/components/MessageWarehouseButton";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/orders");
@@ -500,7 +501,13 @@ export default function OrderDetailScreen() {
           trong mục Ví.
         </NoteBox>
       ) : null}
-
+      {/* Phase 6: hộp thư kho của đơn [CHỜ BE] API 63 trả warehouseId */}
+      <MessageWarehouseButton
+        warehouseId={order.warehouseId}
+        warehouseName={order.warehouseName}
+        draft={`Cho mình hỏi về đơn ${order.orderNo}: `}
+        from={`/orders/${order.id}`}
+      />
       <OrderMockPanel order={order} />
 
       {confirming ? (

@@ -18,17 +18,17 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
-import { showToast } from "@/utils/toast";
 import { REPORT_TARGET } from "@/constants/community";
 import { useCampaign } from "../hooks/useCommunity";
 import {
-  MESSAGE_SOON,
   campaignDaysLeft,
   campaignTitleOf,
   isCampaignOpen,
   mapsUrl,
 } from "../utils/communityRules";
 import { VerifiedBadge } from "../components/VerifiedBadge";
+import { CONVERSATION_TYPE } from "@/constants/chat";
+import { useOpenConversation } from "@/features/chat/hooks/useChat";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/community");
@@ -48,6 +48,7 @@ export default function CampaignScreen() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useCampaign(id);
   const c = query.data;
+  const { open: openChat } = useOpenConversation();
   const here = `/campaigns/${id}`;
   const needLogin = () =>
     askLogin(
@@ -124,7 +125,14 @@ export default function CampaignScreen() {
         <Button
           title="Nhắn tin"
           variant="secondary"
-          onPress={() => (isAuthed ? showToast(MESSAGE_SOON) : needLogin())}
+          onPress={() =>
+            openChat({
+              type: CONVERSATION_TYPE.MEMBER_ORGANIZATION,
+              counterpartId: org?.id,
+              draft: `Mình muốn hỏi về chiến dịch "${campaignTitleOf(c)}": `,
+              from: here,
+            })
+          }
           style={styles.flex}
         />
       </View>

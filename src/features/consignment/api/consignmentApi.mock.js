@@ -254,7 +254,14 @@ export async function getProduct(id) {
       message: "Không tìm thấy sản phẩm.",
     });
   }
-  return { ...product };
+  // Phase 6: id kho để mở hộp thư kho [CHỜ BE] API 22 trả warehouseId
+  return {
+    ...product,
+    warehouseId:
+      product.warehouseId ??
+      WAREHOUSES.find((w) => w.name === product.warehouseName)?.id ??
+      null,
+  };
 }
 // API 23 — POST /products/{id}/price-reduction {newPrice}. Kiểm như BE: chỉ giảm, ≥ giá sàn, 1 lần/ngày
 export async function reducePrice(id, newPrice) {
