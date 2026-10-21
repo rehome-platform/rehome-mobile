@@ -40,6 +40,7 @@ import {
   useCart,
 } from "@/features/cart/hooks/useCart";
 import { shopKeys } from "../api/queryKeys";
+import { canTryOn } from "@/features/tryon/utils/tryonRules";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -63,21 +64,21 @@ const STATE_INFO = {
   },
 };
 
-const askLogin = (href) =>
-  Alert.alert(
-    "Đăng nhập để mua hàng",
-    "Bạn cần đăng nhập để thêm vào giỏ hoặc mua ngay.",
-    [
-      { text: "Để sau", style: "cancel" },
-      {
-        text: "Đăng nhập",
-        onPress: () => {
-          setPendingRedirect(href); // đăng nhập xong mở lại đúng món này
-          router.push("/login");
-        },
+const askLogin = (
+  href,
+  title = "Đăng nhập để mua hàng",
+  message = "Bạn cần đăng nhập để thêm vào giỏ hoặc mua ngay.",
+) =>
+  Alert.alert(title, message, [
+    { text: "Để sau", style: "cancel" },
+    {
+      text: "Đăng nhập",
+      onPress: () => {
+        setPendingRedirect(href); // đăng nhập xong mở lại đúng món này
+        router.push("/login");
       },
-    ],
-  );
+    },
+  ]);
 
 const share = (p) =>
   Share.share({
@@ -251,7 +252,42 @@ export default function ProductDetailScreen() {
             <Text style={styles.muted}>{product.warehouseName}</Text>
           ) : null}
         </View>
-
+        {/* Phase 6 · BR-04: Thử đồ AI (không chiếm chân màn) */}
+        {!query.isPlaceholderData && canTryOn(product) ? (
+          <Pressable
+            onPress={() =>
+              isAuthed
+                ? router.push({
+                    pathname: "/tryon",
+                    params: { productId: id },
+                  })
+                : askLogin(
+                    `/products/${id}`,
+                    "Đăng nhập để thử đồ",
+                    "Bạn cần đăng nhập để thử đồ bằng AI và lưu ảnh vào bộ sưu tập.",
+                  )
+            }
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.tryon, pressed && styles.pressed]}
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={20}
+              color={colors.primary}
+            />
+            <View style={styles.flex}>
+              <Text style={styles.tryonTitle}>Thử đồ AI</Text>
+              <Text style={styles.muted}>
+                Ghép món này lên người mẫu để xem cách phối
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
         {info ? (
           <View style={styles.stateBox}>
             <Text style={styles.stateTitle}>{info.title}</Text>
@@ -324,6 +360,21 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   body: { padding: spacing.lg, gap: spacing.lg },
   titleBlock: { gap: spacing.xs },
+  tryon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  tryonTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
   name: { ...textStyles.title, color: colors.text },
   muted: { ...textStyles.body, color: colors.textSecondary },
   text: { ...textStyles.body, color: colors.text },

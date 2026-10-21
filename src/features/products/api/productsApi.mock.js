@@ -144,6 +144,7 @@ const toSummary = (p) => ({
   condition: p.condition,
   originalPrice: p.originalPrice,
   currentPrice: p.currentPrice,
+  tryonSlot: CATEGORIES.find((c) => c.id === p.categoryId)?.tryonSlot ?? null, // Phase 6 [CHỜ BE câu 5]
 });
 
 export async function getProducts({
@@ -213,3 +214,21 @@ export async function mockSetStatus(id, status) {
 }
 // [MOCK] cartApi.mock dựng giỏ từ cùng dữ liệu này → đổi trạng thái ở khung Mock thì giỏ cũng đổi theo
 export const mockFindProduct = (id) => products.find((p) => p.id === id);
+// ---------- Phase 6 (thử đồ) ----------
+// tryonApi.mock dùng: món đang bán theo slot (bỏ món đang xem)
+export const mockOnSaleBySlot = (slot, excludeId) =>
+  products
+    .filter((p) => p.status === PRODUCT_STATUS.ON_SALE && p.id !== excludeId)
+    .filter(
+      (p) => CATEGORIES.find((c) => c.id === p.categoryId)?.tryonSlot === slot,
+    )
+    .sort((a, b) => dayjs(b.createdAt).diff(a.createdAt))
+    .map(toSummary);
+
+// Món trong ảnh thử đồ: lấy trạng thái HIỆN TẠI (đã bán thì AI-04/06 báo)
+export const mockProductSummary = (id) => {
+  const p = products.find((x) => x.id === id);
+  return p
+    ? { ...toSummary(p), status: p.status, warehouseId: p.warehouseId }
+    : null;
+};

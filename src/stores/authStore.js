@@ -4,6 +4,7 @@ import { setOnSessionExpired } from "@/lib/api/client";
 import { queryClient } from "@/lib/query/queryClient";
 import { authApi } from "@/features/auth/api/authApi";
 import { useCheckoutStore } from "@/stores/checkoutStore";
+import { useTryonJobStore } from "@/stores/tryonJobStore";
 
 export const useAuthStore = create((set) => ({
   status: "loading", // 'loading' | 'guest' | 'authenticated'
@@ -43,6 +44,7 @@ export const useAuthStore = create((set) => ({
     await tokenStorage.clear();
     queryClient.clear(); // xoá dữ liệu cache của người cũ
     useCheckoutStore.getState().clear(); // đơn chờ thanh toán / địa chỉ đang chọn của người cũ
+    useTryonJobStore.getState().reset(); // huỷ việc tạo ảnh của người cũ
     set({ status: "guest", user: null, sessionError: reason });
   },
 
