@@ -24,4 +24,5 @@ export const ERROR_CODES = {
   RETURN_ALREADY_EXISTS: "RETURN_ALREADY_EXISTS", // trả hàng: đơn đã có yêu cầu (API 79, 409) [GIẢ ĐỊNH tên mã]
   RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) [GIẢ ĐỊNH tên mã]
   PRODUCT_ALREADY_ORDERED: "PRODUCT_ALREADY_ORDERED", // rút hàng: món vừa có người đặt (API 90, 409) — contract để trong message [CHỜ BE]
+  INCOMPLETE_OUTFIT: "INCOMPLETE_OUTFIT", // thử đồ: chưa đủ Áo + Quần hoặc Đầm (API 97, 409) — contract để trong message [CHỜ BE]
 };

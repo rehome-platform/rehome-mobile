@@ -1,14 +1,15 @@
 // Mock API 44 — GET /categories, GET /brands (chỉ trả mục đang hoạt động) [CHỜ BE]
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 
+// tryonSlot theo Category.tryonSlot của BE (a0c6abe); null = không thử đồ được [CHỜ BE] slot từng danh mục
 export const CATEGORIES = [
-  { id: "cat-ao", name: "Áo" },
-  { id: "cat-ao-khoac", name: "Áo khoác" },
-  { id: "cat-quan", name: "Quần" },
-  { id: "cat-vay", name: "Váy đầm" },
-  { id: "cat-giay", name: "Giày dép" },
-  { id: "cat-tui", name: "Túi xách" },
-  { id: "cat-phu-kien", name: "Phụ kiện" },
+  { id: "cat-ao", name: "Áo", tryonSlot: "TOP" },
+  { id: "cat-ao-khoac", name: "Áo khoác", tryonSlot: "TOP" },
+  { id: "cat-quan", name: "Quần", tryonSlot: "BOTTOM" },
+  { id: "cat-vay", name: "Váy đầm", tryonSlot: "DRESS" },
+  { id: "cat-giay", name: "Giày dép", tryonSlot: null },
+  { id: "cat-tui", name: "Túi xách", tryonSlot: null },
+  { id: "cat-phu-kien", name: "Phụ kiện", tryonSlot: null },
 ];
 
 export const BRANDS = [
