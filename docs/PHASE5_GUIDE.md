@@ -67,6 +67,8 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 | 11 | **RT-01-QuaHan** nút mờ "Gửi yêu cầu" + "Báo cáo vi phạm" | Chỉ khối "Đã quá hạn" + mốc thời gian; **ẩn** cả hai nút | Nút mờ không có tác dụng; báo cáo là Phase 6 |
 | 12 | **RT-02** "YC-00084", **KG-15** không có mã | Hiện mã hiển thị nếu BE trả; UUID thì ẩn | Bảng không có mã hiển thị [CHỜ BE] |
 | 13 | Lối vào KG-16 (người ký gửi biết món bị hỏng) không vẽ | Dải nhắc ở **tab Ký gửi** + trạng thái mới ở KG-08/09 "Bị hỏng — cần bạn chọn" | Không có thông báo đẩy; Member phải có đường vào màn quyết định |
+| 14 | **RT-02** Không hợp lệ: nút "So sánh với ảnh kiểm định lúc nhập kho" | **Ẩn** | Người mua chưa có API xem ảnh kiểm định của món đã mua [CHỜ BE] |
+| 15 | **RT-02** Đã hoàn tiền: nút "Rút tiền" | Nút **"Xem ví"** + thẻ "Số dư ví hiện tại" | Member thấy giao dịch Hoàn tiền trước; rút tiền mở từ ví |
 
 ---
 
@@ -75,12 +77,25 @@ Chạy trên Android thật, mock (`MOCK.returns`, `MOCK.withdrawals` = true):
 | Thứ tự | Nhánh | Nội dung | Ngày (gợi ý) |
 |---|---|---|---|
 | 0 | — | ✅ Đã đọc BE `2c3b597` (20/10): chưa có API 79–95, `/uploads`, MoMo cho phí; entity/enum khớp guide; điền mục 5.2 | 20/10 |
-| 1 | `feature/returns` | constants, `returnRules`, mock trả hàng (nối kho mock đơn + ví), RT-01, RT-02 (mọi trạng thái), danh sách, bật nút ở BR-11, dòng PR-01 | 21–23/10 |
+| 1 | `feature/returns` | ✅ PR #25 — constants, `returnRules`, mock trả hàng (nối kho mock đơn + ví), RT-01, RT-02 (mọi trạng thái), danh sách, bật nút ở BR-11, dòng PR-01 | 20–21/10 |
 | 2 | `feature/return-invalid-choice` | RT-04 | 24/10 |
 | 3 | `feature/item-withdrawal` | `withdrawalRules`, mock rút hàng, KG-13/14/15, bật nút KG-09, trạng thái mới ở KG-08/09 | 25–26/10 |
 | 4 | `feature/degraded-item` | KG-16, dải nhắc tab Ký gửi | 27/10 |
 | — | nối thật Phase 2/3/4 | khi BE xong | 28–30/10 |
 | 5 | `feature/returns-withdrawal-real-api` | `*.real.js`, tắt mock Phase 5 | khi BE xong |
+
+**Nhánh 1 đã làm khác / thêm so với kế hoạch** (đều trong code, ghi để nối API thật cho đúng):
+
+- Route RT-01 là `returns/new.js?orderId=` (tên cố định `new` được ưu tiên hơn `[id]`); RT-02 là `returns/[id]/index.js` (nhánh 2 thêm `[id]/pickup-choice.js`).
+- `returnStepOf` trả chỉ số bước **đã xong** (giống `orderStepOf` Phase 4): PENDING = 0 → bước "Kho duyệt" đang chạy. Đã huỷ → -1, RT-02 hiện khối lý do thay cho dòng thời gian.
+- BR-11: khối "Hàng có vấn đề? Còn … để yêu cầu trả" + nút **Trả hàng** đặt **trong nội dung** (trên mục Sản phẩm), không chiếm chân màn — nút chính ở chân vẫn là Xác nhận đã nhận hàng / Đánh giá. Đơn đã có yêu cầu → dòng "Yêu cầu trả hàng · <trạng thái>" (`useReturn(order.returnRequestId)`). BR-10 thẻ đơn có nhãn "↩ Có yêu cầu trả hàng".
+- PR-01 badge "n cần bạn làm" = số yêu cầu ở chip **Cần bạn làm** (APPROVED + INVALID); INVALID đã chọn cách nhận vẫn được đếm cho tới khi BE có số đếm riêng [CHỜ BE].
+- Mock dùng **một hạn** `pickupDeadline` cho cả chọn cách nhận lẫn đến kho lấy (đặt lúc kết luận Không hợp lệ, 7 ngày) [GIẢ ĐỊNH — entity chỉ có `pickupDeadline`]. `SHIP_BACK` trong mock trả 409 (chưa có API trả phí, 0.4 #8).
+- Field mock chưa có ở BE (đánh dấu [CHỜ BE] trong `returnsApi.mock.js`): `code` (YC-…), `approvedAt`, `handedOverAt`, `inspectedAt`, `resolutionPhotoUrls`, `refundAmount`, `cancelReason` (`RETURN_CANCEL_REASON`: REJECTED / HANDOVER_EXPIRED), `cancelNote`; kèm thông tin đơn (`orderNo`, `items`, `subtotal`, `shippingFee`, `totalAmount`, 3 field địa chỉ theo tên BE `2c3b597`). Đơn có thêm `returnRequestId` (câu 3).
+- Mã lỗi [GIẢ ĐỊNH tên]: `RETURN_ALREADY_EXISTS` (API 79), `RETURN_HANDOVER_EXPIRED` (API 81); `RETURN_WINDOW_EXPIRED` theo contract.
+- Mock nối: đơn mẫu `od-seed-11 … 16` ↔ yêu cầu `rr-seed-1 … 6` (đủ 6 trạng thái); kết luận hợp lệ / thất lạc → `mockRefund` ghi giao dịch REFUND "Hoàn tiền trả hàng". Khung Mock RT-02: Kho duyệt / từ chối / quá hạn bàn giao / hàng về kho / thất lạc / hợp lệ / không hợp lệ. Khung Mock BR-11: "Rút hạn trả hàng còn 1 phút" (`mockExpireReturnWindow`).
+- `PhotoPicker` (Phase 2) thêm prop `label`, `helper`, `pickTitle`, `pickMessage` (mặc định giữ chữ ký gửi) — dùng lại ở RT-01, chưa chuyển ra `components/ui`.
+- Thành phần mới dùng lại được: `PhotoThumbs` (hàng ảnh nhỏ, bấm xem to), `ReturnStatusTimeline` (dựa trên `StatusTimeline`).
 
 ---
 
@@ -462,12 +477,12 @@ Dữ liệu: sản phẩm (API 22) + biên nhận (API 19, lấy `freeWithdrawal
 Chạy trên Android thật, mock.
 
 **Trả hàng**
-- [ ] BR-11 Đã giao còn hạn → có nút Trả hàng + "Còn n ngày"; đơn quá hạn (khung Mock rút ngắn hạn) → nút biến mất; đơn đã có yêu cầu → dòng mở RT-02.
-- [ ] RT-01: bỏ trống hết bấm gửi → lỗi lý do / mô tả / ảnh; 6 ảnh bị chặn; gửi xong sang RT-02 Chờ duyệt; danh sách + PR-01 badge cập nhật.
-- [ ] RT-01 mở khi đã quá hạn → màn Quá hạn, không có nút gửi.
-- [ ] RT-02 qua khung Mock: Chờ duyệt → Chờ bàn giao (mã vận đơn sao chép được, đếm ngược) → bấm "Tôi đã giao hàng cho shipper" → Đang về kho → Kết luận hợp lệ → **ví có giao dịch Hoàn tiền đúng tổng đơn**.
-- [ ] Kết luận không hợp lệ → RT-04 → Đến kho lấy → RT-02 hiện hạn + nút Mã Member. Gửi lại: mờ / có phí tuỳ mock.
-- [ ] Thất lạc → hoàn tiền; Quá hạn bàn giao → Đã huỷ.
+- [x] BR-11 Đã giao còn hạn → có nút Trả hàng + "Còn n ngày"; đơn quá hạn (khung Mock rút ngắn hạn) → nút biến mất; đơn đã có yêu cầu → dòng mở RT-02.
+- [x] RT-01: bỏ trống hết bấm gửi → lỗi lý do / mô tả / ảnh; 6 ảnh bị chặn; gửi xong sang RT-02 Chờ duyệt; danh sách + PR-01 badge cập nhật.
+- [x] RT-01 mở khi đã quá hạn → màn Quá hạn, không có nút gửi.
+- [x] RT-02 qua khung Mock: Chờ duyệt → Chờ bàn giao (mã vận đơn sao chép được, đếm ngược) → bấm "Tôi đã giao hàng cho shipper" → Đang về kho → Kết luận hợp lệ → **ví có giao dịch Hoàn tiền đúng tổng đơn**.
+- [ ] (nhánh 2) Kết luận không hợp lệ → RT-04 → Đến kho lấy → RT-02 hiện hạn + nút Mã Member. Gửi lại: mờ / có phí tuỳ mock.
+- [x] Thất lạc → hoàn tiền; Quá hạn bàn giao → Đã huỷ.
 
 **Rút hàng**
 - [ ] KG-09 Đang bán trong 7 ngày đầu kỳ → nút Rút hàng về "Miễn phí — còn n ngày"; ngoài cửa sổ → "Phí 50.000 đ"; Đã có đơn / Chờ cuối kỳ → không có nút.
