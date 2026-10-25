@@ -41,3 +41,8 @@ export async function mockPayOrders(orderIds, ok) {
   await delay();
   if (ok) mockMarkPaid(orderIds);
 }
+
+// Bản mock không có cổng thật → không có gì để đồng bộ
+export async function syncStatus() {
+  return null;
+}

@@ -2,6 +2,7 @@
   "expo": {
     "name": "ReHome",
     "slug": "rehome-mobile",
+    "owner": "tranthimyhanhs-team",
     "scheme": "rehome",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -49,10 +50,9 @@
           "locationWhenInUsePermission": "ReHome dùng vị trí để gợi ý kho ký gửi gần bạn."
         }
       ],
-
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-web-browser"
     ],
-
     "extra": {
       "router": {
         "asyncRoutes": {

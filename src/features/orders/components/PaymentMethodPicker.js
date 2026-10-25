@@ -6,7 +6,7 @@ import { PAYMENT_METHOD } from "@/constants/order";
 import { formatVnd } from "@/utils/money";
 import { useWallet } from "@/features/wallet/hooks/useWallet";
 
-// MoMo / Ví ReHome (F-056: trả TRỌN bằng một phương thức). amount: số cần trả để so với số dư khả dụng.
+// MoMo / VNPay / Ví ReHome (F-056: trả TRỌN bằng một phương thức). amount: số cần trả để so với số dư khả dụng.
 // isSubtotal: BR-08 chưa biết phí ship → so với tiền hàng và nhắc cần đủ cả phí ship
 export function PaymentMethodPicker({
   value,
@@ -36,9 +36,15 @@ export function PaymentMethodPicker({
     <View style={styles.wrap}>
       <RadioCard
         title="Ví MoMo"
-        description="Mở MoMo để trả, xong quay lại ReHome"
+        description="Mở trang MoMo để trả, xong đóng trang quay lại ReHome"
         selected={value === PAYMENT_METHOD.MOMO}
         onPress={() => onChange(PAYMENT_METHOD.MOMO)}
+      />
+      <RadioCard
+        title="VNPay"
+        description="Thẻ ATM / Internet Banking / QR ngân hàng"
+        selected={value === PAYMENT_METHOD.VNPAY}
+        onPress={() => onChange(PAYMENT_METHOD.VNPAY)}
       />
       <RadioCard
         title="Ví ReHome"

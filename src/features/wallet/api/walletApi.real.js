@@ -1,13 +1,20 @@
 import { api, unwrap } from "@/lib/api/client";
-import { WALLET_LIMITS } from "@/constants/wallet";
 
-// API 73–78 theo API_CONTRACT [CHỜ BE] — BE chưa có controller ví (đọc code 20/10)
+// API 73–78 + /wallet/config (BE 868d933). Đổi tên field BE về hình dạng màn hình đang dùng (giống mock):
+// transactionNo / payoutNo → code; tên món (itemName) → note khi BE không có ghi chú
+const toTx = (t) => ({
+  ...t,
+  code: t.transactionNo,
+  note: t.note ?? t.itemName ?? null,
+});
+const toPayout = (p) => ({ ...p, code: p.payoutNo });
+const mapPage = (page, fn) => ({ ...page, content: page.content.map(fn) });
 
 export async function getWallet() {
   return unwrap(await api.get("/wallet")); // {balance, lockedBalance, availableBalance}
 }
 
-// direction: "IN" | "OUT" [CHỜ BE câu 13 — contract chỉ lọc theo type]; app vẫn tự lọc theo dấu cho chắc
+// direction: "IN" | "OUT" (BE lọc theo dấu); type: tên WalletTransactionType, nhiều loại nối dấu phẩy
 export async function getTransactions({
   direction,
   type,
@@ -20,32 +27,39 @@ export async function getTransactions({
     ...(type ? { type } : {}),
     ...(direction && direction !== "ALL" ? { direction } : {}),
   };
-  return unwrap(await api.get("/wallet/transactions", { params }));
+  return mapPage(
+    unwrap(await api.get("/wallet/transactions", { params })),
+    toTx,
+  );
 }
 
-export async function getRevenue({ page = 0, size = 20 } = {}) {
-  return unwrap(await api.get("/wallet/revenue", { params: { page, size } }));
+// month: "yyyy-MM" (không gửi = tất cả)
+export async function getRevenue({ month, page = 0, size = 20 } = {}) {
+  const params = { page, size, ...(month ? { month } : {}) };
+  return unwrap(await api.get("/wallet/revenue", { params }));
 }
 
 export async function getPayouts({ page = 0, size = 20 } = {}) {
-  return unwrap(
-    await api.get("/wallet/payout-requests", { params: { page, size } }),
+  return mapPage(
+    unwrap(
+      await api.get("/wallet/payout-requests", { params: { page, size } }),
+    ),
+    toPayout,
   );
 }
 
 export async function getPayout(id) {
-  return unwrap(await api.get(`/wallet/payout-requests/${id}`));
-}
-// API 76 — 409: BELOW_MIN_PAYOUT / INSUFFICIENT_BALANCE / DAILY_PAYOUT_LIMIT_REACHED [CHỜ BE đưa vào field code]
-export async function createPayout(amount) {
-  return unwrap(await api.post("/wallet/payout-requests", { amount })); // {id, amount, status: "PENDING"}
+  return toPayout(unwrap(await api.get(`/wallet/payout-requests/${id}`)));
 }
 
-// [CHỜ BE câu 16] chưa có API cấu hình ví → dùng mặc định, chưa biết số lượt đã dùng hôm nay
+// API 76 — 409 code: BELOW_MIN_PAYOUT / INSUFFICIENT_BALANCE / DAILY_PAYOUT_LIMIT_REACHED
+export async function createPayout(amount) {
+  return toPayout(
+    unwrap(await api.post("/wallet/payout-requests", { amount })),
+  );
+}
+
+// {minPayout, maxPayoutsPerDay, usedToday}
 export async function getWalletConfig() {
-  return {
-    minPayout: WALLET_LIMITS.MIN_PAYOUT,
-    maxPayoutsPerDay: WALLET_LIMITS.MAX_PAYOUTS_PER_DAY,
-    usedToday: null,
-  };
+  return unwrap(await api.get("/wallet/config"));
 }

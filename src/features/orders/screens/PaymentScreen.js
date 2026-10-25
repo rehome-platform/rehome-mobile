@@ -20,7 +20,11 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { MOCK } from "@/config/env";
-import { ORDER_STATUS, PAYMENT_METHOD } from "@/constants/order";
+import {
+  ORDER_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_METHOD_LABEL,
+} from "@/constants/order";
 import { useCheckoutStore } from "@/stores/checkoutStore";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
@@ -97,12 +101,21 @@ function PaymentView({ initialOrders, fromStore = false }) {
     fromStore ? storeMethod : PAYMENT_METHOD.MOMO,
   );
   const [paidBy, setPaidBy] = useState(null); // hiện "Đã thanh toán bằng Ví ReHome" ở màn kết quả
+  const [gateway, setGateway] = useState(null); // MOMO / VNPAY đã mở → nhờ BE hỏi lại cổng đó khi kiểm tra
 
   const ids = orders.map((o) => o.id);
   // Trạng thái thật luôn hỏi BE — không tin kết quả trên đường quay về từ MoMo (F-057)
   const status = useQuery({
     queryKey: orderKeys.statuses(ids),
-    queryFn: () => Promise.all(ids.map((id) => ordersApi.getOrder(id))),
+    queryFn: async () => {
+      // Đã mở MoMo/VNPay → nhờ BE hỏi cổng thanh toán trước (lỗi thì bỏ qua, vẫn đọc đơn)
+      if (gateway)
+        await paymentApi
+          .syncStatus({ orderIds: ids, method: gateway })
+          .catch(() => null);
+      return Promise.all(ids.map((id) => ordersApi.getOrder(id)));
+    },
+
     enabled: ids.length > 0,
     refetchInterval: () => (Date.now() < pollUntil ? POLL_MS : false),
   });
@@ -208,20 +221,26 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const pendingIds = () =>
     ids.filter((id) => statusOf(id) === ORDER_STATUS.PENDING_PAYMENT);
 
-  const payWithMomo = async () => {
+  const payWithGateway = async () => {
     setPaying(true);
     try {
       const { payUrl } = await paymentApi.startPayment({
         orderIds: pendingIds(),
-        method: PAYMENT_METHOD.MOMO,
+        method,
       });
       setOpened(true);
+      if (!payUrl)
+        return showToast(
+          "Bản thử: chưa nối cổng thật — dùng nút Mock bên dưới",
+        );
+      setGateway(method);
       setPollUntil(Date.now() + POLL_WINDOW_MS);
-      // [TẠM] nhánh feature/payment-momo đổi sang WebBrowser.openAuthSessionAsync + đường quay về app
-      if (payUrl) await Linking.openURL(payUrl);
-      else showToast("Bản thử: chưa nối MoMo thật — dùng nút Mock bên dưới");
+      // [TẠM] dev build hiện tại chưa có module native expo-web-browser → mở trình duyệt ngoài.
+      // Quay lại app → AppState "active" → hỏi BE (effect bên trên).
+      // Lần build lại dev build sau → đổi sang WebBrowser.openBrowserAsync (mở ngay trong app)
+      await Linking.openURL(payUrl);
     } catch (e) {
-      Alert.alert("Chưa mở được MoMo", e.message);
+      Alert.alert(`Chưa mở được ${PAYMENT_METHOD_LABEL[method]}`, e.message);
     } finally {
       setPaying(false);
     }
@@ -257,14 +276,16 @@ function PaymentView({ initialOrders, fromStore = false }) {
             { text: "Thanh toán", onPress: payWithWallet },
           ],
         )
-      : payWithMomo();
+      : payWithGateway();
 
   const check = async () => {
     setChecking(true);
     try {
       const res = await status.refetch();
       if (!res.data?.every((o) => o.status === ORDER_STATUS.PAID)) {
-        showToast("Chưa nhận được xác nhận thanh toán từ MoMo");
+        showToast(
+          `Chưa nhận được xác nhận thanh toán từ ${PAYMENT_METHOD_LABEL[gateway ?? method]}`,
+        );
       }
     } finally {
       setChecking(false);
@@ -288,14 +309,14 @@ function PaymentView({ initialOrders, fromStore = false }) {
             title={
               method === PAYMENT_METHOD.WALLET
                 ? `Trả bằng Ví ReHome · ${formatVnd(total)}`
-                : opened
-                  ? "Mở lại MoMo để thanh toán"
-                  : `Thanh toán qua MoMo · ${formatVnd(total)}`
+                : opened && gateway === method
+                  ? `Mở lại ${PAYMENT_METHOD_LABEL[method]} để thanh toán`
+                  : `Thanh toán qua ${PAYMENT_METHOD_LABEL[method]} · ${formatVnd(total)}`
             }
             loading={paying}
             onPress={pay}
           />
-          {method === PAYMENT_METHOD.MOMO ? (
+          {method !== PAYMENT_METHOD.WALLET ? (
             <Button
               title="Tôi đã thanh toán — kiểm tra lại"
               variant="secondary"
@@ -347,8 +368,8 @@ function PaymentView({ initialOrders, fromStore = false }) {
       </View>
 
       <NoteBox>
-        Đã trả tiền mà màn hình chưa đổi? Bấm "Kiểm tra lại". Hệ thống chỉ xác
-        nhận đơn khi nhận được thông báo từ MoMo, có thể chậm vài giây.
+        Trả xong trên trang MoMo/VNPay, bấm Back để quay lại ReHome. Màn hình
+        chưa đổi? Bấm "Kiểm tra lại".
       </NoteBox>
 
       {__DEV__ && MOCK.payment ? (
