@@ -58,7 +58,16 @@ export const CANCEL_REASON_LABEL = {
   CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về kho.",
 };
 
-export const PAYMENT_METHOD = { MOMO: "MOMO", WALLET: "WALLET" }; // Phase 3 chỉ MoMo; Ví bật ở Phase 4
+export const PAYMENT_METHOD = {
+  MOMO: "MOMO",
+  VNPAY: "VNPAY",
+  WALLET: "WALLET",
+};
+export const PAYMENT_METHOD_LABEL = {
+  MOMO: "MoMo",
+  VNPAY: "VNPay",
+  WALLET: "Ví ReHome",
+};
 
 // API 52: BE trả unavailableReason = tên ProductStatus của món khi món không còn ON_SALE (đọc code 19/10)
 export const CART_UNAVAILABLE_LABEL = {

@@ -17,7 +17,7 @@ export const MOCK = {
   productDetail: false, // API 50 GET /products/{id} — đã có (BE 868d933)
   cart: false, // API 51–53 thật — đi CÙNG MOCK.products (id món phải là id thật)
   orders: false, // API 59 POST /orders thật (BE 868d933)
-  payment: false, // Ví: POST /orders/pay thật (BE 868d933). MoMo/VNPay nối ở bước 2.3
+  payment: false, // Ví (POST /orders/pay) + MoMo/VNPay sandbox thật (BE 868d933)
   orderList: false, // API 62–67 thật: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá (BE 868d933)
   wallet: false, // API 73–78 + /wallet/config thật (BE 868d933)
   returns: true, // [CHỜ BE] API 79–82: trả hàng (Phase 5)

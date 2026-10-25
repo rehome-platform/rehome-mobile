@@ -23,7 +23,11 @@ import { formatPhone } from "@/utils/format";
 import { showToast } from "@/utils/toast";
 import { formatCountdown } from "@/hooks/useCountdown";
 import { ERROR_CODES } from "@/constants/errorCodes";
-import { CANCEL_REASON_LABEL, ORDER_STATUS as S } from "@/constants/order";
+import {
+  CANCEL_REASON_LABEL,
+  ORDER_STATUS as S,
+  PAYMENT_METHOD_LABEL,
+} from "@/constants/order";
 import { useAddresses } from "@/features/addresses/hooks/useAddresses";
 import { ordersApi } from "../api/ordersApi";
 import { useOrder, useOrderMutation, useTracking } from "../hooks/useOrders";
@@ -488,7 +492,7 @@ export default function OrderDetailScreen() {
           strong
           label={
             order.paidAt
-              ? `Đã thanh toán qua ${order.paymentMethod === "WALLET" ? "Ví ReHome" : "MoMo"}`
+              ? `Đã thanh toán qua ${PAYMENT_METHOD_LABEL[order.paymentMethod] ?? "MoMo"}`
               : "Tổng"
           }
           value={formatVnd(order.totalAmount)}
