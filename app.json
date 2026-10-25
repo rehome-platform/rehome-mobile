@@ -2,6 +2,7 @@
   "expo": {
     "name": "ReHome",
     "slug": "rehome-mobile",
+    "owner": "tranthimyhanhs-team",
     "scheme": "rehome",
     "version": "1.0.0",
     "orientation": "portrait",
