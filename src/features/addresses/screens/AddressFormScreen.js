@@ -17,7 +17,13 @@ import { ADDRESS_LIMIT } from "@/constants/order";
 import { formatPhone } from "@/utils/format";
 import { showToast } from "@/utils/toast";
 import { addressSchema } from "../schemas";
-import { useAddresses, useSaveAddress } from "../hooks/useAddresses";
+import { SelectField } from "@/components/ui/SelectField";
+import {
+  useAddresses,
+  useProvinces,
+  useSaveAddress,
+  useWards,
+} from "../hooks/useAddresses";
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/addresses");
@@ -88,16 +94,28 @@ function AddressForm({ title, existing, isFirst }) {
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(addressSchema),
     defaultValues: {
       recipientName: existing?.recipientName ?? "",
       phone: formatPhone(existing?.phone ?? ""),
+      provinceName: existing?.provinceName ?? "", // địa chỉ cũ (trước BE 868d933) chưa có → bắt chọn lại
+      wardName: existing?.wardName ?? "",
       addressDetail: existing?.addressDetail ?? "",
       isDefault: lockedDefault,
     },
   });
+
+  // Tỉnh đang chọn → tìm code để tải phường của tỉnh đó
+  const provinceName = watch("provinceName");
+  const provinces = useProvinces();
+  const provinceId = provinces.data?.find(
+    (p) => p.value === provinceName,
+  )?.code;
+  const wards = useWards(provinceId);
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
@@ -184,13 +202,59 @@ function AddressForm({ title, existing, isFirst }) {
       />
       <Controller
         control={control}
+        name="provinceName"
+        render={({ field }) => (
+          <SelectField
+            label="Tỉnh / Thành phố"
+            required
+            searchable
+            placeholder="Chọn tỉnh/thành phố"
+            options={provinces.data ?? []}
+            loading={provinces.isPending}
+            value={field.value}
+            onChange={(v) => {
+              if (v === field.value) return;
+              field.onChange(v);
+              setValue("wardName", "", { shouldDirty: true }); // đổi tỉnh → phường cũ không còn đúng
+            }}
+            error={
+              errors.provinceName?.message ??
+              (provinces.isError ? provinces.error.message : undefined)
+            }
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="wardName"
+        render={({ field }) => (
+          <SelectField
+            label="Phường / Xã"
+            required
+            searchable
+            placeholder={
+              provinceName ? "Chọn phường/xã" : "Chọn tỉnh/thành phố trước"
+            }
+            options={wards.data ?? []}
+            loading={!!provinceId && wards.isPending}
+            value={field.value}
+            onChange={field.onChange}
+            error={
+              errors.wardName?.message ??
+              (wards.isError ? wards.error.message : undefined)
+            }
+          />
+        )}
+      />
+      <Controller
+        control={control}
         name="addressDetail"
         render={({ field }) => (
           <TextField
             label="Địa chỉ cụ thể"
             required
             multiline
-            helper="Số nhà, tên đường, phường/xã, tỉnh/thành phố."
+            helper="Số nhà, tên đường (toà nhà, hẻm nếu có)."
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -215,10 +279,10 @@ function AddressForm({ title, existing, isFirst }) {
           </Checkbox>
         )}
       />
-      {/* PHASE3_GUIDE 0.4 #5: chưa chọn Tỉnh/Phường từ danh sách — BE chỉ có addressDetail [CHỜ BE dữ liệu GHN] */}
+      {/* Tỉnh/phường lấy từ danh mục GHN (BE 868d933) → tên luôn khớp, phí ship tính đúng */}
       <NoteBox>
-        Ghi đủ số nhà, tên đường, phường/xã và tỉnh/thành phố để shipper giao
-        đúng nơi.
+        Phường/xã theo địa giới mới (sau sáp nhập 01/07/2025). Không thấy phường
+        cũ của bạn? Hãy tìm tên phường mới đã sáp nhập.
       </NoteBox>
       <ErrorBox message={formError} />
     </Screen>

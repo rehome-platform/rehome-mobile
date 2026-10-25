@@ -17,10 +17,12 @@ export const addressSchema = z.object({
         .min(1, "Nhập số điện thoại người nhận")
         .regex(PHONE_REGEX, "Số điện thoại gồm 10 số, bắt đầu bằng 0"),
     ),
+  provinceName: z.string().min(1, "Chọn tỉnh/thành phố"),
+  wardName: z.string().min(1, "Chọn phường/xã"),
   addressDetail: z
     .string()
     .trim()
-    .min(10, "Nhập địa chỉ đầy đủ: số nhà, đường, phường/xã, tỉnh/thành phố")
+    .min(5, "Nhập số nhà, tên đường")
     .max(255, "Tối đa 255 ký tự"),
   isDefault: z.boolean(),
 });

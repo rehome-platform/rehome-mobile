@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
-import { formatPhone } from "@/utils/format";
+import { formatAddress, formatPhone } from "@/utils/format";
 
 function Action({ title, onPress, disabled, danger }) {
   return (
@@ -55,7 +55,7 @@ export function AddressCard({
         {isDefault ? <Text style={styles.badge}>MẶC ĐỊNH</Text> : null}
       </View>
       <Text style={styles.text}>{formatPhone(address.phone)}</Text>
-      <Text style={styles.text}>{address.addressDetail}</Text>
+      <Text style={styles.text}>{formatAddress(address)}</Text>
 
       <View style={styles.actions}>
         <Action title="Sửa" onPress={onEdit} disabled={busy} />
