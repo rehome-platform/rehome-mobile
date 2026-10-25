@@ -16,9 +16,9 @@ export const MOCK = {
   products: false, // API 49 thật (BE 868d933). [CHỜ BE] Guest bị 401 — tạm test khi đã đăng nhập
   productDetail: false, // API 50 GET /products/{id} — đã có (BE 868d933)
   cart: false, // API 51–53 thật — đi CÙNG MOCK.products (id món phải là id thật)
-  orders: true, // [TẠM] đi cùng products/cart (sản phẩm, giỏ đang mock). POST /orders thật đã có (ordersApi.real.js)
+  orders: false, // API 59 POST /orders thật (BE 868d933)
   payment: true, // [CHỜ BE] API 60 thanh toán, 61 webhook MoMo, 63 xem đơn
-  orderList: true, // [CHỜ BE] API 62–67: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá đơn
+  orderList: false, // API 62–67 thật: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá (BE 868d933)
   wallet: true, // [CHỜ BE] API 73–78: ví, lịch sử giao dịch, doanh thu, rút tiền
   returns: true, // [CHỜ BE] API 79–82: trả hàng (Phase 5)
   withdrawals: true, // [CHỜ BE] API 90–92 rút lại hàng + 94–95 hàng xuống cấp (Phase 5)

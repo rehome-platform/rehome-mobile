@@ -6,6 +6,7 @@ export const ORDER_STATUS = {
   SHIPPING: "SHIPPING",
   DELIVERED: "DELIVERED",
   COMPLETED: "COMPLETED",
+  RETURNED: "RETURNED", // BE: hàng trả hợp lệ, đã hoàn tiền người mua (Phase 5)
   CANCELLED: "CANCELLED",
 };
 export const ORDER_STATUS_LABEL = {
@@ -15,6 +16,7 @@ export const ORDER_STATUS_LABEL = {
   SHIPPING: "Đang giao",
   DELIVERED: "Đã giao",
   COMPLETED: "Hoàn thành",
+  RETURNED: "Đã trả hàng",
   CANCELLED: "Đã huỷ",
 };
 
