@@ -11,10 +11,11 @@ export const MOCK = {
   upload: true, // [CHỜ BE] POST /uploads
   organization: true, // [TẠM] API thật có từ BE 2af9d85 nhưng Render chưa deploy (bản cũ tạo nhầm account mới) → đổi false khi BE deploy
   consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2
+  catalog: false, // API 44 GET /categories, /brands — đã có (BE 868d933). id thật là UUID → đi cùng MOCK.products = false
   // Phase 3 — mua hàng
-  products: true, // [TẠM] GET /products đã có, nhưng id danh mục/thương hiệu còn mock (API 44 chưa có) → lọc gửi id giả lên BE sẽ lỗi; sàn thật cũng chưa có hàng. Đổi false khi BE có API 44 + có hàng
-  productDetail: true, // [CHỜ BE] API 50 GET /products/{id}
-  cart: true, // [TẠM] đi CÙNG MOCK.products: id món mock (sp-001…) gửi lên BE sẽ 404. BE có sản phẩm mẫu → đổi cả hai sang false
+  products: false, // API 49 thật (BE 868d933). [CHỜ BE] Guest bị 401 — tạm test khi đã đăng nhập
+  productDetail: false, // API 50 GET /products/{id} — đã có (BE 868d933)
+  cart: false, // API 51–53 thật — đi CÙNG MOCK.products (id món phải là id thật)
   orders: true, // [TẠM] đi cùng products/cart (sản phẩm, giỏ đang mock). POST /orders thật đã có (ordersApi.real.js)
   payment: true, // [CHỜ BE] API 60 thanh toán, 61 webhook MoMo, 63 xem đơn
   orderList: true, // [CHỜ BE] API 62–67: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá đơn

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -22,6 +22,29 @@ const normalize = (s) =>
     .replace(/đ/g, "d")
     .replace(/Đ/g, "D")
     .toLowerCase();
+const ROW_HEIGHT = 48; // cao cố định (đã gồm viền) → getItemLayout, FlatList khỏi đo từng dòng
+
+// Tách dòng + memo: gõ tìm chỉ vẽ lại dòng thay đổi, không vẽ lại cả danh sách (phường HCM ~168 dòng)
+const OptionRow = memo(function OptionRow({ item, active, onPick }) {
+  return (
+    <Pressable
+      onPress={() => onPick(item.value)}
+      style={({ pressed }) => [styles.option, pressed && styles.pressed]}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: active }}
+    >
+      <Text
+        style={[styles.optionText, active && styles.optionActive]}
+        numberOfLines={1}
+      >
+        {item.label}
+      </Text>
+      {active ? (
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
+      ) : null}
+    </Pressable>
+  );
+});
 
 export function SelectField({
   label,
@@ -40,20 +63,31 @@ export function SelectField({
   const insets = useSafeAreaInsets();
   const selected = options.find((o) => o.value === value);
 
+  // Bỏ dấu sẵn 1 lần khi danh sách đổi; gõ tìm chỉ còn so chuỗi
+  const indexed = useMemo(
+    () => options.map((o) => ({ o, key: normalize(o.label) })),
+    [options],
+  );
+  // Ô gõ cập nhật ngay, lọc danh sách chạy sau → gõ không bị đứng
+  const deferredQuery = useDeferredValue(query);
   const shown = useMemo(() => {
-    if (!query.trim()) return options;
-    const q = normalize(query.trim());
-    return options.filter((o) => normalize(o.label).includes(q));
-  }, [options, query]);
+    const q = normalize(deferredQuery.trim());
+    if (!q) return options;
+    return indexed.filter((x) => x.key.includes(q)).map((x) => x.o);
+  }, [options, indexed, deferredQuery]);
 
   const close = () => {
     setOpen(false);
     setQuery("");
   };
-  const pick = (v) => {
-    onChange(v);
-    close();
-  };
+  const pick = useCallback(
+    (v) => {
+      onChange(v);
+      setOpen(false);
+      setQuery("");
+    },
+    [onChange],
+  );
 
   return (
     <View style={[styles.wrapper, style]}>
@@ -123,33 +157,20 @@ export function SelectField({
             data={shown}
             keyExtractor={(o) => String(o.value)}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => {
-              const active = item.value === value;
-              return (
-                <Pressable
-                  onPress={() => pick(item.value)}
-                  style={({ pressed }) => [
-                    styles.option,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: active }}
-                >
-                  <Text
-                    style={[styles.optionText, active && styles.optionActive]}
-                  >
-                    {item.label}
-                  </Text>
-                  {active ? (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={colors.primary}
-                    />
-                  ) : null}
-                </Pressable>
-              );
-            }}
+            getItemLayout={(_, index) => ({
+              length: ROW_HEIGHT,
+              offset: ROW_HEIGHT * index,
+              index,
+            })}
+            initialNumToRender={15}
+            windowSize={7}
+            renderItem={({ item }) => (
+              <OptionRow
+                item={item}
+                active={item.value === value}
+                onPick={pick}
+              />
+            )}
             ListEmptyComponent={
               <Text style={styles.empty}>Không tìm thấy</Text>
             }
@@ -208,7 +229,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   option: {
-    minHeight: 48,
+    height: ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,

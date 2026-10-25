@@ -16,3 +16,6 @@ export function formatRelative(at) {
   if (days < 7) return `${days} ngày trước`;
   return t.format("DD/MM/YYYY");
 }
+// Địa chỉ đầy đủ: "12 Lê Lợi, Phường Bến Thành, Hồ Chí Minh". Địa chỉ cũ chưa có phường/tỉnh → chỉ addressDetail
+export const formatAddress = (a) =>
+  [a?.addressDetail, a?.wardName, a?.provinceName].filter(Boolean).join(", ");

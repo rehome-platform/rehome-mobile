@@ -22,7 +22,7 @@ import { PRODUCT_STATUS } from "@/constants/consignment";
 import { useAuthStore } from "@/stores/authStore";
 import { useCheckoutStore } from "@/stores/checkoutStore";
 import { formatVnd } from "@/utils/money";
-import { formatPhone } from "@/utils/format";
+import { formatAddress, formatPhone } from "@/utils/format";
 import { showToast } from "@/utils/toast";
 import { cartApi } from "@/features/cart/api/cartApi";
 import { cartKeys } from "@/features/cart/api/queryKeys";
@@ -383,7 +383,7 @@ function AddressBlock({ address, loading }) {
           <Text style={styles.strong}>
             {address.recipientName} · {formatPhone(address.phone)}
           </Text>
-          <Text style={styles.muted}>{address.addressDetail}</Text>
+          <Text style={styles.muted}>{formatAddress(address)}</Text>
         </View>
       ) : (
         <Pressable

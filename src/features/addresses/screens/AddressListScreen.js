@@ -61,13 +61,30 @@ export default function AddressListScreen() {
       ? remove.variables
       : null;
 
-  const setDefault = (a) =>
+  const setDefault = (a) => {
+    // Địa chỉ tạo trước BE 868d933 chưa có tỉnh/phường → PUT sẽ 400, mời bổ sung trước
+    if (!a.provinceName || !a.wardName) {
+      Alert.alert(
+        "Cần bổ sung địa chỉ",
+        "Địa chỉ này chưa có tỉnh/thành và phường/xã. Bổ sung rồi đặt làm mặc định nhé.",
+        [
+          { text: "Để sau", style: "cancel" },
+          {
+            text: "Bổ sung",
+            onPress: () => router.push(`/addresses/${a.id}/edit`),
+          },
+        ],
+      );
+      return;
+    }
     save.mutate(
       {
         id: a.id,
         values: {
           recipientName: a.recipientName,
           phone: a.phone,
+          provinceName: a.provinceName,
+          wardName: a.wardName,
           addressDetail: a.addressDetail,
           isDefault: true, // BE tự bỏ mặc định ở địa chỉ cũ
         },
@@ -77,6 +94,7 @@ export default function AddressListScreen() {
         onError: (e) => Alert.alert("Chưa đổi được", e.message),
       },
     );
+  };
 
   const confirmDelete = (a) =>
     Alert.alert("Xoá địa chỉ?", `Địa chỉ của "${a.recipientName}" sẽ bị xoá.`, [

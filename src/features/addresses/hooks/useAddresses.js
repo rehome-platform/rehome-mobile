@@ -37,3 +37,27 @@ export function useDeleteAddress() {
       queryClient.invalidateQueries({ queryKey: addressKeys.all }),
   });
 }
+// Tỉnh/phường GHN gần như không đổi → giữ cache 1 ngày. Khoá riêng "address-units" để lưu địa chỉ
+// (invalidate ["addresses"]) không tải lại danh mục. value = tên (BE nhận tên), code dùng để lấy phường
+const DAY = 24 * 60 * 60 * 1000;
+const toUnitOptions = (list) =>
+  list.map((u) => ({ value: u.name, label: u.name, code: u.code }));
+
+export function useProvinces() {
+  return useQuery({
+    queryKey: ["address-units", "provinces"],
+    queryFn: addressApi.getProvinces,
+    select: toUnitOptions,
+    staleTime: DAY,
+  });
+}
+
+export function useWards(provinceId) {
+  return useQuery({
+    queryKey: ["address-units", "wards", provinceId],
+    queryFn: () => addressApi.getWards(provinceId),
+    enabled: !!provinceId,
+    select: toUnitOptions,
+    staleTime: DAY,
+  });
+}
