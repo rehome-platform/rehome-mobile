@@ -340,7 +340,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  boxStrong: { borderWidth: 2, borderColor: colors.text },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   boxSoft: { backgroundColor: colors.background },
   boxTitle: { ...textStyles.heading, color: colors.text },
   option: {

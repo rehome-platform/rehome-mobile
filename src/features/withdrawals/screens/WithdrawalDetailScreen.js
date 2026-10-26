@@ -333,7 +333,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  boxStrong: { borderWidth: 2, borderColor: colors.text },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   boxSoft: { backgroundColor: colors.neutral },
   boxTitle: { ...textStyles.heading, color: colors.text },
   section: { gap: spacing.sm },
@@ -345,12 +349,12 @@ const styles = StyleSheet.create({
     height: 14,
     marginTop: 3,
     borderRadius: 7,
-    backgroundColor: colors.text,
+    backgroundColor: colors.primary,
   },
   dotActive: {
     backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
   },
   line: {
     flex: 1,

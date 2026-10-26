@@ -2,6 +2,7 @@
 export const FORM_STATUS = {
   PENDING: "PENDING",
   APPROVED: "APPROVED",
+  INSPECTING: "INSPECTING", // BE 51c2027: đã mang đồ tới, nhân viên đang kiểm định
   REJECTED: "REJECTED",
   EXPIRED: "EXPIRED",
   CANCELLED: "CANCELLED",
@@ -10,6 +11,7 @@ export const FORM_STATUS = {
 export const FORM_STATUS_LABEL = {
   PENDING: "Chờ duyệt",
   APPROVED: "Đã duyệt",
+  INSPECTING: "Đang kiểm định",
   REJECTED: "Bị từ chối",
   EXPIRED: "Hết hạn",
   CANCELLED: "Đã huỷ",

@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { StatusTimeline } from "@/components/ui/StatusTimeline";
-import { TX_STATUS as P, TX_STATUS_LABEL } from "@/constants/wallet";
+import { StatusChip } from "@/components/ui/StatusChip";
+import {
+  TX_STATUS as P,
+  TX_STATUS_LABEL,
+  TX_STATUS_TONE,
+} from "@/constants/wallet";
 import { useAuthStore } from "@/stores/authStore";
 import { formatVnd } from "@/utils/money";
 import { KeyValueTable } from "@/features/consignment/components/KeyValueTable";
@@ -152,9 +157,11 @@ export default function PayoutDetailScreen() {
         >
           {formatVnd(p.amount)}
         </Text>
-        <Text style={[styles.badge, !final && styles.badgeFilled]}>
-          {(TX_STATUS_LABEL[status] ?? status).toUpperCase()}
-        </Text>
+        <StatusChip
+          label={TX_STATUS_LABEL[status] ?? status}
+          tone={TX_STATUS_TONE[status]}
+          style={styles.chip}
+        />
       </View>
 
       {status === P.FAILED ? (
@@ -237,25 +244,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   amountFailed: { color: colors.textSecondary },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: colors.text,
-    borderRadius: radius.input / 3,
-    overflow: "hidden",
-    ...textStyles.label,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-  badgeFilled: { backgroundColor: colors.text, color: colors.surface },
+  chip: { alignSelf: "center" },
   failBox: {
     gap: spacing.sm,
     padding: spacing.md,
-    borderWidth: 2,
-    borderColor: colors.text,
+    borderWidth: 1,
+    borderColor: tones.danger.fg,
     borderRadius: radius.input,
-    backgroundColor: colors.background,
+    backgroundColor: tones.danger.bg,
   },
   failHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   boxTitle: { flex: 1, ...textStyles.heading, color: colors.text },
@@ -263,7 +259,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.neutral,
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },

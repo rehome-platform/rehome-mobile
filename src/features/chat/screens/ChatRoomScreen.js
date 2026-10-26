@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   tag: {
     paddingHorizontal: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     borderRadius: 4,
     ...textStyles.label,
     fontFamily: fonts.semibold,

@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.neutral,
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },

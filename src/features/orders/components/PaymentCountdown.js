@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderTopWidth: 2,
     borderBottomWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.neutral,
   },
   label: { ...textStyles.label, color: colors.textSecondary },
   time: {
@@ -51,6 +51,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutral,
     overflow: "hidden",
   },
-  fill: { height: "100%", backgroundColor: colors.text },
+  fill: { height: "100%", backgroundColor: colors.primary },
   fillUrgent: { backgroundColor: colors.error },
 });

@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -8,9 +8,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { useAuthStore } from "@/stores/authStore";
+import { StatusChip } from "@/components/ui/StatusChip";
 import {
-  TX_STATUS,
   TX_STATUS_LABEL,
+  TX_STATUS_TONE,
   WALLET_TX_TYPE as T,
   txLabel,
 } from "@/constants/wallet";
@@ -109,15 +110,19 @@ export default function TransactionDetailScreen() {
           {isIncoming(tx) ? "Tiền vào ví" : "Tiền ra khỏi ví"} ·{" "}
           {txLabel(tx.type)}
         </Text>
-        <Text style={styles.amount}>{formatSigned(tx.amount)}</Text>
         <Text
           style={[
-            styles.badge,
-            tx.status === TX_STATUS.SUCCESS && styles.badgeDone,
+            styles.amount,
+            isIncoming(tx) ? styles.amountIn : styles.amountOut,
           ]}
         >
-          {(TX_STATUS_LABEL[tx.status] ?? tx.status).toUpperCase()}
+          {formatSigned(tx.amount)}
         </Text>
+        <StatusChip
+          label={TX_STATUS_LABEL[tx.status] ?? tx.status}
+          tone={TX_STATUS_TONE[tx.status]}
+          style={styles.chip}
+        />
       </View>
 
       {isSale ? (
@@ -172,18 +177,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     color: colors.text,
   },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: colors.text,
-    borderRadius: radius.input / 3,
-    overflow: "hidden",
-    ...textStyles.label,
-    fontFamily: fonts.bold,
-    color: colors.text,
-  },
-  badgeDone: { backgroundColor: colors.text, color: colors.surface },
+  amountIn: { color: colors.success }, // tiền vào: xanh
+  amountOut: { color: colors.error }, // tiền ra: đỏ
+  chip: { alignSelf: "center" },
   section: { gap: spacing.sm },
   sectionTitle: { ...textStyles.label, color: colors.textSecondary },
 });

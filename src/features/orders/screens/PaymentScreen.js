@@ -452,9 +452,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     borderRadius: radius.input,
-    backgroundColor: colors.neutral,
+    backgroundColor: colors.highlight,
   },
   loading: { marginTop: spacing.xxl },
 
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     justifyContent: "space-between",
   },
-  total: { ...textStyles.title, fontFamily: fonts.bold, color: colors.text },
+  total: { ...textStyles.title, fontFamily: fonts.bold, color: colors.primary },
   mock: { gap: spacing.xs, alignItems: "flex-start" },
   mockTitle: { ...textStyles.label, color: colors.textSecondary },
   result: {

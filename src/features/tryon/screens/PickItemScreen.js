@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     borderRadius: radius.input,
   },
-  cellSelected: { borderColor: colors.text },
+  cellSelected: { borderColor: colors.primary },
   caption: { ...textStyles.caption, color: colors.textSecondary },
   strong: {
     ...textStyles.body,

@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { StatusChip } from "@/components/ui/StatusChip";
 import {
   PRODUCT_ENDED_LABEL,
   PRODUCT_VIEW,
@@ -7,15 +6,17 @@ import {
 } from "@/constants/consignment";
 import { getProductView } from "@/utils/consignment";
 
+// Đang bán → success; có đơn / ReHome đang chốt giá → info;
+// CẦN BẠN LÀM (chọn cuối kỳ, đến lấy hàng) → warning; hàng hỏng chờ chọn → danger; kết thúc → neutral
 const TONE = {
-  [PRODUCT_VIEW.AWAITING_DECISION]: { bg: colors.error, fg: colors.onPrimary },
-  [PRODUCT_VIEW.REPRICING]: { bg: colors.secondary, fg: colors.text },
-  [PRODUCT_VIEW.SELLING]: { bg: colors.primary, fg: colors.onPrimary },
-  [PRODUCT_VIEW.HAS_ORDER]: { bg: colors.accent, fg: colors.onPrimary },
-  [PRODUCT_VIEW.ENDED]: { bg: colors.neutral, fg: colors.textSecondary },
-  [PRODUCT_VIEW.PICKUP]: { bg: colors.accent, fg: colors.onPrimary },
-  [PRODUCT_VIEW.WITHDRAWING]: { bg: colors.accent, fg: colors.onPrimary },
-  [PRODUCT_VIEW.DEGRADED_DECISION]: { bg: colors.error, fg: colors.onPrimary },
+  [PRODUCT_VIEW.SELLING]: "success",
+  [PRODUCT_VIEW.HAS_ORDER]: "info",
+  [PRODUCT_VIEW.REPRICING]: "info",
+  [PRODUCT_VIEW.AWAITING_DECISION]: "warning",
+  [PRODUCT_VIEW.PICKUP]: "warning",
+  [PRODUCT_VIEW.WITHDRAWING]: "warning",
+  [PRODUCT_VIEW.DEGRADED_DECISION]: "danger",
+  [PRODUCT_VIEW.ENDED]: "neutral",
 };
 
 export function ProductBadge({ product }) {
@@ -24,20 +25,5 @@ export function ProductBadge({ product }) {
     view === PRODUCT_VIEW.ENDED
       ? PRODUCT_ENDED_LABEL[product.status]
       : PRODUCT_VIEW_LABEL[view];
-  const tone = TONE[view];
-  return (
-    <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.text, { color: tone.fg }]}>{label}</Text>
-    </View>
-  );
+  return <StatusChip label={label} tone={TONE[view]} />;
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  text: { ...textStyles.label, fontFamily: fonts.semibold },
-});

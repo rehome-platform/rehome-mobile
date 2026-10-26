@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.error,
     borderRadius: 4,
     ...textStyles.label,
-    color: colors.text,
+    color: colors.error,
   },
   remove: {
     width: 32,

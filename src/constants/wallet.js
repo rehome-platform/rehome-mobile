@@ -30,6 +30,13 @@ export const TX_STATUS_LABEL = {
   SUCCESS: "Thành công",
   FAILED: "Thất bại",
 };
+// Tông StatusChip theo trạng thái giao dịch / yêu cầu rút
+export const TX_STATUS_TONE = {
+  PENDING: "info",
+  PROCESSING: "info",
+  SUCCESS: "success",
+  FAILED: "danger",
+};
 
 // Chip VI-01 (PHASE4_GUIDE 0.4 #8)
 export const TX_FILTERS = [

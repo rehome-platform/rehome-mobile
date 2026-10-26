@@ -62,5 +62,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.text,
   },
-  total: { ...textStyles.heading, fontFamily: fonts.bold, color: colors.text },
+  total: {
+    ...textStyles.heading,
+    fontFamily: fonts.bold,
+    color: colors.primary,
+  },
 });

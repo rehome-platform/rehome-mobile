@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   unread: { backgroundColor: colors.background },
   pressed: { opacity: 0.8 },
   dotCol: { width: spacing.lg, alignItems: "center", paddingTop: 7 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.text },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
   body: { flex: 1, gap: 2 },
   head: { flexDirection: "row", gap: spacing.sm },
   title: { flex: 1, ...textStyles.body, color: colors.text },

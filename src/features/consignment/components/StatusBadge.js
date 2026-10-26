@@ -1,33 +1,21 @@
-import { StyleSheet, Text, View } from "react-native";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { FORM_STATUS, FORM_STATUS_LABEL } from "@/constants/consignment";
 
-// Màu theo trạng thái form. Nền vàng (secondary) luôn dùng chữ tối (design-tokens)
+// Trạng thái yêu cầu ký gửi. Đã duyệt = CẦN BẠN mang đồ tới → warning; ReHome đang duyệt / kiểm định → info
 const TONE = {
-  [FORM_STATUS.PENDING]: { bg: colors.secondary, fg: colors.text },
-  [FORM_STATUS.APPROVED]: { bg: colors.primary, fg: colors.onPrimary },
-  [FORM_STATUS.REJECTED]: { bg: colors.error, fg: colors.onPrimary },
-  [FORM_STATUS.EXPIRED]: { bg: colors.neutral, fg: colors.textSecondary },
-  [FORM_STATUS.CANCELLED]: { bg: colors.neutral, fg: colors.textSecondary },
+  [FORM_STATUS.PENDING]: "info",
+  [FORM_STATUS.APPROVED]: "warning",
+  [FORM_STATUS.INSPECTING]: "info",
+  [FORM_STATUS.REJECTED]: "danger",
+  [FORM_STATUS.EXPIRED]: "neutral",
+  [FORM_STATUS.CANCELLED]: "neutral",
 };
 
 export function StatusBadge({ status }) {
-  const tone = TONE[status] ?? TONE[FORM_STATUS.EXPIRED];
   return (
-    <View style={[styles.badge, { backgroundColor: tone.bg }]}>
-      <Text style={[styles.text, { color: tone.fg }]}>
-        {FORM_STATUS_LABEL[status] ?? status}
-      </Text>
-    </View>
+    <StatusChip
+      label={FORM_STATUS_LABEL[status] ?? status}
+      tone={TONE[status]}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  text: { ...textStyles.label, fontFamily: fonts.semibold },
-});

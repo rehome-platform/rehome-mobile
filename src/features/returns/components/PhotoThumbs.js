@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.text,
+    backgroundColor: colors.overlay,
   },
   full: { width: "100%", height: "80%" },
   close: { position: "absolute", top: spacing.xxl, right: spacing.lg },

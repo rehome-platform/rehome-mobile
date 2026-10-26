@@ -185,11 +185,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  sumBoxStrong: { borderWidth: 2, borderColor: colors.text },
+  sumBoxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   sumValue: {
     ...textStyles.heading,
     fontFamily: fonts.bold,
-    color: colors.text,
+    color: colors.primary,
   },
   muted: { ...textStyles.body, color: colors.textSecondary },
   caption: { ...textStyles.caption, color: colors.textSecondary },

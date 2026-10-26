@@ -18,6 +18,6 @@ const styles = StyleSheet.create({
     ...textStyles.label,
     fontFamily: fonts.bold,
     color: colors.surface,
-    backgroundColor: colors.text,
+    backgroundColor: colors.overlay,
   },
 });

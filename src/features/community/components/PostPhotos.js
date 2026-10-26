@@ -50,8 +50,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.text,
-    opacity: 0.7,
+    backgroundColor: colors.overlay,
   },
   moreText: {
     ...textStyles.title,

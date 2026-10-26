@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   boxed: {
     padding: spacing.md,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
   total: {
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.text,
+    borderTopColor: colors.neutral,
   },
   totalLabel: { flex: 1, ...textStyles.heading, color: colors.text },
-  totalValue: { ...textStyles.title, color: colors.text },
+  totalValue: { ...textStyles.title, color: colors.primary },
 });

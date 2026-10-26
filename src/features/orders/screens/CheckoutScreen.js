@@ -478,7 +478,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
-  boxStrong: { borderWidth: 2, borderColor: colors.text },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   boxTitle: { ...textStyles.label, color: colors.textSecondary },
   boxNote: {
     ...textStyles.body,
