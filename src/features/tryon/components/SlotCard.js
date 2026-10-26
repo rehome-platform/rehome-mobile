@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  locked: { borderWidth: 2, borderColor: colors.text },
+  locked: { borderWidth: 2, borderColor: colors.primary },
   empty: { borderStyle: "dashed", borderColor: colors.textSecondary },
   emptyBody: {
     flex: 1,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     ...textStyles.label,
     fontFamily: fonts.bold,
     color: colors.surface,
-    backgroundColor: colors.text,
+    backgroundColor: colors.primary,
   },
   btn: { minHeight: 36, paddingHorizontal: spacing.sm },
 });

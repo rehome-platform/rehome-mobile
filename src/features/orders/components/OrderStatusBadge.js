@@ -1,40 +1,24 @@
-import { StyleSheet, Text } from "react-native";
-import { colors, fonts, spacing, textStyles } from "@/theme";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { ORDER_STATUS as S, ORDER_STATUS_LABEL } from "@/constants/order";
 
-// Đơn cần Member làm gì / đang trên đường → nhãn đặc; còn lại → nhãn viền; Đã huỷ → mờ
-const FILLED = [S.PENDING_PAYMENT, S.SHIPPING, S.DELIVERED];
+// Cần Member làm (trả tiền, xác nhận đã nhận) → warning; ReHome / GHN đang xử lý → info;
+// xong → success; huỷ / đã trả hàng → neutral
+const TONE = {
+  [S.PENDING_PAYMENT]: "warning",
+  [S.PAID]: "info",
+  [S.PACKING]: "info",
+  [S.SHIPPING]: "info",
+  [S.DELIVERED]: "warning",
+  [S.COMPLETED]: "success",
+  [S.RETURNED]: "neutral",
+  [S.CANCELLED]: "neutral",
+};
 
 export function OrderStatusBadge({ status }) {
-  const filled = FILLED.includes(status);
   return (
-    <Text
-      style={[
-        styles.badge,
-        filled ? styles.filled : styles.outline,
-        status === S.CANCELLED && styles.cancelled,
-      ]}
-    >
-      {(ORDER_STATUS_LABEL[status] ?? status).toUpperCase()}
-    </Text>
+    <StatusChip
+      label={ORDER_STATUS_LABEL[status] ?? status}
+      tone={TONE[status]}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    overflow: "hidden",
-    ...textStyles.label,
-    fontFamily: fonts.bold,
-  },
-  filled: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
-    color: colors.surface,
-  },
-  outline: { borderColor: colors.text, color: colors.text },
-  cancelled: { borderColor: colors.neutral, color: colors.textSecondary },
-});

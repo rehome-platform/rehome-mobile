@@ -111,7 +111,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
-  cardStrong: { borderWidth: 2, borderColor: colors.text },
+  cardStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   pressed: { opacity: 0.85 },
   head: {
     flexDirection: "row",

@@ -1,39 +1,24 @@
-import { StyleSheet, Text } from "react-native";
-import { colors, fonts, spacing, textStyles } from "@/theme";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { RETURN_STATUS as R, RETURN_STATUS_LABEL } from "@/constants/returns";
 
-// Cần Member làm / đã có kết quả tiền → nhãn đặc; còn lại → nhãn viền; Đã huỷ → mờ
-const FILLED = [R.APPROVED, R.INVALID, R.VALID, R.LOST];
+// Cần Member làm (bàn giao GHN, chọn cách nhận lại) → warning; ReHome đang xử lý → info;
+// đã hoàn tiền → success; huỷ → neutral
+const TONE = {
+  [R.PENDING]: "info",
+  [R.APPROVED]: "warning",
+  [R.SHIPPED_BACK]: "info",
+  [R.INSPECTING]: "info",
+  [R.VALID]: "success",
+  [R.INVALID]: "danger",
+  [R.LOST]: "success",
+  [R.CANCELLED]: "neutral",
+};
 
 export function ReturnStatusBadge({ status }) {
   return (
-    <Text
-      style={[
-        styles.badge,
-        FILLED.includes(status) ? styles.filled : styles.outline,
-        status === R.CANCELLED && styles.cancelled,
-      ]}
-    >
-      {(RETURN_STATUS_LABEL[status] ?? status).toUpperCase()}
-    </Text>
+    <StatusChip
+      label={RETURN_STATUS_LABEL[status] ?? status}
+      tone={TONE[status]}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    overflow: "hidden",
-    ...textStyles.label,
-    fontFamily: fonts.bold,
-  },
-  filled: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
-    color: colors.surface,
-  },
-  outline: { borderColor: colors.text, color: colors.text },
-  cancelled: { borderColor: colors.neutral, color: colors.textSecondary },
-});

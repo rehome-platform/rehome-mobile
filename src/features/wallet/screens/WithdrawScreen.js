@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     borderRadius: radius.input,
     backgroundColor: colors.background,
   },

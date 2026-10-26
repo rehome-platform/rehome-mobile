@@ -226,7 +226,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sumLabel: { ...textStyles.body, color: colors.textSecondary },
-  sumTotal: { ...textStyles.title, fontFamily: fonts.bold, color: colors.text },
+  sumTotal: {
+    ...textStyles.title,
+    fontFamily: fonts.bold,
+    color: colors.primary,
+  },
   sumNote: {
     ...textStyles.caption,
     color: colors.textSecondary,

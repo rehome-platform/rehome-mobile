@@ -25,7 +25,12 @@ export function TransactionRow({ tx, onPress }) {
         </Text>
       </View>
       <View style={styles.right}>
-        <Text style={[styles.amount, isIncoming(tx) && styles.amountIn]}>
+        <Text
+          style={[
+            styles.amount,
+            isIncoming(tx) ? styles.amountIn : styles.amountOut,
+          ]}
+        >
           {formatSigned(tx.amount)}
         </Text>
         <Text style={[styles.status, pending && styles.statusPending]}>
@@ -54,7 +59,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.text,
   },
-  amountIn: { color: colors.success },
+  amountIn: { color: colors.success }, // tiền vào: xanh
+  amountOut: { color: colors.error }, // tiền ra: đỏ
   status: { ...textStyles.caption, color: colors.textSecondary },
   statusPending: { fontFamily: fonts.semibold, color: colors.text },
 });

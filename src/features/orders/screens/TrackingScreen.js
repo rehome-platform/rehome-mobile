@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.md,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     borderRadius: radius.input,
   },
   issueTitle: { ...textStyles.heading, color: colors.text },
@@ -206,12 +206,12 @@ const styles = StyleSheet.create({
     height: 14,
     marginTop: 3,
     borderRadius: 7,
-    backgroundColor: colors.text,
+    backgroundColor: colors.primary,
   },
   dotNow: {
     backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
   },
   line: {
     flex: 1,

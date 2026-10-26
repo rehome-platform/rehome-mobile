@@ -53,8 +53,8 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral,
     backgroundColor: colors.surface,
   },
-  dotDone: { backgroundColor: colors.text, borderColor: colors.text },
-  dotCurrent: { borderColor: colors.text },
+  dotDone: { backgroundColor: colors.primary, borderColor: colors.primary },
+  dotCurrent: { borderColor: colors.primary },
   label: {
     ...textStyles.caption,
     fontSize: 11,

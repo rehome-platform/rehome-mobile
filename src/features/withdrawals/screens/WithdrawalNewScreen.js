@@ -448,7 +448,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  boxStrong: { borderWidth: 2, borderColor: colors.text },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   boxTitle: { ...textStyles.heading, color: colors.text },
   soft: {
     gap: spacing.xs,
@@ -475,7 +479,7 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 2,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -387,7 +387,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
-  boxStrong: { borderWidth: 2, borderColor: colors.text },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   boxTitle: { ...textStyles.heading, color: colors.text },
   kvRow: { flexDirection: "row", justifyContent: "space-between" },
   dim: { gap: spacing.sm, opacity: 0.5 },

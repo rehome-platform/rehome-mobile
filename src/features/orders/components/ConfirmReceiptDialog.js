@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: colors.text,
+    borderColor: colors.primary,
     textAlign: "center",
     ...textStyles.caption,
     lineHeight: 20,

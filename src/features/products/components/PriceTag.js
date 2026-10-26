@@ -33,7 +33,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     columnGap: spacing.sm,
   },
-  price: { ...textStyles.heading, fontFamily: fonts.bold, color: colors.text },
+  price: {
+    ...textStyles.heading,
+    fontFamily: fonts.bold,
+    color: colors.primary,
+  },
   large: { fontSize: 24, lineHeight: 32 },
   struck: { textDecorationLine: "line-through", color: colors.textSecondary },
   old: {

@@ -173,7 +173,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
-  cardStrong: { borderWidth: 2, borderColor: colors.text },
+  cardStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
   pressed: { opacity: 0.85 },
   head: {
     flexDirection: "row",
@@ -205,7 +209,7 @@ const styles = StyleSheet.create({
   total: {
     ...textStyles.body,
     fontFamily: fonts.semibold,
-    color: colors.text,
+    color: colors.primary,
     textAlign: "right",
   },
   footer: {

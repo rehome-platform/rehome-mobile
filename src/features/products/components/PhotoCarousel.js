@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     overflow: "hidden",
-    backgroundColor: colors.text,
+    backgroundColor: colors.overlay,
     color: colors.surface,
     ...textStyles.label,
     fontFamily: fonts.bold,
