@@ -176,7 +176,7 @@ function EndOfTermBody({ product, header, initialChoice }) {
       takeBack ? "Nhận lại hàng?" : "Ký gửi lại?",
       takeBack
         ? `Bạn có 7 ngày để đến ${product.warehouseName} nhận hàng. Lựa chọn này không đổi lại được.`
-        : "Kho sẽ xem lại tình trạng và đề xuất giá mới, bạn xác nhận biên nhận mới thì hàng lên sàn lại. Lựa chọn này không đổi lại được.",
+        : "ReHome sẽ xem lại tình trạng và đề xuất giá mới, bạn xác nhận biên nhận mới thì hàng lên sàn lại. Lựa chọn này không đổi lại được.",
       [
         { text: "Huỷ", style: "cancel" },
         { text: "Xác nhận", onPress: () => decide.mutate(selected) },
@@ -243,7 +243,7 @@ function EndOfTermBody({ product, header, initialChoice }) {
         />
         <Option
           title="Ký gửi lại với giá mới"
-          description="Hàng ở nguyên kho, bạn không phải đi lại. Moderator xem lại tình trạng và đề xuất giá mới, bạn đồng ý thì ký biên nhận mới."
+          description="Hàng ở nguyên địa điểm ký gửi, bạn không phải đi lại. Moderator xem lại tình trạng và đề xuất giá mới, bạn đồng ý thì ký biên nhận mới."
           note={`Chu kỳ ${total} ngày tính lại từ đầu, hoa hồng về mức kỳ 1.`}
           selected={selected === RE_CONSIGN}
           onPress={() => pick(RE_CONSIGN)}

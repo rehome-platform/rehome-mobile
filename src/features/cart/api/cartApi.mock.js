@@ -34,7 +34,7 @@ export async function getCart() {
     const group = groups.get(p.warehouseId) ?? {
       warehouseId: p.warehouseId,
       warehouseName:
-        WAREHOUSES.find((w) => w.id === p.warehouseId)?.name ?? "Kho",
+        WAREHOUSES.find((w) => w.id === p.warehouseId)?.name ?? "Địa điểm ký gửi",
       items: [],
       subtotal: 0,
     };

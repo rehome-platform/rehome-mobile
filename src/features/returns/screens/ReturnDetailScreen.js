@@ -146,7 +146,7 @@ export default function ReturnDetailScreen() {
           text: "Đã giao",
           onPress: () =>
             handover.mutate(r.id, {
-              onSuccess: () => showToast("Đã ghi nhận, hàng đang về kho"),
+              onSuccess: () => showToast("Đã ghi nhận, hàng đang về địa điểm ký gửi"),
               onError: (e) =>
                 showToast(
                   e.code === ERROR_CODES.RETURN_HANDOVER_EXPIRED
@@ -208,7 +208,7 @@ export default function ReturnDetailScreen() {
             strong
             title={`Còn ${formatTimeLeft(r.handoverDeadline)} để giao hàng`}
           >
-            {`Kho đã duyệt${r.approvedAt ? ` lúc ${fmt(r.approvedAt)}` : ""}. Shipper GHN sẽ tới lấy hàng tại địa chỉ bên dưới.`}
+            {`ReHome đã duyệt${r.approvedAt ? ` lúc ${fmt(r.approvedAt)}` : ""}. Shipper GHN sẽ tới lấy hàng tại địa chỉ bên dưới.`}
           </InfoBox>
           {r.ghnReturnTrackingCode ? (
             <View style={styles.codeBox}>
@@ -241,11 +241,11 @@ export default function ReturnDetailScreen() {
         <InfoBox
           title={
             r.status === R.INSPECTING
-              ? "Kho đang kiểm tra hàng"
-              : "Hàng đang về kho"
+              ? "ReHome đang kiểm tra hàng"
+              : "Hàng đang về địa điểm ký gửi"
           }
         >
-          {`Kho sẽ kiểm tra khi hàng về, thường trong 1–2 ngày làm việc.${r.ghnReturnTrackingCode ? ` Mã vận đơn: ${r.ghnReturnTrackingCode}.` : ""}`}
+          {`ReHome sẽ kiểm tra khi hàng về, thường trong 1–2 ngày làm việc.${r.ghnReturnTrackingCode ? ` Mã vận đơn: ${r.ghnReturnTrackingCode}.` : ""}`}
         </InfoBox>
       ) : null}
 
@@ -255,8 +255,8 @@ export default function ReturnDetailScreen() {
             strong
             title={
               r.status === R.LOST
-                ? "Hàng trả bị thất lạc trên đường về kho"
-                : "Kho xác nhận yêu cầu hợp lệ"
+                ? "Hàng trả bị thất lạc trên đường về địa điểm ký gửi"
+                : "ReHome xác nhận yêu cầu hợp lệ"
             }
           >
             {r.status === R.LOST ? (
@@ -268,7 +268,7 @@ export default function ReturnDetailScreen() {
                 label="Phí vận chuyển đơn gốc"
                 value={formatVnd(r.shippingFee)}
               />
-              <MoneyRow label="Phí trả hàng" value="Kho chịu" />
+              <MoneyRow label="Phí trả hàng" value="ReHome chịu" />
               <View style={styles.divider} />
               <MoneyRow
                 strong
@@ -288,7 +288,7 @@ export default function ReturnDetailScreen() {
 
       {r.status === R.INVALID ? (
         <>
-          <InfoBox strong title="Kho không chấp nhận yêu cầu trả">
+          <InfoBox strong title="ReHome không chấp nhận yêu cầu trả">
             <Text style={styles.text}>
               Tình trạng hàng về không khớp với lý do bạn gửi.{" "}
               <Text style={styles.strong}>Không hoàn tiền</Text>, món vẫn thuộc
@@ -296,13 +296,13 @@ export default function ReturnDetailScreen() {
             </Text>
           </InfoBox>
           {r.resolutionNote ? (
-            <Section title="KẾT LUẬN KIỂM ĐỊNH CỦA KHO">
+            <Section title="KẾT LUẬN KIỂM ĐỊNH CỦA REHOME">
               <View style={styles.infoBox}>
                 <Text style={styles.text}>{r.resolutionNote}</Text>
                 {r.resolutionPhotoUrls?.length ? (
                   <>
                     <Text style={styles.sectionTitle}>
-                      ẢNH KHO CHỤP KHI NHẬN LẠI
+                      ẢNH REHOME CHỤP KHI NHẬN LẠI
                     </Text>
                     <PhotoThumbs urls={r.resolutionPhotoUrls} />
                   </>
@@ -311,9 +311,9 @@ export default function ReturnDetailScreen() {
             </Section>
           ) : null}
           {choosing ? (
-            <InfoBox title="Món này đang ở kho, cần bạn chọn cách nhận">
+            <InfoBox title="Món này đang ở địa điểm ký gửi, cần bạn chọn cách nhận">
               <Text style={styles.text}>
-                Kho không giữ hàng của bạn quá 7 ngày. Còn{" "}
+                ReHome không giữ hàng của bạn quá 7 ngày. Còn{" "}
                 <Text style={styles.strong}>
                   {formatTimeLeft(r.pickupDeadline)}
                 </Text>{" "}
@@ -326,7 +326,7 @@ export default function ReturnDetailScreen() {
               title={`Bạn đã chọn: ${INVALID_RETURN_CHOICE_LABEL[r.invalidReturnChoice] ?? r.invalidReturnChoice}`}
             >
               <Text style={styles.text}>
-                Đến {r.warehouseName ?? "kho"} trước{" "}
+                Đến {r.warehouseName ?? "địa điểm ký gửi"} trước{" "}
                 <Text style={styles.strong}>{fmt(r.pickupDeadline)}</Text>, đọc
                 mã Member tại quầy để nhận lại hàng.
               </Text>
@@ -355,7 +355,7 @@ export default function ReturnDetailScreen() {
         <InfoBox title="Yêu cầu đã huỷ">
           {r.cancelReason === RETURN_CANCEL_REASON.HANDOVER_EXPIRED
             ? "Quá hạn bàn giao cho GHN nên yêu cầu tự huỷ. Đơn trở lại bình thường, hàng vẫn là của bạn."
-            : `Kho từ chối yêu cầu.${r.cancelNote ? ` ${r.cancelNote}` : ""} Đơn trở lại bình thường.`}
+            : `ReHome từ chối yêu cầu.${r.cancelNote ? ` ${r.cancelNote}` : ""} Đơn trở lại bình thường.`}
         </InfoBox>
       ) : null}
 
@@ -391,7 +391,7 @@ export default function ReturnDetailScreen() {
             <Text style={styles.muted}>{r.shippingAddressDetail}</Text>
           </View>
           <Text style={styles.caption}>
-            Địa chỉ giao của đơn. Cần đổi địa chỉ thì liên hệ kho.
+            Địa chỉ giao của đơn. Cần đổi địa chỉ thì liên hệ ReHome.
           </Text>
         </Section>
       ) : null}
@@ -407,8 +407,8 @@ export default function ReturnDetailScreen() {
         warehouseName={r.warehouseName}
         title={
           r.status === R.INVALID
-            ? "Khiếu nại kết luận / nhắn cho kho"
-            : "Nhắn cho kho"
+            ? "Khiếu nại kết luận / nhắn ReHome"
+            : "Nhắn ReHome"
         }
         draft={
           r.status === R.INVALID

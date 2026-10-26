@@ -106,7 +106,7 @@ export function WarehouseStep({ value, onChange }) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>Đang tìm kho gần bạn…</Text>
+        <Text style={styles.loadingText}>Đang tìm địa điểm ký gửi gần bạn…</Text>
       </View>
     );
   }
@@ -127,12 +127,12 @@ export function WarehouseStep({ value, onChange }) {
     <View style={styles.wrapper}>
       {coords === null ? (
         <NoteBox>
-          Bật quyền vị trí cho ReHome để xếp kho gần bạn lên đầu. Bạn vẫn chọn
-          kho bình thường được.
+          Bật quyền vị trí cho ReHome để xếp địa điểm gần bạn lên đầu. Bạn vẫn chọn
+          địa điểm bình thường được.
         </NoteBox>
       ) : null}
       <Text style={styles.section}>
-        {coords ? "GẦN BẠN NHẤT" : "DANH SÁCH KHO"}
+        {coords ? "GẦN BẠN NHẤT" : "DANH SÁCH ĐỊA ĐIỂM"}
       </Text>
       {warehouses.data.map((w) => (
         <WarehouseOption
@@ -144,8 +144,8 @@ export function WarehouseStep({ value, onChange }) {
       ))}
       <NoteBox>
         <Text style={styles.note}>
-          Sau khi kho duyệt form, bạn có <Text style={styles.bold}>7 ngày</Text>{" "}
-          để mang đồ đến đúng kho này. Quá hạn thì form tự huỷ.
+          Sau khi ReHome duyệt yêu cầu, bạn có <Text style={styles.bold}>7 ngày</Text>{" "}
+          để mang đồ đến đúng địa điểm này. Quá hạn thì yêu cầu tự huỷ.
         </Text>
       </NoteBox>
     </View>

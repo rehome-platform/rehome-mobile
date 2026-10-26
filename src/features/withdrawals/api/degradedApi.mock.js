@@ -35,7 +35,7 @@ let cases = [
     warehouseOpeningHours: KHO_Q1.openingHours,
     receivedAt: ago(1, "day"), // kho nhận hàng trả về
     description:
-      "Thùng bị móp nặng trên đường về kho — khoá kéo gãy và có vết rách ở thân sau.",
+      "Thùng bị móp nặng trên đường về địa điểm ký gửi — khoá kéo gãy và có vết rách ở thân sau.",
     damagePhotoUrls: [photo("dg1a"), photo("dg1b"), photo("dg1c")],
     compensationAmount: 442000, // = giá bán − hoa hồng lẽ ra bạn nhận (API 93)
     degradedCompensationRate: 0.5, // từ biên nhận

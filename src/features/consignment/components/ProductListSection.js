@@ -144,7 +144,7 @@ export function ProductListSection() {
           <EmptyState
             icon="pricetags-outline"
             title="Chưa có sản phẩm ký gửi"
-            description="Món đồ lên đây sau khi bạn xác nhận biên nhận tại kho."
+            description="Món đồ lên đây sau khi bạn xác nhận biên nhận tại địa điểm ký gửi."
           />
         ) : (
           <Text style={styles.emptyFilter}>

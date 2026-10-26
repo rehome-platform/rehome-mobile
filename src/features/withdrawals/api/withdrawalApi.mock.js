@@ -191,8 +191,8 @@ export async function mockMomoResult(id, success) {
 
 // Khung Mock KG-15: việc của kho (web Moderator) / job hết hạn
 export const MOCK_WITHDRAWAL_ACTIONS = [
-  { key: "HAND_OVER", label: "Kho bàn giao tại quầy" },
-  { key: "EXPIRE", label: "Quá hạn đến kho" },
+  { key: "HAND_OVER", label: "ReHome bàn giao tại quầy" },
+  { key: "EXPIRE", label: "Quá hạn đến địa điểm" },
 ];
 
 export async function mockWithdrawalAction(id, key) {
@@ -222,7 +222,7 @@ export async function mockWithdrawalAction(id, key) {
     body:
       key === "HAND_OVER"
         ? `Bạn đã nhận lại ${w.productName} tại ${w.warehouseName}.`
-        : `Quá hạn đến kho — ${w.productName} đã được đăng bán lại, phí không hoàn.`,
+        : `Quá hạn đến địa điểm ký gửi — ${w.productName} đã được đăng bán lại, phí không hoàn.`,
     targetType: NT.WITHDRAWAL,
     targetId: w.id,
   });

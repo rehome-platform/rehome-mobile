@@ -121,7 +121,7 @@ export default function TrackingScreen() {
           <Text style={styles.issueTitle}>Đơn này đang có vấn đề</Text>
           <Text style={styles.text}>
             {t.issueNote ??
-              "GHN chưa giao được hàng. Nếu không giao được, kiện hàng trả về kho và tiền hoàn vào ví bạn."}
+              "GHN chưa giao được hàng. Nếu không giao được, kiện hàng trả về địa điểm ký gửi và tiền hoàn vào ví bạn."}
           </Text>
         </View>
       ) : null}
@@ -158,7 +158,7 @@ export default function TrackingScreen() {
       )}
 
       <NoteBox>
-        Mốc thời gian lấy từ GHN gửi về, không phải kho tự gõ. Nếu GHN chưa cập
+        Mốc thời gian lấy từ GHN gửi về, không phải ReHome tự gõ. Nếu GHN chưa cập
         nhật thì màn này cũng chưa đổi.
       </NoteBox>
     </Screen>

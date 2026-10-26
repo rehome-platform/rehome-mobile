@@ -114,7 +114,7 @@ export default function ChatRoomScreen({ viewer = "member" }) {
             {viewer === "org"
               ? "Thành viên"
               : warehouse
-                ? "Hộp thư kho"
+                ? "Hộp thư ReHome"
                 : "Đã xác minh"}
           </Text>
           <Text style={styles.sub} numberOfLines={1}>

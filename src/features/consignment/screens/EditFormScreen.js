@@ -51,7 +51,7 @@ export default function EditFormScreen() {
 
   if (status !== "authenticated") return <Redirect href="/login" />;
 
-  const header = <AppHeader title="Sửa form ký gửi" onBack={goBack} />;
+  const header = <AppHeader title="Sửa yêu cầu ký gửi" onBack={goBack} />;
 
   if (query.isPending) {
     return (
@@ -80,8 +80,8 @@ export default function EditFormScreen() {
       <Screen header={header}>
         <EmptyState
           icon="lock-closed-outline"
-          title="Form không còn sửa được"
-          description="Chỉ sửa được khi form đang Chờ duyệt."
+          title="Yêu cầu không còn sửa được"
+          description="Chỉ sửa được khi yêu cầu đang Chờ duyệt."
         >
           <Button title="Quay lại" onPress={goBack} />
         </EmptyState>
@@ -128,7 +128,7 @@ function EditFormBody({ form }) {
     },
     onError: (e) => {
       if (e.code === ERROR_CODES.FORM_NOT_EDITABLE) {
-        showToast("Form đã được kho xử lý, không sửa được nữa");
+        showToast("Yêu cầu đã được ReHome xử lý, không sửa được nữa");
         refresh();
         return goBack();
       }
@@ -163,7 +163,7 @@ function EditFormBody({ form }) {
   return (
     <Screen
       scroll
-      header={<AppHeader title="Sửa form ký gửi" onBack={onCancel} />}
+      header={<AppHeader title="Sửa yêu cầu ký gửi" onBack={onCancel} />}
       footer={
         <View style={styles.footer}>
           <Button
@@ -185,8 +185,8 @@ function EditFormBody({ form }) {
     >
       <NoteBox>
         <Text style={styles.note}>
-          Sửa được khi form còn ở trạng thái{" "}
-          <Text style={styles.bold}>Chờ duyệt</Text>. Kho đã chọn (
+          Sửa được khi yêu cầu còn ở trạng thái{" "}
+          <Text style={styles.bold}>Chờ duyệt</Text>. Địa điểm đã chọn (
           <Text style={styles.bold}>{form.warehouse?.name}</Text>) không đổi
           được ở đây.
         </Text>

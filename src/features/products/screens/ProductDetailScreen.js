@@ -305,7 +305,7 @@ export default function ProductDetailScreen() {
                 color={colors.primary}
               />
               <Text style={styles.inspectedTitle}>
-                Đã kiểm định tại kho ReHome
+                Đã kiểm định tại địa điểm ký gửi ReHome
               </Text>
             </View>
             {product.condition ? (

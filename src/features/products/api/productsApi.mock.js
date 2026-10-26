@@ -103,7 +103,7 @@ function seedProducts() {
       warehouseId: WAREHOUSES[i % WAREHOUSES.length].id,
       status: PRODUCT_STATUS.ON_SALE,
       photos: [1, 2, 3].map((n) => ({ url: photo(`rehome-${i}-${n}`) })),
-      description: `${name} đã được kho ReHome kiểm tra đường may, khoá kéo, vết bẩn. Tình trạng: ${condition.toLowerCase()}. Ảnh chụp thật tại kho.`,
+      description: `${name} đã được ReHome kiểm tra đường may, khoá kéo, vết bẩn. Tình trạng: ${condition.toLowerCase()}. Ảnh chụp thật tại địa điểm ký gửi.`,
       inspectedAt: dayjs()
         .subtract(i + 2, "day")
         .toISOString(),

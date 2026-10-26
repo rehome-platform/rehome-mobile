@@ -23,8 +23,8 @@ function activeDesc(r, i) {
   if (i === 2) return "Đang chờ bạn giao hàng cho shipper";
   if (i === 3)
     return r.status === R.INSPECTING
-      ? "Kho đang kiểm tra · thường 1–2 ngày làm việc"
-      : "Hàng đang trên đường về kho";
+      ? "ReHome đang kiểm tra · thường 1–2 ngày làm việc"
+      : "Hàng đang trên đường về địa điểm ký gửi";
   return undefined;
 }
 

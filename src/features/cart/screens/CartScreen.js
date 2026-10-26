@@ -135,7 +135,7 @@ export default function CartScreen() {
       ) : null}
       {orderCount >= 2 ? (
         <Banner icon="information-circle-outline">
-          {`Hàng của bạn ở ${orderCount} kho khác nhau, sẽ tách thành ${orderCount} đơn và tính phí vận chuyển riêng.`}
+          {`Hàng của bạn ở ${orderCount} địa điểm ký gửi khác nhau, sẽ tách thành ${orderCount} đơn và tính phí vận chuyển riêng.`}
         </Banner>
       ) : null}
     </View>

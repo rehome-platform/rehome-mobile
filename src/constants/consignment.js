@@ -55,7 +55,7 @@ export const PRODUCT_VIEW_LABEL = {
   AWAITING_DECISION: "Chờ cuối kỳ",
   REPRICING: "Chờ chốt giá",
   PICKUP: "Chờ nhận lại",
-  WITHDRAWING: "Chờ đến kho lấy",
+  WITHDRAWING: "Chờ đến địa điểm lấy",
   DEGRADED_DECISION: "Bị hỏng — cần bạn chọn",
 };
 

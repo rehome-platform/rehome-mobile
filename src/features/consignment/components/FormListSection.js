@@ -33,9 +33,9 @@ const FILTERS = [
 const showHowItWorks = () =>
   Alert.alert(
     "Ký gửi hoạt động thế nào?",
-    "1. Gửi form: ảnh, thông tin, giá mong muốn, chọn kho.\n" +
-      "2. Kho duyệt form (thường 1–2 ngày làm việc).\n" +
-      "3. Mang đồ đến kho trong 7 ngày, nhân viên kiểm định và chốt giá với bạn.\n" +
+    "1. Gửi yêu cầu: ảnh, thông tin, giá mong muốn, chọn địa điểm ký gửi.\n" +
+      "2. ReHome duyệt yêu cầu (thường 1–2 ngày làm việc).\n" +
+      "3. Mang đồ đến địa điểm ký gửi trong 7 ngày, nhân viên kiểm định và chốt giá với bạn.\n" +
       "4. Bạn xác nhận biên nhận trên app → hàng lên sàn.",
   );
 
@@ -63,7 +63,7 @@ export function FormListSection() {
           <Text style={styles.bold}>
             {pending.data}/{CONSIGN_LIMITS.MAX_PENDING_FORMS}
           </Text>{" "}
-          form chờ duyệt. Đủ {CONSIGN_LIMITS.MAX_PENDING_FORMS} form thì không
+          yêu cầu chờ duyệt. Đủ {CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu thì không
           tạo thêm được.
         </Text>
       ) : null}
@@ -108,11 +108,11 @@ export function FormListSection() {
         filter === ALL ? (
           <EmptyState
             icon="cube-outline"
-            title="Chưa có form ký gửi nào"
-            description="Gửi thông tin món đồ, kho duyệt xong bạn mới mang đến. Không mất phí đăng, không bán được cũng không mất gì."
+            title="Chưa có yêu cầu ký gửi nào"
+            description="Gửi thông tin món đồ, ReHome duyệt xong bạn mới mang đến. Không mất phí đăng, không bán được cũng không mất gì."
           >
             <Button
-              title="Tạo form ký gửi"
+              title="Ký gửi món đầu tiên"
               onPress={() => router.push("/consign-forms/new")}
             />
             <Button
@@ -123,7 +123,7 @@ export function FormListSection() {
           </EmptyState>
         ) : (
           <Text style={styles.emptyFilter}>
-            Không có form nào ở trạng thái này.
+            Không có yêu cầu nào ở trạng thái này.
           </Text>
         )
       }

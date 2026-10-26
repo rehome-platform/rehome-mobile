@@ -318,7 +318,7 @@ export default function ReturnFormScreen() {
             max={RETURN_LIMITS.MAX_PHOTOS}
             error={errors.photos?.message}
             label="Ảnh chứng minh"
-            helper="Bằng chứng của bạn nếu kho kết luận khác · tối thiểu 1 ảnh."
+            helper="Bằng chứng của bạn nếu ReHome kết luận khác · tối thiểu 1 ảnh."
             pickTitle="Thêm ảnh chứng minh"
             pickMessage="Chụp rõ chỗ không đúng: vết bẩn, rách, nhãn sai…"
           />
@@ -335,7 +335,7 @@ export default function ReturnFormScreen() {
           </View>
           <Text style={styles.caption}>
             Shipper GHN tới địa chỉ giao của đơn. Cần đổi địa chỉ thì liên hệ
-            kho sau khi gửi.
+            ReHome sau khi gửi.
           </Text>
         </Section>
       ) : null}
@@ -343,8 +343,8 @@ export default function ReturnFormScreen() {
       {formError ? <ErrorBox message={formError} /> : null}
 
       <NoteBox>
-        Sau khi kho duyệt, bạn có 3 ngày để giao hàng cho shipper. Hoàn tiền vào
-        ví ReHome khi kho kiểm tra hàng về hợp lệ.
+        Sau khi ReHome duyệt, bạn có 3 ngày để giao hàng cho shipper. Hoàn tiền vào
+        ví ReHome khi ReHome kiểm tra hàng về hợp lệ.
       </NoteBox>
     </Screen>
   );

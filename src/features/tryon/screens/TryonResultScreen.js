@@ -166,7 +166,7 @@ export default function TryonResultScreen() {
         )}
         {warehouses.size > 1 ? (
           <Text style={styles.caption}>
-            Các món ở {warehouses.size} kho khác nhau, khi đặt sẽ tách thành{" "}
+            Các món ở {warehouses.size} địa điểm ký gửi khác nhau, khi đặt sẽ tách thành{" "}
             {warehouses.size} đơn.
           </Text>
         ) : null}

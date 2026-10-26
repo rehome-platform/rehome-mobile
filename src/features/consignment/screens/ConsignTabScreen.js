@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { usePendingDegradedCases } from "@/features/withdrawals/hooks/useDegradedCases";
 
 const SECTIONS = [
-  { value: "forms", label: "Form ký gửi" },
+  { value: "forms", label: "Yêu cầu ký gửi" },
   { value: "products", label: "Sản phẩm ký gửi" },
 ];
 
@@ -31,7 +31,7 @@ function GuestConsign() {
       <EmptyState
         icon="cube-outline"
         title="Đăng nhập để ký gửi"
-        description="Gửi đồ cũ tới kho ReHome: kho kiểm định, chụp ảnh và bán hộ bạn. Tiền về ví khi đơn hoàn thành."
+        description="Gửi đồ cũ tới địa điểm ký gửi ReHome: nhân viên kiểm định, chụp ảnh và bán hộ bạn. Tiền về ví khi đơn hoàn thành."
       >
         <Button title="Đăng nhập" onPress={() => router.push("/login")} />
         <Button
@@ -79,8 +79,8 @@ function DegradedBanner() {
       <Ionicons name="alert-circle" size={20} color={colors.error} />
       <Text style={styles.alertText}>
         {list.length > 1
-          ? `${list.length} món của bạn bị hỏng khi trả về kho — chọn cách đền`
-          : `${list[0].productName} bị hỏng khi trả về kho — chọn cách đền`}
+          ? `${list.length} món của bạn bị hỏng khi trả về địa điểm ký gửi — chọn cách đền`
+          : `${list[0].productName} bị hỏng khi trả về địa điểm ký gửi — chọn cách đền`}
       </Text>
       <Ionicons name="chevron-forward" size={18} color={colors.text} />
     </Pressable>
@@ -94,7 +94,7 @@ function CreateFormButton() {
     if (pending.data >= CONSIGN_LIMITS.MAX_PENDING_FORMS) {
       return Alert.alert(
         "Chưa tạo thêm được",
-        `Bạn đang có ${pending.data} form chờ duyệt (tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS}). Chờ kho xử lý bớt rồi tạo tiếp nhé.`,
+        `Bạn đang có ${pending.data} yêu cầu chờ duyệt (tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS}). Chờ ReHome xử lý bớt rồi tạo tiếp nhé.`,
       );
     }
     router.push("/consign-forms/new");
@@ -106,7 +106,7 @@ function CreateFormButton() {
       accessibilityRole="button"
       style={({ pressed }) => [styles.create, pressed && styles.pressed]}
     >
-      <Text style={styles.createText}>+ Tạo form</Text>
+      <Text style={styles.createText}>+ Ký gửi món mới</Text>
     </Pressable>
   );
 }

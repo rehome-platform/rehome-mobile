@@ -59,7 +59,7 @@ function Clause({ title, children }) {
   );
 }
 
-// Phần thân biên nhận (Điều 1, 2, 3, 8) — dùng cho bản Chờ xác nhận và "Toàn văn" của bản Đã xác nhận
+// Toàn bộ điều khoản, ĐÚNG thứ tự Điều 1 → 10 — dùng cho bản Chờ xác nhận và "Toàn văn" của bản Đã xác nhận
 function ReceiptClauses({ receipt }) {
   const rates = commissionRates(receipt);
   const days = totalTermDays(receipt);
@@ -124,6 +124,11 @@ function ReceiptClauses({ receipt }) {
           {receipt.freeWithdrawalWindowDays} ngày rút hàng không mất phí.
         </Text>
       </Clause>
+      {otherClauses(receipt)
+        .filter((c) => c.no < 8)
+        .map((c) => (
+          <FoldClause key={c.no} clause={c} />
+        ))}
 
       <View style={styles.important}>
         <Text style={styles.clauseTitle}>ĐIỀU 8 — HÀNG VÔ THỪA NHẬN</Text>
@@ -135,12 +140,17 @@ function ReceiptClauses({ receipt }) {
           hàng cho tổ chức từ thiện đối tác và không bồi hoàn.
         </Text>
       </View>
+      {otherClauses(receipt)
+        .filter((c) => c.no > 8)
+        .map((c) => (
+          <FoldClause key={c.no} clause={c} />
+        ))}
     </>
   );
 }
 
-// Điều 4–7, 9, 10 — bấm để mở / đóng
-function OtherClauses({ receipt, title }) {
+// Một điều khoản bấm để mở / đóng (Điều 4–7, 9, 10) — vẫn nằm đúng vị trí số thứ tự
+function FoldClause({ clause }) {
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.clause}>
@@ -150,21 +160,39 @@ function OtherClauses({ receipt, title }) {
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
       >
-        <Text style={[styles.clauseTitle, styles.flex]}>{title}</Text>
+        <Text style={[styles.clauseTitle, styles.flex]}>{clause.title}</Text>
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
           size={18}
           color={colors.textSecondary}
         />
       </Pressable>
-      {open
-        ? otherClauses(receipt).map((c) => (
-            <View key={c.title} style={styles.otherItem}>
-              <Text style={styles.otherTitle}>{c.title}</Text>
-              <Text style={styles.body}>{c.body}</Text>
-            </View>
-          ))
-        : null}
+      {open ? <Text style={styles.body}>{clause.body}</Text> : null}
+    </View>
+  );
+}
+
+// Bản đã xác nhận: gói toàn bộ Điều 1 → 10 trong một mục bấm để xem
+function FullTerms({ receipt }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.clause}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={styles.toggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+      >
+        <Text style={[styles.clauseTitle, styles.flex]}>
+          TOÀN VĂN ĐIỀU KHOẢN
+        </Text>
+        <Ionicons
+          name={open ? "chevron-up" : "chevron-down"}
+          size={18}
+          color={colors.textSecondary}
+        />
+      </Pressable>
+      {open ? <ReceiptClauses receipt={receipt} /> : null}
     </View>
   );
 }
@@ -300,21 +328,20 @@ function PendingReceipt({ receipt, header }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
-            Đọc kỹ trước khi xác nhận. Bấm xác nhận là hàng được nhập kho và
+            Đọc kỹ trước khi xác nhận. Bấm xác nhận là hàng được
             đăng bán ngay.
           </Text>
         </View>
         <ReceiptHeading receipt={receipt} />
         {receipt.previousPrice ? (
           <NoteBox>
-            {`Ký gửi lại: kho đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
+            {`Ký gửi lại: ReHome đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
               receipt.previousPrice,
-            )}).${receipt.moderatorNote ? ` Ghi chú kho: ${receipt.moderatorNote}` : ""}`}
+            )}).${receipt.moderatorNote ? ` Ghi chú ReHome: ${receipt.moderatorNote}` : ""}`}
           </NoteBox>
         ) : null}
 
         <ReceiptClauses receipt={receipt} />
-        <OtherClauses receipt={receipt} title="ĐIỀU 4 – 7, 9, 10" />
       </ScrollView>
 
       <ReceiptConfirmModal
@@ -398,7 +425,7 @@ function ConfirmedReceipt({ receipt, header }) {
           bạn.
         </NoteBox>
 
-        <OtherClauses receipt={receipt} title="TOÀN VĂN ĐIỀU KHOẢN" />
+        <FullTerms receipt={receipt} />
 
         <Text style={styles.small}>
           Biên nhận này không có chữ ký tay. Giá trị xác nhận dựa trên thao tác
@@ -479,12 +506,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   toggle: { flexDirection: "row", alignItems: "center", minHeight: 40 },
-  otherItem: { gap: 2 },
-  otherTitle: {
-    ...textStyles.body,
-    fontFamily: fonts.semibold,
-    color: colors.text,
-  },
   footerCol: { gap: spacing.md },
   confirmedRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   badge: {

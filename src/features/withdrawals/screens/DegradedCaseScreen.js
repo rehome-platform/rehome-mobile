@@ -120,8 +120,8 @@ export default function DegradedCaseScreen() {
     Alert.alert(
       `Nhận ${formatVnd(amount)}?`,
       choice === C.FULL_COMPENSATION
-        ? "Món thuộc về kho, tiền đền cộng vào ví ngay. Không đổi lại được."
-        : "Bạn đến kho lấy lại món hỏng, tiền đền một phần cộng vào ví ngay. Không đổi lại được.",
+        ? "Món thuộc về ReHome, tiền đền cộng vào ví ngay. Không đổi lại được."
+        : "Bạn đến địa điểm ký gửi lấy lại món hỏng, tiền đền một phần cộng vào ví ngay. Không đổi lại được.",
       [
         { text: "Huỷ", style: "cancel" },
         {
@@ -185,16 +185,16 @@ export default function DegradedCaseScreen() {
       </View>
 
       <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
-        <Text style={styles.boxTitle}>Món bị hỏng khi vận chuyển về kho</Text>
+        <Text style={styles.boxTitle}>Món bị hỏng khi vận chuyển về địa điểm ký gửi</Text>
         <Text style={styles.text}>
-          Người mua đã trả món này và kho nhận lại ngày{" "}
+          Người mua đã trả món này và ReHome nhận lại ngày{" "}
           {dayjs(c.receivedAt).format("DD/MM")}. {c.description}{" "}
           <Text style={styles.strong}>Không phải lỗi của bạn</Text>, và lần này
           không tính vào lịch sử ký gửi.
         </Text>
         <PhotoThumbs urls={c.damagePhotoUrls} />
         {c.damagePhotoUrls?.length ? (
-          <Text style={styles.caption}>Ảnh kho chụp khi nhận lại</Text>
+          <Text style={styles.caption}>Ảnh ReHome chụp khi nhận lại</Text>
         ) : null}
       </View>
 
@@ -203,12 +203,12 @@ export default function DegradedCaseScreen() {
           <View style={styles.gapXs}>
             <Text style={styles.heading}>Bạn muốn ReHome xử lý thế nào?</Text>
             <Text style={styles.muted}>
-              Kho đền vì lỗi nằm ở khâu vận chuyển do kho sắp xếp.
+              ReHome đền vì lỗi nằm ở khâu vận chuyển do ReHome sắp xếp.
             </Text>
           </View>
           <OptionCard
             title={DEGRADED_CHOICE_LABEL.FULL_COMPENSATION}
-            desc="Món thuộc về kho, bạn không phải tới lấy."
+            desc="Món thuộc về ReHome, bạn không phải tới lấy."
             amountLabel="Cộng vào ví"
             amount={full}
             selected={choice === C.FULL_COMPENSATION}
@@ -216,7 +216,7 @@ export default function DegradedCaseScreen() {
           />
           <OptionCard
             title={DEGRADED_CHOICE_LABEL.PARTIAL_WITH_ITEM_BACK}
-            desc={`Đến kho lấy trong ${pickupDays} ngày. Món vẫn hỏng như ảnh trên. Không mất phí rút hàng.`}
+            desc={`Đến địa điểm ký gửi lấy trong ${pickupDays} ngày. Món vẫn hỏng như ảnh trên. Không mất phí rút hàng.`}
             amountLabel={`Cộng vào ví · ${formatRate(c.degradedCompensationRate)}`}
             amount={partial}
             selected={choice === C.PARTIAL_WITH_ITEM_BACK}
@@ -280,7 +280,7 @@ export default function DegradedCaseScreen() {
             </>
           ) : (
             <Text style={styles.muted}>
-              Món thuộc về kho, bạn không phải tới lấy.
+              Món thuộc về ReHome, bạn không phải tới lấy.
             </Text>
           )}
         </View>

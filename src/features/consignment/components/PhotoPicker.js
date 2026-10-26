@@ -20,7 +20,7 @@ export function PhotoPicker({
   max,
   error,
   label = "Ảnh sản phẩm",
-  helper = "Cần ảnh mặt trước, mặt sau, nhãn mác và tem thương hiệu. Ảnh càng rõ, kho duyệt càng nhanh.",
+  helper = "Cần ảnh mặt trước, mặt sau, nhãn mác và tem thương hiệu. Ảnh càng rõ, ReHome duyệt càng nhanh.",
   pickTitle = "Thêm ảnh sản phẩm",
   pickMessage = "Chụp rõ, đủ sáng, thấy được nhãn mác và tem thương hiệu.",
 }) {

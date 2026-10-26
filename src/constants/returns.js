@@ -11,10 +11,10 @@ export const RETURN_STATUS = {
 };
 
 export const RETURN_STATUS_LABEL = {
-  PENDING: "Chờ kho duyệt",
+  PENDING: "Chờ ReHome duyệt",
   APPROVED: "Chờ bàn giao cho GHN",
-  SHIPPED_BACK: "Đang gửi về kho",
-  INSPECTING: "Kho đang kiểm tra",
+  SHIPPED_BACK: "Đang gửi về địa điểm ký gửi",
+  INSPECTING: "ReHome đang kiểm tra",
   VALID: "Đã hoàn tiền",
   INVALID: "Không hợp lệ",
   LOST: "Thất lạc — đã hoàn tiền",
@@ -24,9 +24,9 @@ export const RETURN_STATUS_LABEL = {
 // Dòng thời gian RT-02 (chỉ số dùng với returnStepOf)
 export const RETURN_STEPS = [
   "Đã gửi yêu cầu",
-  "Kho duyệt yêu cầu",
+  "ReHome duyệt yêu cầu",
   "Bàn giao GHN",
-  "Hàng về kho, kiểm định",
+  "Hàng về địa điểm, kiểm định",
   "Kết quả",
 ];
 
@@ -72,8 +72,8 @@ export const INVALID_RETURN_CHOICE = {
   WAREHOUSE_PICKUP: "WAREHOUSE_PICKUP",
 };
 export const INVALID_RETURN_CHOICE_LABEL = {
-  SHIP_BACK: "Kho gửi lại cho bạn",
-  WAREHOUSE_PICKUP: "Đến kho lấy",
+  SHIP_BACK: "ReHome gửi lại cho bạn",
+  WAREHOUSE_PICKUP: "Đến địa điểm lấy",
 };
 
 // [CHỜ BE câu 6] BE chưa có field lý do huỷ — mock tự đặt

@@ -39,7 +39,7 @@ function Footer({ order, onPay, onTrack, onConfirm, onRate }) {
       return <PendingFooter order={order} onPay={onPay} />;
     case S.PAID:
     case S.PACKING:
-      return <Text style={styles.muted}>Kho đang chuẩn bị hàng</Text>;
+      return <Text style={styles.muted}>ReHome đang chuẩn bị hàng</Text>;
     case S.SHIPPING:
       return (
         <>

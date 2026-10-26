@@ -125,7 +125,7 @@ let returns = [
     resolvedAt: ago(11, "hour"),
     ghnReturnTrackingCode: "GHNR9B3C7D",
     resolutionNote:
-      "Có dấu vết sử dụng sau khi nhận. Áo có vết bùn khô và sơn mới, không có trong ảnh kiểm định lúc nhập kho. Phần sờn ở ve áo đúng như mô tả và đã ghi trong mục Tình trạng khi đăng bán.",
+      "Có dấu vết sử dụng sau khi nhận. Áo có vết bùn khô và sơn mới, không có trong ảnh kiểm định lúc nhận hàng. Phần sờn ở ve áo đúng như mô tả và đã ghi trong mục Tình trạng khi đăng bán.",
     resolutionPhotoUrls: [photo("rt5k1"), photo("rt5k2"), photo("rt5k3")],
     pickupDeadline: later(157, "hour"), // ≈ "Còn 6 ngày 13 giờ"
   }),
@@ -313,7 +313,7 @@ export async function chooseInvalidReturn(id, choice) {
   }
   if (choice === INVALID_RETURN_CHOICE.SHIP_BACK) {
     // [CHỜ BE câu 9] chưa có API trả phí gửi lại
-    throw conflict("HTTP_409", "Kho gửi lại chưa hỗ trợ.");
+    throw conflict("HTTP_409", "ReHome gửi lại chưa hỗ trợ.");
   }
   r.invalidReturnChoice = choice;
   return {
@@ -326,10 +326,10 @@ export async function chooseInvalidReturn(id, choice) {
 // ---------- [DEV] khung Mock: giả lập kho / GHN ----------
 // from: trạng thái được phép bấm. Màn RT-02 chỉ hiện nút hợp với trạng thái hiện tại
 export const MOCK_RETURN_ACTIONS = [
-  { key: "APPROVE", label: "Kho duyệt", from: [R.PENDING] },
-  { key: "REJECT", label: "Kho từ chối", from: [R.PENDING] },
+  { key: "APPROVE", label: "ReHome duyệt", from: [R.PENDING] },
+  { key: "REJECT", label: "ReHome từ chối", from: [R.PENDING] },
   { key: "EXPIRE_HANDOVER", label: "Quá hạn bàn giao", from: [R.APPROVED] },
-  { key: "ARRIVE", label: "Hàng về kho", from: [R.SHIPPED_BACK] },
+  { key: "ARRIVE", label: "Hàng về địa điểm", from: [R.SHIPPED_BACK] },
   { key: "LOST", label: "Thất lạc", from: [R.SHIPPED_BACK] },
   { key: "VALID", label: "Kết luận hợp lệ", from: [R.INSPECTING] },
   { key: "INVALID", label: "Kết luận không hợp lệ", from: [R.INSPECTING] },
@@ -378,7 +378,7 @@ export async function mockReturnAction(id, key) {
       r.status = R.INVALID;
       r.resolvedAt = t;
       r.resolutionNote =
-        "Có dấu vết sử dụng sau khi nhận, không có trong ảnh kiểm định lúc nhập kho.";
+        "Có dấu vết sử dụng sau khi nhận, không có trong ảnh kiểm định lúc nhận hàng.";
       r.resolutionPhotoUrls = [photo(`${r.id}k1`), photo(`${r.id}k2`)];
       r.pickupDeadline = later(RETURN_LIMITS.PICKUP_DAYS, "day");
       break;
@@ -387,15 +387,15 @@ export async function mockReturnAction(id, key) {
   const TEXT = {
     APPROVE: [
       "Yêu cầu trả hàng đã được duyệt",
-      `Giao hàng cho shipper trước hạn để kho nhận lại (${r.code}).`,
+      `Giao hàng cho shipper trước hạn để ReHome nhận lại (${r.code}).`,
     ],
     REJECT: [
       "Yêu cầu trả hàng bị từ chối",
-      `Kho từ chối yêu cầu ${r.code}. Xem lý do trong chi tiết.`,
+      `ReHome từ chối yêu cầu ${r.code}. Xem lý do trong chi tiết.`,
     ],
     VALID: [
       "Đã hoàn tiền trả hàng",
-      `Kho xác nhận hợp lệ, tiền đã hoàn vào ví (${r.code}).`,
+      `ReHome xác nhận hợp lệ, tiền đã hoàn vào ví (${r.code}).`,
     ],
     INVALID: [
       "Yêu cầu trả hàng không hợp lệ",

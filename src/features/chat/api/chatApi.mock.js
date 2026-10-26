@@ -20,7 +20,7 @@ const notFound = () =>
 
 const REPLY = {
   [C.MEMBER_WAREHOUSE]:
-    "Chào bạn, nhân viên kho đã nhận tin và sẽ kiểm tra giúp bạn ngay.",
+    "Chào bạn, nhân viên ReHome đã nhận tin và sẽ kiểm tra giúp bạn ngay.",
   [C.MEMBER_ORGANIZATION]:
     "Cảm ơn bạn đã nhắn! Bên mình sẽ trả lời chi tiết sớm nhé.",
 };
@@ -78,13 +78,13 @@ msg(
 msg(
   "cv-wh-q1",
   false,
-  "Chào bạn, món này đang chờ in tem và nhập kho. Sáng mai sẽ lên app, bạn sẽ nhận thông báo.",
+  "Chào bạn, món này đang chờ in tem và lên kệ. Sáng mai sẽ lên app, bạn sẽ nhận thông báo.",
   25 * 60,
 );
 msg(
   "cv-wh-q1",
   false,
-  "Chào bạn, hàng của bạn đã được nhập kho và đang bán với giá 185.000 đ.",
+  "Chào bạn, hàng của bạn đã được nhận và đang bán với giá 185.000 đ.",
   90,
 );
 

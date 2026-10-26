@@ -36,7 +36,7 @@ const leftText = (n) =>
 // Tiến trình theo trạng thái (chỉ PENDING / APPROVED có tiến trình)
 function buildTimeline(form) {
   const sent = {
-    title: "Đã gửi form",
+    title: "Đã gửi yêu cầu",
     desc: dayjs(form.createdAt).format("HH:mm DD/MM/YYYY"),
     state: "done",
   };
@@ -44,34 +44,34 @@ function buildTimeline(form) {
     return [
       sent,
       {
-        title: "Kho đang duyệt",
+        title: "ReHome đang duyệt",
         desc: "Thường trong 1–2 ngày làm việc",
         state: "active",
       },
-      { title: "Mang đồ đến kho", state: "todo" },
-      { title: "Kiểm định & nhập kho", state: "todo" },
+      { title: "Mang đồ đến địa điểm ký gửi", state: "todo" },
+      { title: "Kiểm định & nhận hàng", state: "todo" },
     ];
   }
   if (form.status === FORM_STATUS.APPROVED) {
     const atWarehouse = !!form.receiptId; // đã có biên nhận = đã mang đồ đến, kho đã kiểm định
     return [
       sent,
-      { title: "Kho đã duyệt", state: "done" },
+      { title: "ReHome đã duyệt", state: "done" },
       atWarehouse
-        ? { title: "Đã mang đồ đến kho", state: "done" }
+        ? { title: "Đã mang đồ đến địa điểm ký gửi", state: "done" }
         : {
-            title: "Mang đồ đến kho",
+            title: "Mang đồ đến địa điểm ký gửi",
             desc: `Trước ${fmtDate(form.bringInDeadline)}`,
             state: "active",
           },
       form.receiptConfirmed
         ? {
-            title: "Kiểm định & nhập kho",
-            desc: "Hàng đã nhập kho và đang đăng bán",
+            title: "Kiểm định & nhận hàng",
+            desc: "Hàng đã được nhận và đang đăng bán",
             state: "done",
           }
         : {
-            title: "Kiểm định & nhập kho",
+            title: "Kiểm định & nhận hàng",
             desc: atWarehouse ? "Chờ bạn xác nhận biên nhận" : undefined,
             state: atWarehouse ? "active" : "todo",
           },
@@ -96,7 +96,7 @@ function ApprovedTodo({ form }) {
       <View style={styles.todo}>
         <Text style={styles.todoTitle}>Đã xác nhận biên nhận</Text>
         <Text style={styles.todoText}>
-          Hàng đã nhập kho và đang được đăng bán. Theo dõi ở mục Sản phẩm ký
+          Hàng đã được nhận và đang đăng bán. Theo dõi ở mục Sản phẩm ký
           gửi.
         </Text>
       </View>
@@ -106,9 +106,9 @@ function ApprovedTodo({ form }) {
   if (form.receiptId) {
     return (
       <View style={styles.todo}>
-        <Text style={styles.todoTitle}>Kho đã lập biên nhận</Text>
+        <Text style={styles.todoTitle}>ReHome đã lập biên nhận</Text>
         <Text style={styles.todoText}>
-          Đọc và xác nhận biên nhận để hàng được nhập kho và đăng bán.
+          Đọc và xác nhận biên nhận để hàng được đăng bán.
         </Text>
       </View>
     );
@@ -122,7 +122,7 @@ function ApprovedTodo({ form }) {
         trước <Text style={styles.bold}>{fmtDate(form.bringInDeadline)}</Text>.
       </Text>
       <Text style={[styles.todoText, left <= 2 && styles.urgent]}>
-        {leftText(left)} · Quá hạn thì form tự huỷ.
+        {leftText(left)} · Quá hạn thì yêu cầu tự huỷ.
       </Text>
     </View>
   );
@@ -145,7 +145,7 @@ function Footer({ form }) {
 
     return (
       <Button
-        title="Sửa form"
+        title="Sửa yêu cầu"
         onPress={() => router.push(`/consign-forms/${form.id}/edit`)}
       />
     );
@@ -172,8 +172,8 @@ function Footer({ form }) {
     <Button
       title={
         form.status === FORM_STATUS.REJECTED
-          ? "Tạo form mới từ thông tin này"
-          : "Tạo form mới"
+          ? "Ký gửi lại từ thông tin này"
+          : "Ký gửi món mới"
       }
       onPress={() =>
         router.push({
@@ -196,7 +196,7 @@ export default function FormDetailScreen() {
 
   if (status !== "authenticated") return <Redirect href="/login" />;
 
-  const header = <AppHeader title="Chi tiết form" onBack={goBack} />;
+  const header = <AppHeader title="Chi tiết yêu cầu" onBack={goBack} />;
 
   if (query.isPending) {
     return (
@@ -215,8 +215,8 @@ export default function FormDetailScreen() {
         {notFound ? (
           <EmptyState
             icon="search-outline"
-            title="Không tìm thấy form"
-            description="Form không tồn tại hoặc bạn không có quyền xem."
+            title="Không tìm thấy yêu cầu"
+            description="Yêu cầu không tồn tại hoặc bạn không có quyền xem."
           >
             <Button title="Quay lại" onPress={goBack} />
           </EmptyState>
@@ -255,7 +255,7 @@ export default function FormDetailScreen() {
         <View style={styles.topRow}>
           {/* Mã form dễ đọc chỉ hiện khi BE trả (id là UUID) [CHỜ BE formNo] */}
           <Text style={styles.code}>
-            {form.formNo ? `Mã form ${form.formNo}` : "Form ký gửi"}
+            {form.formNo ? `Mã yêu cầu ${form.formNo}` : "Yêu cầu ký gửi"}
           </Text>
           <StatusBadge status={form.status} />
         </View>
@@ -267,7 +267,7 @@ export default function FormDetailScreen() {
         {form.status === FORM_STATUS.APPROVED && !form.receiptId ? (
           <NoteBox>
             Đến quầy, đọc mã Member hoặc số điện thoại cho nhân viên. Moderator
-            sẽ kiểm định và thống nhất giá bán với bạn trước khi nhập kho.
+            sẽ kiểm định và thống nhất giá bán với bạn trước khi nhận hàng.
           </NoteBox>
         ) : null}
 
@@ -275,7 +275,7 @@ export default function FormDetailScreen() {
           <Section title="LÝ DO TỪ CHỐI">
             <View style={styles.reject}>
               <Text style={styles.rejectText}>
-                {form.rejectReason || "Kho không ghi lý do."}
+                {form.rejectReason || "ReHome không ghi lý do."}
               </Text>
             </View>
           </Section>
@@ -283,7 +283,7 @@ export default function FormDetailScreen() {
 
         {form.status === FORM_STATUS.EXPIRED ? (
           <NoteBox>
-            {`Form đã hết hạn vì quá hạn mang đồ đến kho (${fmtDate(form.bringInDeadline)}). Bạn có thể tạo form mới.`}
+            {`Yêu cầu đã hết hạn vì quá hạn mang đồ đến địa điểm ký gửi (${fmtDate(form.bringInDeadline)}). Bạn có thể ký gửi lại.`}
           </NoteBox>
         ) : null}
 
@@ -314,7 +314,7 @@ export default function FormDetailScreen() {
         </Section>
 
         {form.warehouse ? (
-          <Section title="KHO TIẾP NHẬN">
+          <Section title="ĐỊA ĐIỂM KÝ GỬI">
             <Text style={styles.whName}>{form.warehouse.name}</Text>
             <Text style={styles.muted}>{form.warehouse.address}</Text>
             {form.warehouse.openingHours ? (

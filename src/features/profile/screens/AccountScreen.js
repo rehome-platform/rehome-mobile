@@ -120,7 +120,7 @@ function MemberAccount() {
         <ListItem
           icon="id-card-outline"
           title="Mã Member của tôi"
-          description="Đọc cho nhân viên khi tới kho"
+          description="Đọc cho nhân viên khi tới địa điểm ký gửi"
           onPress={() => router.push("/profile/member-code")}
         />
         <ListItem

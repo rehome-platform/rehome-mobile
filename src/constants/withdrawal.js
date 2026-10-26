@@ -5,7 +5,7 @@ export const WITHDRAWAL_STATUS = {
   EXPIRED: "EXPIRED",
 };
 export const WITHDRAWAL_STATUS_LABEL = {
-  PENDING_PICKUP: "Chờ bạn đến kho",
+  PENDING_PICKUP: "Chờ bạn đến địa điểm",
   COMPLETED: "Đã bàn giao",
   EXPIRED: "Quá hạn — hàng đăng bán lại",
 };

@@ -36,7 +36,7 @@ export function ConversationRow({ conv, onPress }) {
             {name}
           </Text>
           {isWarehouse(conv) ? (
-            <Text style={styles.tag}>Hộp thư kho</Text>
+            <Text style={styles.tag}>Hộp thư ReHome</Text>
           ) : conv.counterpart?.verified ? (
             <Text style={styles.tag}>Đã xác minh</Text>
           ) : null}

@@ -29,7 +29,7 @@ const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
 const later = (n, unit) => dayjs().add(n, unit).toISOString();
 const photo = (seed) => `https://picsum.photos/seed/${seed}/400`;
 const warehouseName = (id) =>
-  WAREHOUSES.find((w) => w.id === id)?.name ?? "Kho ReHome";
+  WAREHOUSES.find((w) => w.id === id)?.name ?? "Địa điểm ký gửi";
 const notFound = () =>
   new ApiError({
     status: 404,
@@ -161,7 +161,7 @@ let orders = [
     ghnTrackingCode: "GHN5J82K7PQ",
     expectedDeliveryDate: later(1, "day"),
     trackingEvents: [
-      ev("PICKED_UP", "GHN đã lấy hàng", "Kho Thủ Đức", 30),
+      ev("PICKED_UP", "GHN đã lấy hàng", "Địa điểm ký gửi - Thủ Đức", 30),
       ev("SORTED", "Đã rời kho phân loại", "Kho phân loại HCM", 20),
       ev("DELIVERING", "Đang giao đến bạn", "Bưu cục Thủ Đức", 2),
     ],
@@ -177,9 +177,9 @@ let orders = [
     ghnTrackingCode: "GHN5590712435",
     hasIssue: true,
     issueNote:
-      "GHN báo không liên lạc được người nhận sau 2 lần giao. Quá 3 ngày nữa mà không giao được, kiện hàng trả về kho và tiền hoàn vào ví bạn.",
+      "GHN báo không liên lạc được người nhận sau 2 lần giao. Quá 3 ngày nữa mà không giao được, kiện hàng trả về địa điểm ký gửi và tiền hoàn vào ví bạn.",
     trackingEvents: [
-      ev("PICKED_UP", "GHN đã lấy hàng", "Kho Quận 1", 80),
+      ev("PICKED_UP", "GHN đã lấy hàng", "Địa điểm ký gửi - Quận 1", 80),
       ev("SORTED", "Đã rời kho phân loại", "Kho phân loại HCM", 70),
       ev(
         "FAILED_DELIVERY",
@@ -205,7 +205,7 @@ let orders = [
     deliveredAt: ago(17, "hour"),
     autoCompleteDeadline: later(55, "hour"), // ≈ "2 ngày 7 giờ" như wireframe
     trackingEvents: [
-      ev("PICKED_UP", "GHN đã lấy hàng", "Kho Quận 1", 50),
+      ev("PICKED_UP", "GHN đã lấy hàng", "Địa điểm ký gửi - Quận 1", 50),
       ev("DELIVERED", "Giao thành công", "Bưu cục Quận 1", 17),
     ],
   }),
@@ -480,7 +480,7 @@ export async function cancelOrder(id) {
   if (o.status !== S.PAID) {
     throw conflict(
       ERROR_CODES.CANNOT_CANCEL_AFTER_PACKING,
-      "Kho đã bắt đầu đóng gói, không huỷ được nữa.",
+      "ReHome đã bắt đầu đóng gói, không huỷ được nữa.",
     );
   }
   o.status = S.CANCELLED;
@@ -586,12 +586,12 @@ export async function mockAdvanceOrder(id) {
   // Phase 6: đơn đổi trạng thái → thông báo
   const TEXT = {
     [S.PACKING]: [
-      "Kho đang đóng gói đơn",
+      "ReHome đang đóng gói đơn",
       `Đơn ${o.orderNo} đang được đóng gói, không huỷ được nữa.`,
     ],
     [S.SHIPPING]: [
       "Đơn đang được giao",
-      `Đơn ${o.orderNo} đã rời kho, GHN sẽ giao trong 1–3 ngày.`,
+      `Đơn ${o.orderNo} đã được gửi đi, GHN sẽ giao trong 1–3 ngày.`,
     ],
     [S.DELIVERED]: [
       "Đơn đã giao thành công",
@@ -599,7 +599,7 @@ export async function mockAdvanceOrder(id) {
     ],
     [S.COMPLETED]: [
       "Đơn đã hoàn thành",
-      `Đơn ${o.orderNo} đã hoàn thành. Chấm điểm dịch vụ của kho nhé.`,
+      `Đơn ${o.orderNo} đã hoàn thành. Chấm điểm dịch vụ của ReHome nhé.`,
     ],
   };
   if (TEXT[o.status]) {

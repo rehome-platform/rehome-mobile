@@ -16,7 +16,7 @@ export const CHAT_NOTICE = {
   MEMBER_WAREHOUSE:
     "Hỏi về đơn hàng, ký gửi, hoàn tiền. ReHome không bao giờ hỏi mật khẩu hay mã OTP.",
   MEMBER_ORGANIZATION:
-    "Bạn đang nhắn với tổ chức, không phải ReHome. Hỏi về đơn hàng hoặc ký gửi hãy dùng Hộp thư kho.",
+    "Bạn đang nhắn với tổ chức, không phải ReHome. Hỏi về đơn hàng hoặc ký gửi hãy dùng Hộp thư ReHome.",
 };
 
 // Dòng phụ dưới tên ở header phòng chat [GIẢ ĐỊNH — BE chưa trả]

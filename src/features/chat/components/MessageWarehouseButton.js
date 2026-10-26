@@ -8,7 +8,7 @@ export function MessageWarehouseButton({
   warehouseName,
   draft,
   from,
-  title = "Nhắn cho kho",
+  title = "Nhắn ReHome",
 }) {
   const { open, isOpening } = useOpenConversation();
   if (!warehouseId) return null;
