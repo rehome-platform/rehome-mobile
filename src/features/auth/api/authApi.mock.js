@@ -1,5 +1,4 @@
-// CHỈ mock phần BE chưa dùng được: quên / đặt lại mật khẩu (BE đang gửi link web) [CHỜ BE]
-// Cùng tên hàm + hình dạng dữ liệu với authApi.real.js
+// Mock quên / đặt lại mật khẩu (OTP + link) — cùng tên hàm + hình dạng dữ liệu với authApi.real.js
 import { ApiError } from "@/lib/api/errors";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
@@ -21,4 +20,8 @@ export async function verifyResetOtp({ otp }) {
 export async function resetPassword() {
   await delay();
   return { message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập." };
+}
+export async function forgotPasswordByLink() {
+  await delay(); // BE gửi link qua email, trả 200 rỗng
+  return null;
 }

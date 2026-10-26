@@ -7,7 +7,7 @@ export const ENV = {
 
 // Nhóm API BE chưa có / chưa dùng được → mock. BE xong nhóm nào thì đổi nhóm đó sang false
 export const MOCK = {
-  password: false, // quên / đặt lại mật khẩu — gọi thật qua resend-otp + verify-otp + password/reset
+  password: false, // quên mật khẩu: OTP (resend-otp + verify-otp + password/reset) hoặc link (password/forgot)
   upload: false, // POST /uploads thật (BE 7572732) — multipart + ?folder=
   organization: false, // Đăng ký / nộp lại hồ sơ tổ chức thật (BE 7572732). [CHỜ BE] GET /api/organizations/me
   consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2

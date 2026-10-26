@@ -82,9 +82,9 @@ export const changePassword = async ({
     }),
   );
 
-// Quên mật khẩu (AU-05) — gửi OTP "đặt lại mật khẩu" qua resend-otp (purpose FORGOT_PASSWORD).
-// KHÔNG dùng /api/auth/password/forgot vì API đó gửi LINK web (localhost), điện thoại không mở được.
-// Luôn trả như nhau dù email có tồn tại hay không. Gửi lại < 60 giây → 429. [Báo BE xác nhận cách dùng này]
+// Quên mật khẩu (AU-05) — 2 cách, dùng chung "phiên đặt lại" (cách gửi sau cùng mới dùng được):
+// Cách 1 — OTP: gửi mã qua resend-otp (FORGOT_PASSWORD) → verify-otp lấy resetToken → password/reset, làm hết TRONG APP.
+// Luôn trả như nhau dù email có tồn tại hay không. Gửi lại < 60 giây → 429
 export const forgotPassword = ({ email }) =>
   resendOtp({ email, purpose: OTP_PURPOSE.FORGOT_PASSWORD });
 
@@ -111,3 +111,8 @@ export const resetPassword = async ({
       confirmPassword,
     }),
   ); // { message }
+// Cách 2 — LINK: POST /api/auth/password/forgot → email có link {APP_FRONTEND_URL}/reset-password?email=&token=
+// → người dùng đặt mật khẩu mới trên TRANG WEB (trình duyệt điện thoại) rồi quay lại app đăng nhập.
+// BE luôn trả 200 giống nhau (email không có / chưa xác thực / bị khoá / gửi lại < 60 giây → im lặng không gửi)
+export const forgotPasswordByLink = async ({ email }) =>
+  unwrap(await api.post("/api/auth/password/forgot", { email }));
