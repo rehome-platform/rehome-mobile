@@ -35,7 +35,7 @@ export function ReceiptConfirmModal({
           <View style={styles.head}>
             <Text style={styles.title}>Xác nhận biên nhận?</Text>
             <Text style={styles.desc}>
-              Sau khi xác nhận, hàng được nhập kho và đăng bán ngay.{" "}
+              Sau khi xác nhận, hàng được đăng bán ngay.{" "}
               <Text style={styles.bold}>Không thể huỷ biên nhận này.</Text>
             </Text>
           </View>

@@ -172,7 +172,7 @@ export default function WithdrawalNewScreen() {
       "Gửi yêu cầu rút hàng?",
       fee > 0
         ? `Phí ${formatVnd(fee)} không hoàn lại. Sản phẩm gỡ khỏi sàn ngay sau khi trả phí.`
-        : "Sản phẩm gỡ khỏi sàn ngay, bạn có 7 ngày để đến kho lấy.",
+        : "Sản phẩm gỡ khỏi sàn ngay, bạn có 7 ngày để đến địa điểm ký gửi lấy.",
       [
         { text: "Huỷ", style: "cancel" },
         {
@@ -392,7 +392,7 @@ export default function WithdrawalNewScreen() {
         </Text>
         <Text style={styles.text}>
           {fee > 0
-            ? `Nếu quá 7 ngày bạn không đến kho nhận hàng, yêu cầu bị huỷ, sản phẩm đăng bán lại và phí ${formatVnd(fee)} không được hoàn.`
+            ? `Nếu quá 7 ngày bạn không đến địa điểm ký gửi nhận hàng, yêu cầu bị huỷ, sản phẩm đăng bán lại và phí ${formatVnd(fee)} không được hoàn.`
             : "Yêu cầu bị huỷ, sản phẩm được đăng bán lại và kỳ ký gửi tiếp tục như cũ."}
         </Text>
       </View>

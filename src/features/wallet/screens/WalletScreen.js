@@ -29,7 +29,7 @@ const goBack = () =>
 const WHEN_IN = [
   "Món ký gửi của bạn bán được và đơn hoàn thành.",
   "Đơn bạn mua bị huỷ hoặc trả hàng hợp lệ, tiền hoàn về đây.",
-  "Nền tảng đền bù khi hàng của bạn bị hỏng trong lúc lưu kho hoặc vận chuyển.",
+  "Nền tảng đền bù khi hàng của bạn bị hỏng trong lúc ReHome giữ hàng hoặc vận chuyển.",
 ];
 
 // Số dư lớn + Khả dụng / Đang khoá + Rút tiền / Doanh thu

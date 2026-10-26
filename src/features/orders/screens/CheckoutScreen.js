@@ -59,7 +59,7 @@ const productLine = (p) => ({
   thumbnailUrl: p.thumbnailUrl,
   price: p.currentPrice,
   warehouseId: p.warehouseId ?? "buy-now",
-  warehouseName: p.warehouseName ?? "Kho ReHome",
+  warehouseName: p.warehouseName ?? "Địa điểm ký gửi",
   available: p.status === PRODUCT_STATUS.ON_SALE,
 });
 
@@ -176,7 +176,7 @@ export default function CheckoutScreen() {
           // BE không trả tên kho → lấy từ các dòng vừa đặt
           const warehouseNameOf = (whId) =>
             list.find((l) => l.warehouseId === whId)?.warehouseName ??
-            "Kho ReHome";
+            "Địa điểm ký gửi";
           setPendingOrders(
             orders.map((o) => ({
               ...o,
@@ -311,7 +311,7 @@ export default function CheckoutScreen() {
             color={colors.text}
           />
           <Text style={styles.bannerText}>
-            {`Hàng ở ${groups.length} kho nên tách thành ${groups.length} đơn riêng, giao ${groups.length} lần, mỗi đơn một phí vận chuyển.`}
+            {`Hàng ở ${groups.length} địa điểm ký gửi nên tách thành ${groups.length} đơn riêng, giao ${groups.length} lần, mỗi đơn một phí vận chuyển.`}
           </Text>
         </View>
       ) : null}

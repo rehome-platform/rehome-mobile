@@ -60,14 +60,14 @@ export default function MemberCodeScreen() {
             disabled={!code}
           />
           <Text style={styles.footerNote}>
-            Màn này tự tăng độ sáng để dễ đọc trong kho.
+            Màn này tự tăng độ sáng để dễ đọc tại quầy.
           </Text>
         </View>
       }
       contentStyle={styles.content}
     >
       <Text style={styles.guide}>
-        Đưa mã QR cho nhân viên quét, hoặc đọc mã bên dưới khi tới kho ký gửi,
+        Đưa mã QR cho nhân viên quét, hoặc đọc mã bên dưới khi tới địa điểm ký gửi,
         rút hàng, nhận hàng.
       </Text>
 

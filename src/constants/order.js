@@ -46,16 +46,16 @@ export const ORDER_TABS = [
 export const ORDER_STEPS = [
   "Đặt hàng",
   "Thanh toán",
-  "Kho đóng gói",
+  "Đóng gói",
   "Đang giao",
   "Hoàn thành",
 ];
 
 // [CHỜ BE] Order chưa có cancelReason (PHASE4_GUIDE câu 4b) — tên mã là [GIẢ ĐỊNH]
 export const CANCEL_REASON_LABEL = {
-  BUYER_CANCELLED: "Bạn đã huỷ đơn khi kho chưa đóng gói.",
+  BUYER_CANCELLED: "Bạn đã huỷ đơn khi ReHome chưa đóng gói.",
   PAYMENT_EXPIRED: "Đơn hết hạn thanh toán (15 phút) nên tự huỷ.",
-  CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về kho.",
+  CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về địa điểm ký gửi.",
 };
 
 export const PAYMENT_METHOD = {
@@ -89,7 +89,7 @@ export const TRACKING_EVENT_LABEL = {
   DELIVERING: "Đang giao đến bạn",
   FAILED_DELIVERY: "Giao không thành công",
   DELIVERED: "Giao thành công",
-  RETURNING: "Đang trả hàng về kho",
+  RETURNING: "Đang trả hàng về địa điểm ký gửi",
 };
 
 // BR-14: chữ đi kèm số sao [GIẢ ĐỊNH]

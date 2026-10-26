@@ -49,7 +49,7 @@ function Timeline({ w }) {
   if (w.status === W.PENDING_PICKUP) {
     items.unshift({
       key: "waiting",
-      title: "Chờ bạn đến kho",
+      title: "Chờ bạn đến địa điểm",
       right: `còn ${Math.max(0, daysLeft(w.pickupDeadline))} ngày`,
       active: true,
     });
@@ -88,7 +88,7 @@ function MockPanel({ w }) {
   return (
     <NoteBox>
       <View style={styles.mock}>
-        <Text style={styles.caption}>Mock (chỉ bản dev): việc của kho</Text>
+        <Text style={styles.caption}>Mock (chỉ bản dev): việc của ReHome</Text>
         {withdrawalApi.MOCK_WITHDRAWAL_ACTIONS.map((a) => (
           <Button
             key={a.key}
@@ -196,7 +196,7 @@ export default function WithdrawalDetailScreen() {
       {/* ---- Khối theo trạng thái ---- */}
       {w.status === W.PENDING_PICKUP ? (
         <View style={[styles.box, styles.boxStrong]}>
-          <Text style={styles.boxTitle}>Còn {left} ngày để đến kho</Text>
+          <Text style={styles.boxTitle}>Còn {left} ngày để đến địa điểm ký gửi</Text>
           <Text style={styles.text}>
             Hạn cuối{" "}
             <Text style={styles.strong}>
@@ -244,7 +244,7 @@ export default function WithdrawalDetailScreen() {
         <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
           <Text style={styles.boxTitle}>Đã quá hạn — hàng đăng bán lại</Text>
           <Text style={styles.text}>
-            Bạn không đến kho trong 7 ngày. Yêu cầu bị huỷ tự động, sản phẩm đã
+            Bạn không đến địa điểm ký gửi trong 7 ngày. Yêu cầu bị huỷ tự động, sản phẩm đã
             quay lại sàn và kỳ ký gửi tiếp tục như cũ.
           </Text>
         </View>
@@ -284,7 +284,7 @@ export default function WithdrawalDetailScreen() {
         <View style={styles.dashed}>
           <Text style={styles.text}>
             Hàng <Text style={styles.strong}>không còn trên ReHome</Text>. Muốn
-            bán lại thì tạo form ký gửi mới — kỳ và hoa hồng tính lại từ đầu.
+            bán lại thì gửi yêu cầu ký gửi mới — kỳ và hoa hồng tính lại từ đầu.
           </Text>
         </View>
       ) : null}

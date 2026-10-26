@@ -50,7 +50,7 @@ export default function ShopHomeScreen() {
         <NoteBox>
           <View style={styles.noteRow}>
             <Text style={styles.noteText}>
-              Mọi món trên ReHome đều đã qua kiểm định tại kho. Mỗi món là duy
+              Mọi món trên ReHome đều đã qua kiểm định tại địa điểm ký gửi. Mỗi món là duy
               nhất — bán rồi là hết.
             </Text>
             <Pressable
@@ -91,7 +91,7 @@ export default function ShopHomeScreen() {
                 ? "Chưa có món nào lên sàn"
                 : "Danh mục này chưa có món nào"
             }
-            description="Kho nhập hàng mới mỗi ngày, quay lại sau nhé."
+            description="ReHome nhận hàng mới mỗi ngày, quay lại sau nhé."
           />
         }
       />

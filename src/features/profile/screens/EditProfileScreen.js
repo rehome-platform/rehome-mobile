@@ -212,7 +212,7 @@ export default function EditProfileScreen() {
             keyboardType="phone-pad"
             autoComplete="tel"
             maxLength={13}
-            helper="Kho gọi số này khi có việc gấp với hàng ký gửi của bạn."
+            helper="ReHome gọi số này khi có việc gấp với hàng ký gửi của bạn."
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}

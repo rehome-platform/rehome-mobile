@@ -30,7 +30,7 @@ function Footer({ form }) {
           color={left <= 2 ? colors.error : colors.primary}
         />
         <Text style={[styles.todoText, left <= 2 && styles.urgent]}>
-          Mang đồ đến kho trước {dayjs(form.bringInDeadline).format("DD/MM")} ·{" "}
+          Mang đồ đến địa điểm trước {dayjs(form.bringInDeadline).format("DD/MM")} ·{" "}
           {leftText(left)}
         </Text>
       </View>
@@ -46,7 +46,7 @@ function Footer({ form }) {
   if (form.status === FORM_STATUS.EXPIRED && form.bringInDeadline) {
     return (
       <Text style={styles.sub}>
-        Quá hạn mang đồ đến kho{" "}
+        Quá hạn mang đồ đến địa điểm{" "}
         {dayjs(form.bringInDeadline).format("DD/MM/YYYY")}
       </Text>
     );

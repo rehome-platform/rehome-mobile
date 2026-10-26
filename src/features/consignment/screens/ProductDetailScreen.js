@@ -265,7 +265,7 @@ function AwaitingBody({ product }) {
         <Text style={styles.boxTitle}>Ký gửi lại với giá mới</Text>
         <Text style={styles.body}>
           Moderator đề xuất giá mới, bạn đồng ý thì ký biên nhận mới. Hàng vẫn ở
-          kho, bạn không phải đi lại. Chu kỳ
+          địa điểm ký gửi, bạn không phải đi lại. Chu kỳ
           {` ${total}`} ngày tính lại từ đầu, hoa hồng về mức kỳ 1.
         </Text>
       </View>
@@ -456,10 +456,10 @@ export default function ProductDetailScreen() {
         {view === PRODUCT_VIEW.PICKUP ? <PickupInfo product={product} /> : null}
         {view === PRODUCT_VIEW.DEGRADED_DECISION ? (
           <View style={styles.attention}>
-            <Text style={styles.boxTitle}>Hàng bị hỏng khi trả về kho</Text>
+            <Text style={styles.boxTitle}>Hàng bị hỏng khi trả về địa điểm ký gửi</Text>
             <Text style={styles.body}>
-              Người mua đã trả món này và hàng bị hỏng trên đường về kho.{" "}
-              <Text style={styles.bold}>Không phải lỗi của bạn</Text> — kho đền
+              Người mua đã trả món này và hàng bị hỏng trên đường về địa điểm ký gửi.{" "}
+              <Text style={styles.bold}>Không phải lỗi của bạn</Text> — ReHome đền
               bù. Bạn chọn nhận tiền đền hoặc nhận lại hàng kèm đền một phần
               {product.degradedCase?.decisionDeadline
                 ? ` trước ${fmtDate(product.degradedCase.decisionDeadline)}`
@@ -471,7 +471,7 @@ export default function ProductDetailScreen() {
 
         {view === PRODUCT_VIEW.WITHDRAWING ? (
           <View style={styles.attention}>
-            <Text style={styles.boxTitle}>Chờ bạn đến kho lấy hàng</Text>
+            <Text style={styles.boxTitle}>Chờ bạn đến địa điểm lấy hàng</Text>
             <Text style={styles.body}>
               Sản phẩm đã gỡ khỏi sàn. Đến {product.warehouseName}
               {product.withdrawalPickupDeadline
@@ -484,7 +484,7 @@ export default function ProductDetailScreen() {
 
         {view === PRODUCT_VIEW.REPRICING ? (
           <View style={styles.infoBox}>
-            <Text style={styles.boxTitle}>Đang chờ kho đề xuất giá mới</Text>
+            <Text style={styles.boxTitle}>Đang chờ ReHome đề xuất giá mới</Text>
             <Text style={styles.body}>
               Bạn đã chọn ký gửi lại. Moderator {product.warehouseName} sẽ xem
               lại tình trạng món hàng và đề xuất giá mới, thường trong 1–2 ngày

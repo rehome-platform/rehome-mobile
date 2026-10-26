@@ -89,7 +89,7 @@ export default function PickItemScreen() {
         </Text>
       ) : noSuggestion ? (
         <NoteBox>
-          {`Chưa có món nào hợp tông để gợi ý — hàng ký gửi là đồ cũ nên kho không phải lúc nào cũng có đủ. Dưới đây là toàn bộ ${label} đang bán, bạn tự chọn nhé.`}
+          {`Chưa có món nào hợp tông để gợi ý — hàng ký gửi là đồ cũ nên không phải lúc nào cũng có đủ. Dưới đây là toàn bộ ${label} đang bán, bạn tự chọn nhé.`}
         </NoteBox>
       ) : null}
     </View>

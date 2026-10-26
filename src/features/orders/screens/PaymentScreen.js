@@ -199,8 +199,8 @@ function PaymentView({ initialOrders, fromStore = false }) {
         title="Thanh toán thành công"
         description={
           paidBy === PAYMENT_METHOD.WALLET
-            ? "Đã trừ tiền trong Ví ReHome. Kho sẽ đóng gói và giao hàng cho bạn."
-            : "Kho sẽ đóng gói và giao hàng cho bạn. Bạn sẽ nhận thông báo khi đơn được gửi đi."
+            ? "Đã trừ tiền trong Ví ReHome. ReHome sẽ đóng gói và giao hàng cho bạn."
+            : "ReHome sẽ đóng gói và giao hàng cho bạn. Bạn sẽ nhận thông báo khi đơn được gửi đi."
         }
         orders={orders}
       />

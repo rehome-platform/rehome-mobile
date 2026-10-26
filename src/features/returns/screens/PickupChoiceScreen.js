@@ -116,8 +116,8 @@ export default function PickupChoiceScreen() {
 
   const confirm = () =>
     Alert.alert(
-      "Đến kho lấy lại hàng?",
-      `Bạn cần đến ${r.warehouseName ?? "kho"} trước ${fmt(r.pickupDeadline)} và đọc mã Member tại quầy.`,
+      "Đến địa điểm lấy lại hàng?",
+      `Bạn cần đến ${r.warehouseName ?? "địa điểm ký gửi"} trước ${fmt(r.pickupDeadline)} và đọc mã Member tại quầy.`,
       [
         { text: "Chưa", style: "cancel" },
         {
@@ -125,7 +125,7 @@ export default function PickupChoiceScreen() {
           onPress: () =>
             choose.mutate(choice, {
               onSuccess: () => {
-                showToast("Đã ghi nhận, hẹn bạn ở kho");
+                showToast("Đã ghi nhận, hẹn bạn ở địa điểm ký gửi");
                 goBack();
               },
               onError: (e) => {
@@ -139,7 +139,7 @@ export default function PickupChoiceScreen() {
 
   const footer = expired ? null : (
     <Button
-      title="Xác nhận đến kho lấy"
+      title="Xác nhận đến địa điểm lấy"
       loading={choose.isPending}
       onPress={confirm}
     />
@@ -175,7 +175,7 @@ export default function PickupChoiceScreen() {
           <Text style={styles.boxTitle}>Đã hết hạn chọn cách nhận lại</Text>
           <Text style={styles.text}>
             Hết hạn {fmt(r.pickupDeadline)} mà chưa chọn: món thành hàng vô chủ
-            và kho xử lý theo quy định.
+            và ReHome xử lý theo quy định.
           </Text>
         </View>
       ) : (
@@ -183,12 +183,12 @@ export default function PickupChoiceScreen() {
           <View style={styles.gapSm}>
             <Text style={styles.heading}>Bạn muốn nhận lại bằng cách nào?</Text>
             <Text style={styles.muted}>
-              Món này vẫn là của bạn. Kho không giữ hộ quá 7 ngày.
+              Món này vẫn là của bạn. ReHome không giữ hộ quá 7 ngày.
             </Text>
           </View>
 
           <OptionCard
-            title="Đến kho lấy"
+            title="Đến địa điểm lấy"
             desc="Miễn phí. Mang mã Member tới quầy để nhận lại hàng."
             selected={choice === C.WAREHOUSE_PICKUP}
             onPress={() => setChoice(C.WAREHOUSE_PICKUP)}
@@ -219,7 +219,7 @@ export default function PickupChoiceScreen() {
 
           {/* [CHỜ BE câu 9 + LEAD] chưa có API trả phí gửi lại → mờ (0.4 #8) */}
           <OptionCard
-            title="Kho gửi lại cho bạn"
+            title="ReHome gửi lại cho bạn"
             desc="Giao về địa chỉ cũ trong 2–3 ngày. Bạn trả phí vận chuyển."
             tag="Sắp có"
             disabled
@@ -235,7 +235,7 @@ export default function PickupChoiceScreen() {
           <View style={styles.warn}>
             <Text style={styles.strong}>Nếu hết 7 ngày mà bạn không chọn</Text>
             <Text style={styles.text}>
-              Món thành <Text style={styles.strong}>hàng vô chủ</Text> và kho xử
+              Món thành <Text style={styles.strong}>hàng vô chủ</Text> và ReHome xử
               lý theo quy định. Bạn mất quyền với món này.
             </Text>
           </View>

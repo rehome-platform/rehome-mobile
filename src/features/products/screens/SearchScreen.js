@@ -155,7 +155,7 @@ export default function SearchScreen() {
             <EmptyState
               icon="search-outline"
               title="Không tìm thấy món nào"
-              description="Hàng ký gửi là đồ cũ nên mỗi món chỉ có một cái. Thử từ khoá khác, bỏ bớt bộ lọc, hoặc quay lại sau — kho nhập hàng mới mỗi ngày."
+              description="Hàng ký gửi là đồ cũ nên mỗi món chỉ có một cái. Thử từ khoá khác, bỏ bớt bộ lọc, hoặc quay lại sau — ReHome nhận hàng mới mỗi ngày."
             >
               {filterCount > 0 ? (
                 <Button

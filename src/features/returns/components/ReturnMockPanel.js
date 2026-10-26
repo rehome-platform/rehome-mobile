@@ -19,7 +19,7 @@ export function ReturnMockPanel({ item: r }) {
   return (
     <NoteBox>
       <View style={styles.wrap}>
-        <Text style={styles.title}>Mock (chỉ bản dev): việc của kho / GHN</Text>
+        <Text style={styles.title}>Mock (chỉ bản dev): việc của ReHome / GHN</Text>
         {actions.map((a) => (
           <Button
             key={a.key}

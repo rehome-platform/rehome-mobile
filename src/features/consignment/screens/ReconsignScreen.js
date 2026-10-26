@@ -156,14 +156,14 @@ export default function ReconsignScreen() {
 
         {hasProposal ? (
           <View style={styles.infoBox}>
-            <Text style={styles.boxTitle}>Kho đã đề xuất giá mới</Text>
+            <Text style={styles.boxTitle}>ReHome đã đề xuất giá mới</Text>
             <Text style={styles.body}>
               Xem biên nhận mới: đồng ý thì xác nhận, hàng lên sàn lại ngay.
             </Text>
           </View>
         ) : (
           <View style={styles.infoBox}>
-            <Text style={styles.boxTitle}>Đang chờ kho phản hồi</Text>
+            <Text style={styles.boxTitle}>Đang chờ ReHome phản hồi</Text>
             <Text style={styles.body}>
               Moderator {product.warehouseName} sẽ kiểm tra lại tình trạng món
               hàng và đề xuất mức giá phù hợp hơn. Thường trong{" "}
@@ -188,13 +188,13 @@ export default function ReconsignScreen() {
         />
 
         <NoteBox>
-          Hàng vẫn đang giữ tại kho, chưa đăng bán. Khi kho đề xuất giá, bạn xem
+          Hàng vẫn đang giữ tại địa điểm ký gửi, chưa đăng bán. Khi ReHome đề xuất giá, bạn xem
           và xác nhận biên nhận mới để hàng lên sàn lại.
         </NoteBox>
 
         {__DEV__ && MOCK.consignment && !hasProposal ? (
           <Button
-            title="[Dev] Giả lập kho đề xuất giá"
+            title="[Dev] Giả lập ReHome đề xuất giá"
             variant="text"
             onPress={() => propose.mutate()}
             loading={propose.isPending}

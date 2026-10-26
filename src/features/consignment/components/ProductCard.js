@@ -21,10 +21,10 @@ function Detail({ product, view }) {
     return (
       <>
         <Text style={styles.urgent}>
-          Bị hỏng khi trả về kho
+          Bị hỏng khi trả về địa điểm ký gửi
           {due ? ` · còn ${Math.max(0, daysLeft(due))} ngày để chọn` : ""}
         </Text>
-        <Text style={styles.sub}>Không phải lỗi của bạn · kho đền bù</Text>
+        <Text style={styles.sub}>Không phải lỗi của bạn · ReHome đền bù</Text>
       </>
     );
   }
@@ -65,7 +65,7 @@ function Detail({ product, view }) {
   if (view === PRODUCT_VIEW.REPRICING) {
     return (
       <Text style={styles.sub}>
-        Đã chọn ký gửi lại · đang chờ kho đề xuất giá mới
+        Đã chọn ký gửi lại · đang chờ ReHome đề xuất giá mới
       </Text>
     );
   }

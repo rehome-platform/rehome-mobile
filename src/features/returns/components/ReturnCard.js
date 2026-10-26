@@ -12,23 +12,23 @@ import { ReturnStatusBadge } from "./ReturnStatusBadge";
 function nextStep(r) {
   switch (r.status) {
     case R.PENDING:
-      return { text: "Kho đang xem xét yêu cầu" };
+      return { text: "ReHome đang xem xét yêu cầu" };
     case R.APPROVED:
       return {
         text: `Giao hàng cho shipper trước ${toDate(r.handoverDeadline).format("DD/MM HH:mm")}`,
         strong: true,
       };
     case R.SHIPPED_BACK:
-      return { text: "Hàng đang gửi về kho" };
+      return { text: "Hàng đang gửi về địa điểm ký gửi" };
     case R.INSPECTING:
-      return { text: "Kho đang kiểm tra hàng" };
+      return { text: "ReHome đang kiểm tra hàng" };
     case R.VALID:
     case R.LOST:
       return { text: "Đã hoàn tiền vào ví của bạn" };
     case R.INVALID:
       return r.invalidReturnChoice
         ? {
-            text: `Đến kho lấy trước ${toDate(r.pickupDeadline).format("DD/MM")}`,
+            text: `Đến địa điểm lấy trước ${toDate(r.pickupDeadline).format("DD/MM")}`,
           }
         : {
             text: `Chọn cách nhận lại hàng · còn ${formatTimeLeft(r.pickupDeadline)}`,

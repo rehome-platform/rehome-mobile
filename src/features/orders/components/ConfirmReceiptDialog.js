@@ -27,8 +27,8 @@ export function ConfirmReceiptDialog({ order, onClose }) {
         showToast("Đã xác nhận nhận hàng");
         // Hỏi ngay lúc trải nghiệm còn mới (thông lệ Shopee) — không bắt buộc
         Alert.alert(
-          "Chấm dịch vụ của kho?",
-          "Mất vài giây, giúp kho đóng gói và giao tốt hơn.",
+          "Chấm dịch vụ của ReHome?",
+          "Mất vài giây, giúp ReHome đóng gói và giao tốt hơn.",
           [
             { text: "Để sau", style: "cancel" },
             {

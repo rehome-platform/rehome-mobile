@@ -60,7 +60,7 @@ export async function getForm(id) {
     throw new ApiError({
       status: 404,
       code: "HTTP_404",
-      message: "Không tìm thấy form ký gửi.",
+      message: "Không tìm thấy yêu cầu ký gửi.",
     });
   }
   return { ...form };
@@ -100,7 +100,7 @@ export async function createForm(payload) {
     throw new ApiError({
       status: 409,
       code: ERROR_CODES.TOO_MANY_PENDING_FORMS,
-      message: `Bạn đang có ${pendingCount} form chờ duyệt, chưa tạo thêm được.`,
+      message: `Bạn đang có ${pendingCount} yêu cầu chờ duyệt, chưa tạo thêm được.`,
     });
   }
   const form = {
@@ -137,14 +137,14 @@ export async function updateForm(id, payload) {
     throw new ApiError({
       status: 404,
       code: "HTTP_404",
-      message: "Không tìm thấy form ký gửi.",
+      message: "Không tìm thấy yêu cầu ký gửi.",
     });
   }
   if (current.status !== FORM_STATUS.PENDING) {
     throw new ApiError({
       status: 409,
       code: ERROR_CODES.FORM_NOT_EDITABLE,
-      message: "Form đã được kho xử lý, không sửa được nữa.",
+      message: "Yêu cầu đã được ReHome xử lý, không sửa được nữa.",
     });
   }
   const updated = {

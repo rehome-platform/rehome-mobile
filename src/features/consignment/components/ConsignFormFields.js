@@ -101,7 +101,7 @@ export function ConsignFormFields({ control, errors }) {
       />
       <NoteBox>
         Đây chỉ là giá bạn đề xuất. Moderator sẽ kiểm định và chốt giá bán cuối
-        cùng với bạn tại kho. Bạn có quyền từ chối nếu không đồng ý.
+        cùng với bạn tại địa điểm ký gửi. Bạn có quyền từ chối nếu không đồng ý.
       </NoteBox>
 
       <Controller

@@ -41,7 +41,7 @@ const add = (
 add(
   N.ORDER_UPDATE,
   "Đơn đang được giao",
-  "Đơn Áo len cổ lọ đã rời kho, GHN dự kiến giao ngày mai.",
+  "Đơn Áo len cổ lọ đã được gửi đi, GHN dự kiến giao ngày mai.",
   T.ORDER,
   "od-seed-4",
   ago(40, "minute"),
@@ -49,7 +49,7 @@ add(
 add(
   N.ORDER_UPDATE,
   "Yêu cầu trả hàng đã được duyệt",
-  "Kho đã duyệt yêu cầu trả Áo khoác dạ dài. Giao hàng cho shipper trong 3 ngày.",
+  "ReHome đã duyệt yêu cầu trả Áo khoác dạ dài. Giao hàng cho shipper trong 3 ngày.",
   T.RETURN_REQUEST,
   "rr-seed-2",
   ago(10, "hour"),

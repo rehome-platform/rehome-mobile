@@ -9,7 +9,7 @@ import { useOrderMutation } from "../hooks/useOrders";
 
 // Việc phía kho / GHN làm (web Moderator) → mobile giả lập để xem từng trạng thái
 const NEXT_STEP = {
-  PAID: "Kho bắt đầu đóng gói",
+  PAID: "ReHome bắt đầu đóng gói",
   PACKING: "Bàn giao cho GHN",
   SHIPPING: "GHN giao thành công",
   DELIVERED: "Hết hạn → tự hoàn thành",

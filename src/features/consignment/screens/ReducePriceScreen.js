@@ -419,7 +419,7 @@ function ReducePriceBody({ product, header }) {
           Giá mới áp dụng ngay khi xác nhận. Bạn{" "}
           <Text style={styles.bold}>chỉ được giảm, không được tăng lại</Text>,
           và mỗi ngày đổi giá tối đa 1 lần. Muốn tăng giá phải thương lượng lại
-          biên nhận với kho.
+          biên nhận với ReHome.
         </Text>
       </NoteBox>
 

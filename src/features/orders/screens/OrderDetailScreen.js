@@ -192,7 +192,7 @@ export default function OrderDetailScreen() {
               onError: (e) =>
                 showToast(
                   e.code === ERROR_CODES.CANNOT_CANCEL_AFTER_PACKING
-                    ? "Kho vừa đóng gói, không huỷ được nữa"
+                    ? "ReHome vừa đóng gói, không huỷ được nữa"
                     : e.message,
                 ),
             }),
@@ -295,15 +295,15 @@ export default function OrderDetailScreen() {
 
       {order.status === S.PAID ? (
         <InfoBox strong title="Vẫn huỷ được">
-          Kho chưa đóng gói. Huỷ bây giờ bạn được hoàn 100%, kể cả phí vận
-          chuyển, tiền vào thẳng ví ReHome. Khi kho bắt đầu đóng gói thì không
+          ReHome chưa đóng gói. Huỷ bây giờ bạn được hoàn 100%, kể cả phí vận
+          chuyển, tiền vào thẳng ví ReHome. Khi ReHome bắt đầu đóng gói thì không
           huỷ được nữa, chỉ còn cách trả hàng sau khi nhận.
         </InfoBox>
       ) : null}
 
       {order.status === S.PACKING ? (
-        <InfoBox title="Kho đang đóng gói">
-          Đơn không huỷ được nữa. Kho sẽ bàn giao cho GHN sớm.
+        <InfoBox title="ReHome đang đóng gói">
+          Đơn không huỷ được nữa. ReHome sẽ bàn giao cho GHN sớm.
         </InfoBox>
       ) : null}
 
@@ -351,7 +351,7 @@ export default function OrderDetailScreen() {
             ) : null}
           </Section>
           <InfoBox title="Không huỷ đơn được nữa">
-            Hàng đã rời kho. Nếu nhận hàng không đúng mô tả, bạn có 3 ngày kể từ
+            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bạn có 3 ngày kể từ
             khi nhận để gửi yêu cầu trả hàng.
           </InfoBox>
         </>
@@ -399,8 +399,8 @@ export default function OrderDetailScreen() {
           </Text>
           <Text style={styles.muted}>
             {order.serviceRating != null
-              ? `${order.serviceRating}/5 · dịch vụ của kho`
-              : "Chấm dịch vụ đóng gói và giao hàng của kho"}
+              ? `${order.serviceRating}/5 · dịch vụ của ReHome`
+              : "Chấm dịch vụ đóng gói và giao hàng của ReHome"}
           </Text>
         </Section>
       ) : null}

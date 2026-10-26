@@ -80,7 +80,7 @@ export default function CreateFormScreen() {
     mutationFn: sendForm,
     onSuccess: (form) => {
       queryClient.invalidateQueries({ queryKey: ["consign", "forms"] }); // danh sách + số form chờ
-      showToast("Đã gửi form ký gửi");
+      showToast("Đã gửi yêu cầu ký gửi");
       router.replace(`/consign-forms/${form.id}`);
     },
     onError: (e) => {
@@ -101,11 +101,11 @@ export default function CreateFormScreen() {
     if (step === 2) return setStep(1);
     if (!isDirty) return leave();
     Alert.alert(
-      "Bỏ form đang tạo?",
+      "Bỏ yêu cầu đang tạo?",
       "Thông tin bạn đã nhập sẽ không được lưu.",
       [
         { text: "Ở lại", style: "cancel" },
-        { text: "Bỏ form", style: "destructive", onPress: leave },
+        { text: "Bỏ", style: "destructive", onPress: leave },
       ],
     );
   }, [step, isDirty]);
@@ -130,11 +130,11 @@ export default function CreateFormScreen() {
     !submit.isSuccess
   ) {
     return (
-      <Screen header={<AppHeader title="Tạo form ký gửi" onBack={leave} />}>
+      <Screen header={<AppHeader title="Ký gửi món mới" onBack={leave} />}>
         <EmptyState
           icon="hourglass-outline"
-          title={`Bạn đang có ${pending.data} form chờ duyệt`}
-          description={`Tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} form chờ cùng lúc. Chờ kho xử lý bớt rồi tạo tiếp nhé.`}
+          title={`Bạn đang có ${pending.data} yêu cầu chờ duyệt`}
+          description={`Tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ cùng lúc. Chờ ReHome xử lý bớt rồi tạo tiếp nhé.`}
         >
           <Button title="Về danh sách" onPress={leave} />
         </EmptyState>
@@ -152,7 +152,7 @@ export default function CreateFormScreen() {
   );
 
   const onSend = handleSubmit((values) => {
-    if (!values.warehouseId) return setFormError("Chọn kho tiếp nhận");
+    if (!values.warehouseId) return setFormError("Chọn địa điểm ký gửi");
     setFormError(null);
     submit.mutate(values);
   });
@@ -164,7 +164,7 @@ export default function CreateFormScreen() {
   const header = (
     <View>
       <AppHeader
-        title={step === 1 ? "Tạo form ký gửi" : "Chọn kho"}
+        title={step === 1 ? "Ký gửi món mới" : "Chọn địa điểm ký gửi"}
         onBack={onBack}
         right={<Text style={styles.stepText}>Bước {step} / 2</Text>}
       />
@@ -183,10 +183,10 @@ export default function CreateFormScreen() {
       header={header}
       footer={
         step === 1 ? (
-          <Button title="Tiếp tục — chọn kho" onPress={goStep2} />
+          <Button title="Tiếp tục — chọn địa điểm" onPress={goStep2} />
         ) : (
           <Button
-            title="Gửi form ký gửi"
+            title="Gửi yêu cầu ký gửi"
             onPress={onSend}
             loading={submit.isPending}
           />
@@ -203,8 +203,8 @@ export default function CreateFormScreen() {
           ) : null}
           {source ? (
             <NoteBox>
-              Đã điền sẵn từ form cũ. Kiểm tra lại ảnh và thông tin (nhất là
-              phần kho đã nhắc khi từ chối).
+              Đã điền sẵn từ yêu cầu cũ. Kiểm tra lại ảnh và thông tin (nhất là
+              phần ReHome đã nhắc khi từ chối).
             </NoteBox>
           ) : null}
           <ConsignFormFields control={control} errors={errors} />
