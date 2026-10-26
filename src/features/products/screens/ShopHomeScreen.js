@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useAuthStore } from "@/stores/authStore";
 import { takePendingRedirect } from "@/stores/pendingRedirect";
@@ -14,6 +14,7 @@ import { useProducts } from "../hooks/useProducts";
 import { ProductGrid } from "../components/ProductGrid";
 import { CartButton } from "@/features/cart/components/CartButton";
 
+const logo = require("../../../../assets/logo/logo.png"); // assets nằm ngoài src nên không dùng @/
 const ALL = "ALL";
 
 // BR-01 · Trang chủ Mua sắm (Guest xem được)
@@ -50,8 +51,8 @@ export default function ShopHomeScreen() {
         <NoteBox>
           <View style={styles.noteRow}>
             <Text style={styles.noteText}>
-              Mọi món trên ReHome đều đã qua kiểm định tại địa điểm ký gửi. Mỗi món là duy
-              nhất — bán rồi là hết.
+              Mọi món trên ReHome đều đã qua kiểm định tại địa điểm ký gửi. Mỗi
+              món là duy nhất — bán rồi là hết.
             </Text>
             <Pressable
               onPress={() => setShowNote(false)}
@@ -103,7 +104,13 @@ export default function ShopHomeScreen() {
 function ShopHeader() {
   return (
     <View style={styles.header}>
-      <Text style={styles.logo}>ReHome</Text>
+      <Image
+        source={logo}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="ReHome"
+      />
+
       <Pressable
         onPress={() => router.push("/search")}
         accessibilityRole="search"
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral,
   },
-  logo: { ...textStyles.title, color: colors.primary },
+  logo: { width: 130, height: 28 }, // ghi rõ cả 2 chiều: ảnh require() mặc định lấy kích thước gốc; tỉ lệ ≈ 4.62
   search: {
     flex: 1,
     height: 40,

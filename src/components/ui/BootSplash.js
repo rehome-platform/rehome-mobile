@@ -1,7 +1,7 @@
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { colors, spacing, textStyles } from "@/theme";
 
-const logo = require("../../../assets/logo/logoIcon.png"); // assets nằm ngoài src nên không dùng @/
+const logo = require("../../../assets/logo/logo.png"); // assets nằm ngoài src nên không dùng @/
 
 // AU-01: màn chờ lúc mở app, trong khi khôi phục phiên đăng nhập (server Render ngủ có thể mất vài chục giây)
 export function BootSplash() {
@@ -11,8 +11,9 @@ export function BootSplash() {
         source={logo}
         style={styles.logo}
         accessibilityIgnoresInvertColors
+        resizeMode="contain"
+        accessibilityLabel="ReHome"
       />
-      <Text style={styles.name}>ReHome</Text>
 
       <View style={styles.bottom}>
         <ActivityIndicator color={colors.primary} />
@@ -30,8 +31,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     backgroundColor: colors.background,
   },
-  logo: { width: 96, height: 96 },
-  name: { ...textStyles.title, color: colors.text },
+  logo: { width: 240, height: 52 },
   bottom: {
     position: "absolute",
     bottom: 64,

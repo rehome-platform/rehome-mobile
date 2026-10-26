@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -28,7 +27,6 @@ import { SALE_STATE, saleStateOf } from "../utils/saleState";
 import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PriceTag } from "../components/PriceTag";
 import { SimilarProducts } from "../components/SimilarProducts";
-import { metaLine } from "../components/ProductCard";
 import { setPendingRedirect } from "@/stores/pendingRedirect";
 import { MockStatusPanel } from "../components/MockStatusPanel";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +39,9 @@ import {
 } from "@/features/cart/hooks/useCart";
 import { shopKeys } from "../api/queryKeys";
 import { canTryOn } from "@/features/tryon/utils/tryonRules";
+import { ProductInfoTable } from "../components/ProductInfoTable";
+import { useOpenConversation } from "@/features/chat/hooks/useChat";
+import { CONVERSATION_TYPE } from "@/constants/chat";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -99,6 +100,7 @@ export default function ProductDetailScreen() {
   const scrollRef = useRef(null);
   const similarY = useRef(0);
   const [expanded, setExpanded] = useState(false);
+  const chat = useOpenConversation();
 
   const header = (
     <AppHeader
@@ -189,10 +191,45 @@ export default function ProductDetailScreen() {
     ? () => router.push({ pathname: "/checkout", params: { buyNow: id } })
     : () => askLogin(`/products/${id}`);
 
+  // Nút "Nhắn" nhỏ bên trái (hộp thư địa điểm đang giữ món, soạn sẵn câu hỏi) — giống Shopee "Chat ngay"
+  const chatButton = product.warehouseId ? (
+    <Pressable
+      onPress={() =>
+        chat.open({
+          type: CONVERSATION_TYPE.MEMBER_WAREHOUSE,
+          counterpartId: product.warehouseId,
+          draft: `Mình muốn hỏi về món "${product.name}"`,
+          from: `/products/${id}`,
+        })
+      }
+      disabled={chat.isOpening}
+      accessibilityRole="button"
+      accessibilityLabel="Nhắn ReHome về món này"
+      style={({ pressed }) => [styles.chatBtn, pressed && styles.pressed]}
+    >
+      {chat.isOpening ? (
+        <ActivityIndicator size="small" color={colors.primary} />
+      ) : (
+        <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
+      )}
+      <Text style={styles.chatText}>Nhắn</Text>
+    </Pressable>
+  ) : null;
+
   let footer = null;
-  if (state === SALE_STATE.ON_SALE) {
+  if (state === SALE_STATE.ON_SALE && product.isMine) {
+    // Món của chính mình: không mua được → đưa về trang quản lý món ký gửi
+    footer = (
+      <Button
+        title="Đây là món bạn ký gửi — xem chi tiết"
+        variant="secondary"
+        onPress={() => router.push(`/my-products/${id}`)}
+      />
+    );
+  } else if (state === SALE_STATE.ON_SALE) {
     footer = (
       <View style={styles.footerRow}>
+        {chatButton}
         {inCart ? (
           <Button
             title="Xem giỏ hàng"
@@ -232,24 +269,27 @@ export default function ProductDetailScreen() {
 
       <View style={styles.body}>
         <View style={styles.titleBlock}>
-          <Text style={[styles.name, gone && styles.muted]}>
-            {product.name}
-          </Text>
           <PriceTag
             large
+            showOff
             struck={gone}
             currentPrice={product.currentPrice}
             originalPrice={product.originalPrice}
           />
-          <Text style={styles.muted}>
-            {metaLine(
-              product.brandName,
-              product.size ? `Size ${product.size}` : null,
-              product.categoryName,
-            )}
+          <Text style={[styles.name, gone && styles.muted]}>
+            {product.name}
           </Text>
-          {product.warehouseName ? (
-            <Text style={styles.muted}>{product.warehouseName}</Text>
+          {!info ? (
+            <View style={styles.verified}>
+              <Ionicons
+                name="shield-checkmark"
+                size={16}
+                color={colors.primary}
+              />
+              <Text style={styles.verifiedText}>
+                Đã kiểm định tại địa điểm ký gửi ReHome
+              </Text>
+            </View>
           ) : null}
         </View>
         {/* Phase 6 · BR-04: Thử đồ AI (không chiếm chân màn) */}
@@ -296,28 +336,7 @@ export default function ProductDetailScreen() {
         ) : null}
         {info?.note ? <NoteBox>{info.note}</NoteBox> : null}
 
-        {!info ? (
-          <View style={styles.inspected}>
-            <View style={styles.inspectedHead}>
-              <Ionicons
-                name="shield-checkmark"
-                size={18}
-                color={colors.primary}
-              />
-              <Text style={styles.inspectedTitle}>
-                Đã kiểm định tại địa điểm ký gửi ReHome
-              </Text>
-            </View>
-            {product.condition ? (
-              <Text style={styles.text}>Tình trạng: {product.condition}</Text>
-            ) : null}
-            {product.inspectedAt ? (
-              <Text style={styles.muted}>
-                Kiểm định ngày {dayjs(product.inspectedAt).format("DD/MM/YYYY")}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
+        <ProductInfoTable product={product} />
 
         {product.description ? (
           <View style={styles.section}>
@@ -375,7 +394,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.primary,
   },
-  name: { ...textStyles.title, color: colors.text },
+  name: { ...textStyles.heading, color: colors.text },
   muted: { ...textStyles.body, color: colors.textSecondary },
   text: { ...textStyles.body, color: colors.text },
   stateBox: {
@@ -387,20 +406,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   stateTitle: { ...textStyles.heading, color: colors.text },
-  inspected: {
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radius.input,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.neutral,
-  },
-  inspectedHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  inspectedTitle: { ...textStyles.heading, color: colors.text },
   section: { gap: spacing.sm },
   sectionTitle: { ...textStyles.heading, color: colors.text },
   link: {
@@ -408,6 +413,19 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.accent,
   },
-  footerRow: { flexDirection: "row", gap: spacing.md },
+  footerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   flex: { flex: 1 },
+  verified: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  verifiedText: {
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  chatBtn: {
+    width: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  chatText: { ...textStyles.caption, color: colors.primary },
 });

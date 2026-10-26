@@ -17,7 +17,7 @@ import { ERROR_CODES } from "@/constants/errorCodes";
 import { OTP_PURPOSE } from "@/constants/auth";
 import { GOOGLE_AVAILABLE, getGoogleIdToken } from "@/features/auth/google";
 
-const logo = require("../../../../assets/logo/logoIcon.png"); // assets nằm ngoài src nên không dùng @/
+const logo = require("../../../../assets/logo/logo.png"); // assets nằm ngoài src nên không dùng @/
 // Thông báo xanh khi quay về từ màn khác (param = "1")
 const NOTICES = {
   verified: "Xác thực email thành công, mời bạn đăng nhập.",
@@ -132,9 +132,9 @@ export default function LoginScreen() {
         <Image
           source={logo}
           style={styles.logo}
-          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          accessibilityLabel="ReHome"
         />
-        <Text style={styles.brandName}>ReHome</Text>
         <Text style={styles.tagline}>
           Ký gửi, mua đồ cũ có kiểm định{"\n"}và quyên góp cho tổ chức từ thiện
         </Text>
@@ -234,8 +234,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   content: { gap: spacing.lg },
   brand: { alignItems: "center", gap: spacing.sm, marginVertical: spacing.lg },
-  logo: { width: 72, height: 72 },
-  brandName: { ...textStyles.title, color: colors.text },
+  logo: { width: 220, height: 48 },
   tagline: {
     ...textStyles.body,
     color: colors.textSecondary,
