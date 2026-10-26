@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { Redirect, router } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
@@ -25,21 +25,34 @@ import {
 } from "@/features/organization/utils/summary";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { uploadFile } from "@/lib/api/upload";
+import { UPLOAD_FOLDER } from "@/constants/upload";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { locateAddress } from "@/features/organization/utils/geocode";
+import { orgKeys } from "@/features/organization/hooks/useMyOrganization";
 
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
 // Toạ độ điểm nhận (BE bắt buộc) → upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → gửi hồ sơ
+const isRemote = (uri) => /^https?:\/\//.test(uri); // logo cũ (nộp lại) đã là URL trên server
 async function submitApplication(data) {
   const { info, documents, location } = data;
-  const coords = await locateAddress(pickupAddress(info, location)); // lỗi → báo ngay, chưa upload gì
-  const upload = (file) => uploadFile(file).then((res) => res.url);
+  // Toạ độ đã kiểm ở bước 1 / 4; thiếu (dữ liệu cũ) thì tra lại cho chắc
+  const coords =
+    location.coords ?? (await locateAddress(pickupAddress(info, location)));
+  // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF).
+  // Logo: BE chưa có thư mục riêng → tạm AVATARS [CHỜ BE]
+  const upload = (file, folder = UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS) =>
+    uploadFile(file, folder).then((res) => res.url);
 
   const [logo, cccdFront, cccdBack, legalDocs] = await Promise.all([
-    info.logoUri
-      ? upload({ uri: info.logoUri, name: "logo.jpg", mimeType: "image/jpeg" })
-      : null,
+    !info.logoUri
+      ? null
+      : isRemote(info.logoUri)
+        ? info.logoUri
+        : upload(
+            { uri: info.logoUri, name: "logo.jpg", mimeType: "image/jpeg" },
+            UPLOAD_FOLDER.AVATARS,
+          ),
     upload(documents.cccdFront),
     upload(documents.cccdBack),
     Promise.all(documents.legalDocs.map((doc) => upload(doc.file))),
@@ -50,7 +63,10 @@ async function submitApplication(data) {
     { logo, cccdFront, cccdBack, legalDocs },
     coords,
   );
-  return organizationApi.registerOrganization(payload);
+  // Bị từ chối → nộp lại (PUT); lần đầu → POST
+  return data.mode === "resubmit"
+    ? organizationApi.resubmitRegistration(payload)
+    : organizationApi.registerOrganization(payload);
 }
 
 export default function OrgReviewScreen() {
@@ -58,21 +74,22 @@ export default function OrgReviewScreen() {
   const representative = useOrgRegisterStore((s) => s.representative);
   const documents = useOrgRegisterStore((s) => s.documents);
   const location = useOrgRegisterStore((s) => s.location);
+  const mode = useOrgRegisterStore((s) => s.mode);
+  const queryClient = useQueryClient();
 
   const [agreed, setAgreed] = useState(false);
   const [agreeError, setAgreeError] = useState(null);
 
   // Sang màn "Đã gửi". BE chỉ trả {accountId, verificationStatus} → tên, email lấy từ dữ liệu đã nhập
   const goSubmitted = () => {
+    const params = {
+      displayName: info.displayName,
+      email: info.contactEmail,
+      submittedAt: new Date().toISOString(),
+    };
+    queryClient.invalidateQueries({ queryKey: orgKeys.me }); // màn đầu tổ chức hỏi lại BE → "Đang xác minh"
     router.dismissAll(); // bỏ các màn nộp hồ sơ khỏi lịch sử → Back không quay lại form đã gửi
-    router.replace({
-      pathname: "/org/registration/submitted",
-      params: {
-        displayName: info.displayName,
-        email: info.contactEmail,
-        submittedAt: new Date().toISOString(),
-      },
-    });
+    router.replace({ pathname: "/org/registration/submitted", params });
   };
 
   const submit = useMutation({
@@ -91,7 +108,7 @@ export default function OrgReviewScreen() {
 
   const onSubmit = () => {
     if (!agreed) return setAgreeError("Bạn cần xác nhận cam đoan để gửi hồ sơ");
-    submit.mutate({ info, representative, documents, location });
+    submit.mutate({ info, representative, documents, location, mode });
   };
 
   // Về đúng bước để sửa (các bước giữa vẫn giữ dữ liệu) → bấm Tiếp tục để quay lại đây

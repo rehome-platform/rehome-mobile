@@ -12,3 +12,9 @@ export async function registerOrganization(payload) {
 export async function resubmitRegistration(payload) {
   return unwrap(await api.put("/api/organizations/me/registration", payload)); // {verificationStatus}
 }
+// Hồ sơ của chính tổ chức đang đăng nhập (BE 51c2027). Chưa nộp → mọi field null (verificationStatus = null).
+// Có: verificationStatus PENDING | REJECTED | VERIFIED, rejectionReason, thông tin tổ chức + điểm nhận.
+// KHÔNG có người đại diện / giấy tờ. Response không bọc {result} — unwrap vẫn xử lý được
+export async function getMyOrganization() {
+  return unwrap(await api.get("/api/organizations/me"));
+}

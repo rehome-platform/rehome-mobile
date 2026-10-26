@@ -35,3 +35,7 @@ export async function resubmitRegistration() {
   await delay(1200);
   return { verificationStatus: "PENDING" };
 }
+export async function getMyOrganization() {
+  await delay(400);
+  return { verificationStatus: null }; // mock: luôn "chưa nộp"
+}

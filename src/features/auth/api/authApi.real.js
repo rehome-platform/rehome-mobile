@@ -5,7 +5,9 @@ import { ROLES } from "@/constants/roles";
 import { OTP_PURPOSE } from "@/constants/auth";
 
 // ===== Đăng ký + OTP =====
-// role: "MEMBER" | "ORGANIZATION" — BE bắt buộc từ 2af9d85 (thiếu → lỗi 500). Mặc định Member
+// Member: POST /api/auth/register · Tổ chức: POST /api/organizations/register/account
+// (BE 7572732 bỏ field role — /api/auth/register LUÔN tạo MEMBER). Cùng body, cùng trả {message},
+// cùng gửi OTP REGISTER → xác thực bằng verify-otp như Member
 export const register = async ({
   fullName,
   email,
@@ -14,13 +16,12 @@ export const register = async ({
   role = ROLES.MEMBER,
 }) =>
   unwrap(
-    await api.post("/api/auth/register", {
-      fullName,
-      email,
-      phone,
-      password,
-      role,
-    }),
+    await api.post(
+      role === ROLES.ORGANIZATION
+        ? "/api/organizations/register/account"
+        : "/api/auth/register",
+      { fullName, email, phone, password },
+    ),
   ); // { message }
 
 export const verifyRegisterOtp = async ({ email, otp }) =>

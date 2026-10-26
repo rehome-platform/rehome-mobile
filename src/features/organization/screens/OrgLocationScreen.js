@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Redirect, router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -16,6 +16,7 @@ import { OrgRegisterHeader } from "@/features/organization/components/OrgRegiste
 import { WEEKDAYS } from "@/features/organization/constants";
 import { orgLocationSchema } from "@/features/organization/schemas";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { locateAddress } from "@/features/organization/utils/geocode";
 
 // Điền sẵn từ bước 1: tên hiển thị, SĐT liên hệ. Giờ hành chính 08:00–17:00
 const emptyLocation = (info) => ({
@@ -38,12 +39,14 @@ export default function OrgLocationScreen() {
     control,
     handleSubmit,
     watch,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(orgLocationSchema),
     defaultValues: saved ?? emptyLocation(info),
   });
   const useOfficeAddress = watch("useOfficeAddress");
+  const [locating, setLocating] = useState(false);
 
   // Tự lưu nháp (giống bước 2, 3)
   useEffect(() => {
@@ -52,17 +55,35 @@ export default function OrgLocationScreen() {
   }, [watch, saveStep]);
 
   if (!info || !documents) return <Redirect href="/org/registration/info" />;
-
-  const onSubmit = handleSubmit((values) => {
-    saveStep("location", values);
-    router.push("/org/registration/review");
+  // Nhận tại trụ sở → dùng lại toạ độ đã kiểm ở bước 1; địa chỉ khác → kiểm ngay tại đây
+  const onSubmit = handleSubmit(async (values) => {
+    if (values.useOfficeAddress) {
+      saveStep("location", { ...values, coords: info.coords });
+      return router.push("/org/registration/review");
+    }
+    setLocating(true);
+    try {
+      const coords = await locateAddress(values.address);
+      saveStep("location", { ...values, coords });
+      router.push("/org/registration/review");
+    } catch (e) {
+      setError("address", { message: e.message });
+    } finally {
+      setLocating(false);
+    }
   });
 
   return (
     <Screen
       scroll
       header={<OrgRegisterHeader step={3} />}
-      footer={<Button title="Tiếp tục — Xem lại" onPress={onSubmit} />}
+      footer={
+        <Button
+          title="Tiếp tục — Xem lại"
+          onPress={onSubmit}
+          loading={locating}
+        />
+      }
       contentStyle={styles.content}
     >
       <Text style={styles.desc}>
