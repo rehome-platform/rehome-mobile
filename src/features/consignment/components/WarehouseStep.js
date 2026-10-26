@@ -78,7 +78,7 @@ function WarehouseOption({ warehouse, selected, onPress }) {
   );
 }
 
-// KG-03: chọn kho tiếp nhận. value/onChange = warehouseId
+// KG-03: chọn địa điểm ký gửi. value = warehouseId; onChange(warehouseId, warehouse) — warehouse = {id, name, address, …}
 export function WarehouseStep({ value, onChange }) {
   const [coords, setCoords] = useState(undefined); // undefined = đang lấy vị trí; null = không có
   useEffect(() => {
@@ -99,14 +99,17 @@ export function WarehouseStep({ value, onChange }) {
 
   // Chọn sẵn kho đầu tiên (gần nhất) khi danh sách về
   useEffect(() => {
-    if (!value && warehouses.data?.length) onChange(warehouses.data[0].id);
+    if (!value && warehouses.data?.length)
+      onChange(warehouses.data[0].id, warehouses.data[0]);
   }, [value, warehouses.data, onChange]);
 
   if (coords === undefined || warehouses.isPending) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>Đang tìm địa điểm ký gửi gần bạn…</Text>
+        <Text style={styles.loadingText}>
+          Đang tìm địa điểm ký gửi gần bạn…
+        </Text>
       </View>
     );
   }
@@ -127,8 +130,8 @@ export function WarehouseStep({ value, onChange }) {
     <View style={styles.wrapper}>
       {coords === null ? (
         <NoteBox>
-          Bật quyền vị trí cho ReHome để xếp địa điểm gần bạn lên đầu. Bạn vẫn chọn
-          địa điểm bình thường được.
+          Bật quyền vị trí cho ReHome để xếp địa điểm gần bạn lên đầu. Bạn vẫn
+          chọn địa điểm bình thường được.
         </NoteBox>
       ) : null}
       <Text style={styles.section}>
@@ -139,13 +142,14 @@ export function WarehouseStep({ value, onChange }) {
           key={w.id}
           warehouse={w}
           selected={w.id === value}
-          onPress={() => onChange(w.id)}
+          onPress={() => onChange(w.id, w)}
         />
       ))}
       <NoteBox>
         <Text style={styles.note}>
-          Sau khi ReHome duyệt yêu cầu, bạn có <Text style={styles.bold}>7 ngày</Text>{" "}
-          để mang đồ đến đúng địa điểm này. Quá hạn thì yêu cầu tự huỷ.
+          Sau khi ReHome duyệt yêu cầu, bạn có{" "}
+          <Text style={styles.bold}>7 ngày</Text> để mang đồ đến đúng địa điểm
+          này. Quá hạn thì yêu cầu tự huỷ.
         </Text>
       </NoteBox>
     </View>

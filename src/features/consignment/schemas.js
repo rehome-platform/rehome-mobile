@@ -54,3 +54,24 @@ export const makeReducePriceSchema = ({ currentPrice, floorPrice }) =>
       .lt(currentPrice, "Giá mới phải thấp hơn giá hiện tại")
       .gte(floorPrice, "Thấp hơn giá sàn"),
   });
+// Màn "Thêm món" — phần thông tin (danh mục / thương hiệu / ảnh kiểm riêng ở từng bước)
+export const consignItemInfoSchema = z
+  .object({
+    productName: z
+      .string()
+      .trim()
+      .min(2, "Chưa nhập tên sản phẩm")
+      .max(100, "Tối đa 100 ký tự"),
+    size: z.string().min(1, "Chọn size"),
+    condition: z.string().min(1, "Chọn tình trạng"),
+    desiredPrice: z
+      .number({ error: "Nhập giá mong muốn" })
+      .int()
+      .positive("Giá phải lớn hơn 0"),
+    note: z.string().trim().max(800, "Tối đa 800 ký tự"),
+  })
+  // "Có lỗi nhỏ" → bắt ghi rõ lỗi để ReHome biết trước khi duyệt
+  .refine((v) => v.condition !== "FLAW" || v.note.length >= 5, {
+    path: ["note"],
+    message: "Ghi rõ lỗi (vết bẩn, sờn, rách ở đâu)",
+  });
