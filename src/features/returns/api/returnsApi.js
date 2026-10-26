@@ -3,7 +3,7 @@ import { MOCK } from "@/config/env";
 import * as real from "./returnsApi.real";
 import * as mock from "./returnsApi.mock";
 
-const impl = MOCK.returns ? mock : real; // [CHỜ BE] API 79–82
+const impl = MOCK.returns ? mock : real; // API 79–82 (BE 51c2027)
 
 export const returnsApi = {
   createReturn: impl.createReturn,
