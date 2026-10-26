@@ -20,7 +20,7 @@ export const MOCK = {
   payment: false, // Ví (POST /orders/pay) + MoMo/VNPay sandbox thật (BE 868d933)
   orderList: false, // API 62–67 thật: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá (BE 868d933)
   wallet: false, // API 73–78 + /wallet/config thật (BE 868d933)
-  returns: true, // [CHỜ BE] API 79–82: trả hàng (Phase 5)
+  returns: false, // BE 51c2027: ReturnRequestController (Phase 5)
   withdrawals: true, // [CHỜ BE] API 90–92 rút lại hàng + 94–95 hàng xuống cấp (Phase 5)
   tryon: true, // [CHỜ BE] API 96–99: thử đồ AI (Phase 6)
   community: true, // [CHỜ BE] API 100–109: tổ chức, chiến dịch, bài viết, bình luận, theo dõi, báo cáo (Phase 6)
