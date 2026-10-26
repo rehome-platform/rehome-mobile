@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, BackHandler, StyleSheet, Text, View } from "react-native";
 import {
   Redirect,
@@ -6,111 +6,108 @@ import {
   useFocusEffect,
   useLocalSearchParams,
 } from "expo-router";
-import { Controller, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { colors, spacing, textStyles } from "@/theme";
+import { useQueryClient } from "@tanstack/react-query";
+import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
+import { Stepper } from "@/components/ui/Stepper";
 import { NoteBox } from "@/components/ui/NoteBox";
-import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
-import { ERROR_CODES } from "@/constants/errorCodes";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
-import { consignKeys } from "@/features/consignment/api/queryKeys";
-import {
-  consignFormSchema,
-  formToValues,
-  STEP1_FIELDS,
-} from "@/features/consignment/schemas";
 import { uploadPhotos } from "@/features/consignment/utils/photos";
-import { ConsignFormFields } from "@/features/consignment/components/ConsignFormFields";
+import {
+  orderedPhotos,
+  toCreatePayload,
+} from "@/features/consignment/utils/consignItem";
+import { useConsignBatchStore } from "@/features/consignment/store/consignBatchStore";
 import { WarehouseStep } from "@/features/consignment/components/WarehouseStep";
+import { BatchItemCard } from "@/features/consignment/components/BatchItemCard";
 import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
+import { consignKeys } from "@/features/consignment/api/queryKeys";
+import { formToItem } from "@/features/consignment/utils/consignItem";
 
-const EMPTY_FORM = {
-  photos: [],
-  productName: "",
-  categoryId: "",
-  brandId: "",
-  desiredPrice: undefined, // ô trống → zod báo "Nhập giá mong muốn"
-  description: "",
-  warehouseId: "",
-};
+const STEPS = ["Địa điểm", "Món", "Xem lại"];
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
 
-// Upload ảnh mới → gửi form (API 15)
-async function sendForm(values) {
-  const { photos, ...rest } = values;
-  const photoUrls = await uploadPhotos(photos);
-  return consignmentApi.createForm({ ...rest, photoUrls });
+// Upload ảnh của 1 món → tạo 1 yêu cầu ký gửi (API 15). BE nhận 1 món / 1 yêu cầu
+async function sendItem(item, warehouseId) {
+  const photoUrls = await uploadPhotos(orderedPhotos(item));
+  return consignmentApi.createForm(
+    toCreatePayload(item, warehouseId, photoUrls),
+  );
 }
 
-// KG-02 + KG-03: một màn, một form, 2 bước. ?fromFormId=… → điền sẵn từ form cũ (bị từ chối / hết hạn)
+// KG-02 / KG-03 · "Ký gửi món mới": Địa điểm (gần nhất lên đầu) → Món sẽ mang tới (thêm nhiều món)
+// → Xem lại & gửi (mỗi món một yêu cầu, gửi lần lượt; món lỗi giữ lại để gửi lại)
+// ?fromFormId=… → điền sẵn yêu cầu cũ thành 1 món (ký gửi lại)
 export default function CreateFormScreen() {
   const status = useAuthStore((s) => s.status);
-  const { fromFormId } = useLocalSearchParams();
   const queryClient = useQueryClient();
   const scrollRef = useRef(null);
-  const [step, setStep] = useState(1);
-  const [formError, setFormError] = useState(null);
   const pending = usePendingFormCount();
 
-  // Form cũ đã có trong cache (vừa xem ở màn chi tiết). Kho để chọn lại ở bước 2
-  const source = fromFormId
-    ? queryClient.getQueryData(consignKeys.form(fromFormId))
-    : undefined;
+  const warehouse = useConsignBatchStore((s) => s.warehouse);
+  const items = useConsignBatchStore((s) => s.items);
+  const setWarehouse = useConsignBatchStore((s) => s.setWarehouse);
+  const removeItem = useConsignBatchStore((s) => s.removeItem);
+  const reset = useConsignBatchStore((s) => s.reset);
+  const saveItem = useConsignBatchStore((s) => s.saveItem);
+  const { fromFormId } = useLocalSearchParams();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isDirty, isSubmitted },
-  } = useForm({
-    resolver: zodResolver(consignFormSchema),
-    defaultValues: source ? formToValues(source) : EMPTY_FORM,
-  });
+  // "Ký gửi lại từ thông tin này" (yêu cầu bị từ chối / hết hạn): yêu cầu cũ đã có trong cache
+  // (vừa xem ở màn chi tiết) → thành 1 món, chọn sẵn địa điểm cũ, mở luôn màn sửa món
+  // để chọn lại size / tình trạng và sửa theo lý do từ chối. Chỉ chạy 1 lần
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!fromFormId || prefilled.current) return;
+    prefilled.current = true;
+    const form = queryClient.getQueryData(consignKeys.form(fromFormId));
+    if (!form) return;
+    reset();
+    const item = formToItem(form);
+    saveItem(item);
+    if (form.warehouse) setWarehouse(form.warehouse);
+    router.push({ pathname: "/consign-forms/item", params: { key: item.key } });
+  }, [fromFormId]);
 
-  const submit = useMutation({
-    mutationFn: sendForm,
-    onSuccess: (form) => {
-      queryClient.invalidateQueries({ queryKey: ["consign", "forms"] }); // danh sách + số form chờ
-      showToast("Đã gửi yêu cầu ký gửi");
-      router.replace(`/consign-forms/${form.id}`);
-    },
-    onError: (e) => {
-      if (e.code === ERROR_CODES.TOO_MANY_PENDING_FORMS) {
-        return Alert.alert("Chưa tạo thêm được", e.message, [
-          { text: "Về danh sách", onPress: leave },
-        ]);
-      }
-      setFormError(e.message); // mất mạng, lỗi khác → khung lỗi, giữ nguyên dữ liệu đã nhập
-    },
-  });
+  const [step, setStep] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [results, setResults] = useState({}); // key món → { ok, message }
 
-  const scrollTop = (animated = true) =>
-    scrollRef.current?.scrollTo({ y: 0, animated });
+  // Số món còn được gửi lần này = giới hạn yêu cầu chờ duyệt − số đang chờ
+  const allowed = CONSIGN_LIMITS.MAX_PENDING_FORMS - (pending.data ?? 0);
 
-  // ← ở bước 2 → về bước 1. Bước 1 đã nhập → hỏi trước khi bỏ
+  const go = (n) => {
+    setStep(n);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  };
+
+  const quit = () => {
+    reset();
+    leave();
+  };
+
+  // ← / Back Android: lùi 1 bước; ở bước đầu mà đã có món → hỏi trước khi bỏ cả lần gửi
   const onBack = useCallback(() => {
-    if (step === 2) return setStep(1);
-    if (!isDirty) return leave();
+    if (sending) return;
+    if (step > 0) return go(step - 1);
+    if (!items.length) return quit();
     Alert.alert(
-      "Bỏ yêu cầu đang tạo?",
-      "Thông tin bạn đã nhập sẽ không được lưu.",
+      "Bỏ lần ký gửi này?",
+      `${items.length} món bạn vừa thêm sẽ không được lưu.`,
       [
         { text: "Ở lại", style: "cancel" },
-        { text: "Bỏ", style: "destructive", onPress: leave },
+        { text: "Bỏ", style: "destructive", onPress: quit },
       ],
     );
-  }, [step, isDirty]);
+  }, [step, items.length, sending]);
 
-  // Nút Back Android làm giống nút ←
   useFocusEffect(
     useCallback(() => {
       const sub = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -121,114 +118,216 @@ export default function CreateFormScreen() {
     }, [onBack]),
   );
 
+  const confirmRemove = (item) =>
+    Alert.alert("Xoá món này?", item.productName, [
+      { text: "Huỷ", style: "cancel" },
+      {
+        text: "Xoá",
+        style: "destructive",
+        onPress: () => removeItem(item.key),
+      },
+    ]);
+
+  // Gửi LẦN LƯỢT từng món: dễ báo lỗi riêng từng món, không dồn nhiều upload cùng lúc
+  const sendAll = async () => {
+    setSending(true);
+    const next = {};
+    for (const item of items) {
+      try {
+        await sendItem(item, warehouse.id);
+        next[item.key] = { ok: true };
+      } catch (e) {
+        next[item.key] = { ok: false, message: e.message };
+      }
+      setResults({ ...next });
+    }
+    setSending(false);
+    queryClient.invalidateQueries({ queryKey: ["consign", "forms"] }); // danh sách + số yêu cầu chờ
+
+    const okKeys = Object.keys(next).filter((k) => next[k].ok);
+    if (okKeys.length === items.length) {
+      showToast(`Đã gửi ${okKeys.length} yêu cầu ký gửi`);
+      reset();
+      return router.replace("/consign");
+    }
+    okKeys.forEach(removeItem); // món đã gửi xong → bỏ khỏi lần gửi, chỉ giữ món lỗi
+    if (okKeys.length)
+      showToast(
+        `Đã gửi ${okKeys.length} món, còn ${items.length - okKeys.length} món chưa gửi được`,
+      );
+  };
+
   if (status !== "authenticated") return <Redirect href="/login" />;
 
-  // Vào màn khi đã đủ 5 form chờ → báo luôn, khỏi nhập rồi mới bị từ chối
-  if (
-    pending.data >= CONSIGN_LIMITS.MAX_PENDING_FORMS &&
-    !submit.isPending &&
-    !submit.isSuccess
-  ) {
+  // Đã đủ số yêu cầu chờ duyệt → báo luôn, khỏi nhập rồi mới bị chặn
+  if (allowed <= 0 && !items.length) {
     return (
-      <Screen header={<AppHeader title="Ký gửi món mới" onBack={leave} />}>
+      <Screen header={<AppHeader title="Ký gửi món mới" onBack={quit} />}>
         <EmptyState
           icon="hourglass-outline"
           title={`Bạn đang có ${pending.data} yêu cầu chờ duyệt`}
-          description={`Tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ cùng lúc. Chờ ReHome xử lý bớt rồi tạo tiếp nhé.`}
+          description={`Tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ cùng lúc. Chờ ReHome xử lý bớt rồi gửi tiếp nhé.`}
         >
-          <Button title="Về danh sách" onPress={leave} />
+          <Button title="Về danh sách" onPress={quit} />
         </EmptyState>
       </Screen>
     );
   }
 
-  // Bước 1 → kiểm hết các ô (warehouseId chưa bắt buộc). Lỗi → cuộn lên hộp tổng lỗi
-  const goStep2 = handleSubmit(
-    () => {
-      setStep(2);
-      scrollTop(false);
-    },
-    () => scrollTop(),
-  );
-
-  const onSend = handleSubmit((values) => {
-    if (!values.warehouseId) return setFormError("Chọn địa điểm ký gửi");
-    setFormError(null);
-    submit.mutate(values);
-  });
-
-  const step1Errors = STEP1_FIELDS.map((f) => errors[f]?.message).filter(
-    Boolean,
-  );
-
-  const header = (
-    <View>
-      <AppHeader
-        title={step === 1 ? "Ký gửi món mới" : "Chọn địa điểm ký gửi"}
-        onBack={onBack}
-        right={<Text style={styles.stepText}>Bước {step} / 2</Text>}
-      />
-      <View style={styles.progress}>
-        <View
-          style={[styles.progressFill, { width: step === 1 ? "50%" : "100%" }]}
-        />
-      </View>
-    </View>
-  );
+  const footer = [
+    <Button
+      key="0"
+      title="Tiếp tục — thêm món"
+      disabled={!warehouse}
+      onPress={() => go(1)}
+    />,
+    <Button
+      key="1"
+      title={
+        items.length
+          ? `Tiếp tục — xem lại (${items.length} món)`
+          : "Thêm ít nhất 1 món"
+      }
+      disabled={!items.length}
+      onPress={() => go(2)}
+    />,
+    <Button
+      key="2"
+      title={`Gửi ${items.length} yêu cầu ký gửi`}
+      loading={sending}
+      disabled={!items.length}
+      onPress={sendAll}
+    />,
+  ][step];
 
   return (
     <Screen
       scroll
       scrollRef={scrollRef}
-      header={header}
-      footer={
-        step === 1 ? (
-          <Button title="Tiếp tục — chọn địa điểm" onPress={goStep2} />
-        ) : (
-          <Button
-            title="Gửi yêu cầu ký gửi"
-            onPress={onSend}
-            loading={submit.isPending}
-          />
-        )
+      header={
+        <View>
+          <AppHeader title="Ký gửi món mới" onBack={onBack} />
+          <View style={styles.stepper}>
+            <Stepper steps={STEPS} current={step} />
+          </View>
+        </View>
       }
+      footer={footer}
       contentStyle={styles.content}
     >
+      {step === 0 ? (
+        <>
+          <Text style={styles.title}>Bạn sẽ mang đồ tới đâu?</Text>
+          <WarehouseStep
+            value={warehouse?.id}
+            onChange={(_id, w) => setWarehouse(w)}
+          />
+        </>
+      ) : null}
+
       {step === 1 ? (
         <>
-          {isSubmitted && step1Errors.length ? (
-            <ErrorBox message={`Còn ${step1Errors.length} mục chưa hợp lệ`}>
-              <Text style={styles.summary}>{step1Errors.join(" · ")}</Text>
-            </ErrorBox>
-          ) : null}
-          {source ? (
-            <NoteBox>
-              Đã điền sẵn từ yêu cầu cũ. Kiểm tra lại ảnh và thông tin (nhất là
-              phần ReHome đã nhắc khi từ chối).
-            </NoteBox>
-          ) : null}
-          <ConsignFormFields control={control} errors={errors} />
-        </>
-      ) : (
-        <>
-          <Controller
-            control={control}
-            name="warehouseId"
-            render={({ field }) => (
-              <WarehouseStep value={field.value} onChange={field.onChange} />
-            )}
+          <View style={styles.place}>
+            <View style={styles.flex}>
+              <Text style={styles.muted}>Mang tới</Text>
+              <Text style={styles.placeName}>{warehouse?.name}</Text>
+            </View>
+            <Button title="Đổi" variant="text" onPress={() => go(0)} />
+          </View>
+
+          {items.length ? (
+            items.map((item) => (
+              <BatchItemCard
+                key={item.key}
+                item={item}
+                onEdit={() =>
+                  router.push({
+                    pathname: "/consign-forms/item",
+                    params: { key: item.key },
+                  })
+                }
+                onRemove={() => confirmRemove(item)}
+              />
+            ))
+          ) : (
+            <EmptyState
+              icon="shirt-outline"
+              title="Chưa có món nào"
+              description="Thêm từng món bạn sẽ mang tới. Mỗi món ReHome duyệt riêng."
+            />
+          )}
+
+          <Button
+            title="+ Thêm món"
+            variant="secondary"
+            disabled={items.length >= allowed}
+            onPress={() => router.push("/consign-forms/item")}
           />
-          <ErrorBox message={formError} />
+          <Text style={styles.hint}>
+            {items.length >= allowed
+              ? `Đã đủ ${allowed} món cho lần này (tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ duyệt cùng lúc).`
+              : `Lần này thêm được tối đa ${allowed} món.`}
+          </Text>
         </>
-      )}
+      ) : null}
+
+      {step === 2 ? (
+        <>
+          <View style={styles.placeBox}>
+            <Text style={styles.muted}>Địa điểm ký gửi</Text>
+            <Text style={styles.placeName}>{warehouse?.name}</Text>
+            {warehouse?.address ? (
+              <Text style={styles.muted}>{warehouse.address}</Text>
+            ) : null}
+          </View>
+
+          <Text style={styles.title}>{items.length} món sẽ mang tới</Text>
+          {items.map((item) => (
+            <BatchItemCard
+              key={item.key}
+              item={item}
+              result={results[item.key]}
+            />
+          ))}
+
+          <NoteBox>
+            <Text style={styles.note}>
+              ReHome duyệt <Text style={styles.bold}>từng món</Text> (thường 1–2
+              ngày làm việc). Món nào được duyệt, bạn có{" "}
+              <Text style={styles.bold}>7 ngày</Text> để mang tới địa điểm này.
+            </Text>
+          </NoteBox>
+        </>
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  stepper: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.surface,
+  },
   content: { gap: spacing.lg },
-  stepText: { ...textStyles.body, color: colors.textSecondary },
-  progress: { height: 3, backgroundColor: colors.neutral },
-  progressFill: { height: 3, backgroundColor: colors.primary },
-  summary: { ...textStyles.body, color: colors.text },
+  flex: { flex: 1 },
+  title: { ...textStyles.heading, color: colors.text },
+  muted: { ...textStyles.caption, color: colors.textSecondary },
+  hint: { ...textStyles.caption, color: colors.textSecondary },
+  place: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  placeName: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
+  placeBox: {
+    gap: 2,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.card,
+    backgroundColor: colors.highlight,
+  },
+  note: { ...textStyles.body, color: colors.textSecondary },
+  bold: { fontFamily: fonts.semibold, color: colors.text },
 });
