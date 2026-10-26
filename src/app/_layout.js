@@ -1,5 +1,10 @@
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import {
+  router,
+  Stack,
+  useRootNavigationState,
+  useSegments,
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -29,10 +34,20 @@ export default function RootLayout() {
   });
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
+  const isAuthed = status === "authenticated";
+  const isOrg = isAuthed && user?.role === ROLES.ORGANIZATION;
+  const segments = useSegments();
+  const navReady = !!useRootNavigationState()?.key; // Stack đã dựng xong mới điều hướng được
 
   useEffect(() => {
     useAuthStore.getState().bootstrap(); // khôi phục phiên khi mở app
   }, []);
+
+  // Tổ chức đăng nhập / mở lại app khi đã đăng nhập: Stack.Protected khoá (member) + (auth) và đưa về
+  // anchor "/" — nhóm (org) không có màn "/" → "Unmatched route". Chủ động đưa về màn đầu /org
+  useEffect(() => {
+    if (navReady && isOrg && segments[0] !== "(org)") router.replace("/org");
+  }, [navReady, isOrg, segments]);
 
   // Font xong là ẩn splash native ngay; phần khôi phục phiên (có thể lâu) hiện bằng BootSplash
   useEffect(() => {
@@ -40,9 +55,6 @@ export default function RootLayout() {
   }, [fontsLoaded]);
   if (!fontsLoaded) return null; // splash native vẫn đang hiện (thường < 1 giây)
   if (status === "loading") return <BootSplash />; // AU-01: đang kiểm tra đăng nhập
-
-  const isAuthed = status === "authenticated";
-  const isOrg = isAuthed && user?.role === ROLES.ORGANIZATION;
 
   return (
     <QueryClientProvider client={queryClient}>

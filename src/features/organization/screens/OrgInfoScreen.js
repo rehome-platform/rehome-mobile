@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { locateAddress } from "@/features/organization/utils/geocode";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -40,6 +42,7 @@ export default function OrgInfoScreen() {
     control,
     handleSubmit,
     setValue,
+    setError,
     watch,
     formState: { errors, isDirty },
   } = useForm({
@@ -79,16 +82,33 @@ export default function OrgInfoScreen() {
       setValue("logoUri", result.assets[0].uri, { shouldDirty: true });
   };
 
-  const onSubmit = handleSubmit((values) => {
-    saveStep("info", values);
-    router.push("/org/registration/representative");
+  const [locating, setLocating] = useState(false);
+  // Kiểm tra địa chỉ trụ sở NGAY bước 1 (trước đây tới bước Gửi mới biết sai → phải quay lại 3 bước).
+  // Toạ độ lưu kèm → bước 4 / Xem lại dùng lại, không tra lần nữa
+  const onSubmit = handleSubmit(async (values) => {
+    setLocating(true);
+    try {
+      const coords = await locateAddress(values.address);
+      saveStep("info", { ...values, coords });
+      router.push("/org/registration/representative");
+    } catch (e) {
+      setError("address", { message: e.message });
+    } finally {
+      setLocating(false);
+    }
   });
 
   return (
     <Screen
       scroll
       header={<OrgRegisterHeader step={0} onBack={onBack} />}
-      footer={<Button title="Tiếp tục — Người đại diện" onPress={onSubmit} />}
+      footer={
+        <Button
+          title="Tiếp tục — Người đại diện"
+          onPress={onSubmit}
+          loading={locating}
+        />
+      }
       contentStyle={styles.content}
     >
       <Controller

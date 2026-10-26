@@ -8,8 +8,8 @@ export const ENV = {
 // Nhóm API BE chưa có / chưa dùng được → mock. BE xong nhóm nào thì đổi nhóm đó sang false
 export const MOCK = {
   password: false, // quên / đặt lại mật khẩu — gọi thật qua resend-otp + verify-otp + password/reset
-  upload: true, // [CHỜ BE] POST /uploads
-  organization: true, // [TẠM] API thật có từ BE 2af9d85 nhưng Render chưa deploy (bản cũ tạo nhầm account mới) → đổi false khi BE deploy
+  upload: false, // POST /uploads thật (BE 7572732) — multipart + ?folder=
+  organization: false, // Đăng ký / nộp lại hồ sơ tổ chức thật (BE 7572732). [CHỜ BE] GET /api/organizations/me
   consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2
   catalog: false, // API 44 GET /categories, /brands — đã có (BE 868d933). id thật là UUID → đi cùng MOCK.products = false
   // Phase 3 — mua hàng

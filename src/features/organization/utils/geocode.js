@@ -13,14 +13,14 @@ export async function locateAddress(address) {
     const { granted } = await Location.requestForegroundPermissionsAsync();
     if (!granted) {
       throw new Error(
-        "Cần cho phép quyền vị trí để xác định toạ độ điểm nhận đồ. Bật quyền rồi gửi lại.",
+        "Cần cho phép quyền vị trí để kiểm tra địa chỉ. Bật quyền rồi thử lại.",
       );
     }
     hit = await lookup().catch(() => null);
   }
   if (!hit) {
     throw new Error(
-      "Không tìm được vị trí của địa chỉ nhận đồ. Ghi rõ số nhà, đường, phường/xã, tỉnh/thành phố rồi gửi lại.",
+      "Không tìm được vị trí của địa chỉ này. Ghi rõ số nhà, tên đường, phường/xã, tỉnh/thành phố.",
     );
   }
   return { latitude: round6(hit.latitude), longitude: round6(hit.longitude) };
