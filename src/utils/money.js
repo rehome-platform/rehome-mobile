@@ -17,3 +17,8 @@ export const parseVnd = (text) => {
   const digits = String(text ?? "").replace(/\D/g, "");
   return digits ? Number(digits) : undefined;
 };
+// % giảm so với giá gốc, làm tròn: (500k → 425k) = 15. Không giảm / thiếu số → 0
+export const discountPercent = (current, original) =>
+  original > 0 && current < original
+    ? Math.round(((original - current) / original) * 100)
+    : 0;

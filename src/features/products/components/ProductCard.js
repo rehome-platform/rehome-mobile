@@ -1,13 +1,16 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { discountPercent } from "@/utils/money";
 import { PriceTag } from "./PriceTag";
 
 // "Uniqlo · M · Như mới" — bỏ phần BE không trả
 export const metaLine = (...parts) => parts.filter(Boolean).join(" · ");
 
-// Thẻ sản phẩm trên sàn (BR-01, BR-02). Ảnh 3:4, nền xám trong lúc ảnh đang tải
+// Thẻ sản phẩm trên sàn (BR-01, BR-02) kiểu Shopee: thẻ trắng bo góc, ảnh 3:4 (quần áo chụp dọc),
+// nhãn nhỏ "Đã kiểm định" góc trên trái, nhãn "-x%" góc trên phải khi đã giảm giá
 export function ProductCard({ product, onPress, style }) {
+  const off = discountPercent(product.currentPrice, product.originalPrice);
   return (
     <Pressable
       onPress={onPress}
@@ -29,48 +32,76 @@ export function ProductCard({ product, onPress, style }) {
             color={colors.textSecondary}
           />
         )}
-        <Text style={styles.badge}>ĐÃ KIỂM ĐỊNH</Text>
+        <View style={styles.verified}>
+          <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
+          <Text style={styles.verifiedText}>Đã kiểm định</Text>
+        </View>
+        {off > 0 ? <Text style={styles.off}>-{off}%</Text> : null}
       </View>
-      <Text style={styles.name} numberOfLines={2}>
-        {product.name}
-      </Text>
-      <PriceTag
-        currentPrice={product.currentPrice}
-        originalPrice={product.originalPrice}
-      />
-      <Text style={styles.meta} numberOfLines={1}>
-        {metaLine(product.brandName, product.size, product.condition)}
-      </Text>
+
+      <View style={styles.body}>
+        <Text style={styles.name} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <PriceTag
+          currentPrice={product.currentPrice}
+          originalPrice={product.originalPrice}
+        />
+        <Text style={styles.meta} numberOfLines={1}>
+          {metaLine(product.brandName, product.size, product.condition)}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.xs },
-  pressed: { opacity: 0.8 },
+  card: {
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  pressed: { opacity: 0.85 },
   photo: {
     aspectRatio: 3 / 4,
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    borderRadius: radius.input,
     backgroundColor: colors.neutral,
-    marginBottom: spacing.xs,
   },
-  badge: {
+  verified: {
     position: "absolute",
-    left: spacing.sm,
-    bottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    top: spacing.xs,
+    left: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
+  verifiedText: {
+    ...textStyles.label,
+    fontSize: 10,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  off: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderBottomLeftRadius: radius.input,
     overflow: "hidden",
-    backgroundColor: colors.primary,
-    color: colors.onPrimary,
+    backgroundColor: colors.secondary,
+    color: colors.text,
     ...textStyles.label,
     fontFamily: fonts.bold,
-    fontSize: 10,
   },
+  body: { gap: 2, padding: spacing.sm },
   name: { ...textStyles.body, color: colors.text },
   meta: { ...textStyles.caption, color: colors.textSecondary },
 });
