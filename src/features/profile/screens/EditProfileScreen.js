@@ -5,6 +5,9 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { uploadFile } from "@/lib/api/upload";
+import { UPLOAD_FOLDER } from "@/constants/upload";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -64,6 +67,53 @@ export default function EditProfileScreen() {
       setFormError(e.message);
     },
   });
+  // Đổi ảnh: chọn → upload AVATARS → PATCH CHỈ avatarUrl → lấy lại hồ sơ.
+  // Lưu NGAY (như Facebook/Shopee), không chờ nút "Lưu thay đổi" của form tên / SĐT
+  const avatar = useMutation({
+    mutationFn: async (uri) => {
+      const { url } = await uploadFile(
+        { uri, name: "avatar.jpg", mimeType: "image/jpeg" },
+        UPLOAD_FOLDER.AVATARS,
+      );
+      await profileApi.updateMe({ avatarUrl: url });
+      return authApi.getMe();
+    },
+    onSuccess: (me) => {
+      setUser(me); // PR-01, tab Cá nhân đổi ảnh ngay
+      queryClient.setQueryData(["me"], me); // PR-02
+      showToast("Đã đổi ảnh đại diện");
+    },
+    onError: (e) => Alert.alert("Chưa đổi được ảnh", e.message),
+  });
+
+  // Ảnh vuông (khung tròn), nén 0.7 cho nhẹ — BE nhận tối đa 10MB
+  const pickAvatar = async (fromCamera) => {
+    if (fromCamera) {
+      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted)
+        return Alert.alert(
+          "Chưa có quyền camera",
+          "Bật quyền camera cho ReHome trong Cài đặt để chụp ảnh.",
+        );
+    }
+    const options = {
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    };
+    const res = fromCamera
+      ? await ImagePicker.launchCameraAsync(options)
+      : await ImagePicker.launchImageLibraryAsync(options);
+    if (!res.canceled) avatar.mutate(res.assets[0].uri);
+  };
+
+  const changeAvatar = () =>
+    Alert.alert("Đổi ảnh đại diện", undefined, [
+      { text: "Chụp ảnh", onPress: () => pickAvatar(true) },
+      { text: "Chọn từ thư viện", onPress: () => pickAvatar(false) },
+      { text: "Huỷ", style: "cancel" },
+    ]);
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null);
@@ -104,11 +154,11 @@ export default function EditProfileScreen() {
     >
       <View style={styles.avatarBlock}>
         <Avatar uri={user?.avatarUrl} name={user?.fullName} size={80} />
-        {/* [CHỜ BE] POST /uploads — chưa upload được nên chỉ báo "sắp có" */}
         <Button
           title="Đổi ảnh đại diện"
           variant="text"
-          onPress={() => showToast("Đổi ảnh đại diện sẽ có ở phiên bản sau.")}
+          onPress={changeAvatar}
+          loading={avatar.isPending}
         />
       </View>
 
