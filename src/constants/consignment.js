@@ -76,3 +76,18 @@ export const ORDER_STEPS = [
   { value: "SHIPPING", label: "Đang giao" },
   { value: "COMPLETED", label: "Hoàn thành" },
 ];
+// "Đồ ký gửi của tôi": tab theo hành trình của MÓN (gộp yêu cầu ký gửi + sản phẩm)
+export const CONSIGN_STAGE = {
+  PENDING: "PENDING", // yêu cầu chờ ReHome duyệt
+  BRING: "BRING", // đã duyệt / đang kiểm định / chờ xác nhận biên nhận → cần mang tới
+  SELLING: "SELLING", // đã lên sàn (gồm có đơn, chờ cuối kỳ, chờ đến lấy, hàng hỏng chờ chọn)
+  SOLD: "SOLD", // đã bán
+  ENDED: "ENDED", // bị từ chối, hết hạn, đã huỷ, đã rút, vô thừa nhận…
+};
+export const CONSIGN_STAGE_TABS = [
+  { value: CONSIGN_STAGE.PENDING, label: "Chờ duyệt" },
+  { value: CONSIGN_STAGE.BRING, label: "Mang tới" },
+  { value: CONSIGN_STAGE.SELLING, label: "Đang bán" },
+  { value: CONSIGN_STAGE.SOLD, label: "Đã bán" },
+  { value: CONSIGN_STAGE.ENDED, label: "Kết thúc" },
+];

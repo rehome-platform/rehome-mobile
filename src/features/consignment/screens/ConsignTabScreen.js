@@ -1,24 +1,16 @@
-import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
-import { ChipGroup } from "@/components/ui/ChipGroup";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
-import { FormListSection } from "@/features/consignment/components/FormListSection";
-import { ProductListSection } from "@/features/consignment/components/ProductListSection";
 import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
 import { Ionicons } from "@expo/vector-icons";
 import { usePendingDegradedCases } from "@/features/withdrawals/hooks/useDegradedCases";
-
-const SECTIONS = [
-  { value: "forms", label: "Yêu cầu ký gửi" },
-  { value: "products", label: "Sản phẩm ký gửi" },
-];
+import { MyConsignSection } from "@/features/consignment/components/MyConsignSection";
 
 export default function ConsignTabScreen() {
   const status = useAuthStore((s) => s.status);
@@ -44,27 +36,20 @@ function GuestConsign() {
   );
 }
 
+// Tab Ký gửi của Member: "Đồ ký gửi của tôi" theo hành trình (Chờ duyệt → Mang tới → Đang bán → Đã bán → Kết thúc)
 function MemberConsign() {
-  const [section, setSection] = useState("forms"); // nhớ mục đang chọn trong lúc màn còn mở
   return (
     <Screen
       edges={["top"]}
       padded={false}
-      header={
-        <AppHeader
-          title="Ký gửi"
-          right={section === "forms" ? <CreateFormButton /> : null}
-        />
-      }
+      header={<AppHeader title="Ký gửi" right={<CreateFormButton />} />}
     >
       <DegradedBanner />
-      <View style={styles.segment}>
-        <ChipGroup options={SECTIONS} value={section} onChange={setSection} />
-      </View>
-      {section === "forms" ? <FormListSection /> : <ProductListSection />}
+      <MyConsignSection />
     </Screen>
   );
 }
+
 // Phase 5 (0.4 #13): có món bị hỏng chờ chọn cách đền → dải nhắc đầu tab
 function DegradedBanner() {
   const query = usePendingDegradedCases();
@@ -87,7 +72,7 @@ function DegradedBanner() {
   );
 }
 
-// "+ Tạo form". Đủ 5 form chờ → giải thích lý do thay vì mở form (BE vẫn chặn 409 nếu lọt)
+// "+ Ký gửi món mới" (luôn hiện). Đủ 5 yêu cầu chờ → giải thích lý do thay vì mở màn (BE có thể chặn 409)
 function CreateFormButton() {
   const pending = usePendingFormCount();
   const onPress = () => {
@@ -112,7 +97,6 @@ function CreateFormButton() {
 }
 
 const styles = StyleSheet.create({
-  segment: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   create: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
