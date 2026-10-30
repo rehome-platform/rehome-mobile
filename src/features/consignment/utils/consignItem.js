@@ -1,19 +1,7 @@
-import {
-  conditionLabel,
-  groupOfCategory,
-  photoSlotsOf,
-} from "@/constants/consignItem";
+import { groupOfCategory, photoSlotsOf } from "@/constants/consignItem";
 
-// BE chưa có cột size / tình trạng → ghép vào ĐẦU mô tả: "Size M · Như mới. <ghi chú>" [CHỜ BE cột riêng]
-export const composeDescription = ({ size, condition, note }) =>
-  [
-    [size && size !== "Khác" ? `Size ${size}` : null, conditionLabel(condition)]
-      .filter(Boolean)
-      .join(" · "),
-    note?.trim(),
-  ]
-    .filter(Boolean)
-    .join(". ");
+// Size "Khác" = Member tự ghi trong mô tả → không gửi lên cột size
+const sizeValue = (size) => (size && size !== "Khác" ? size : null);
 
 // Tên gợi ý từ danh mục + thương hiệu: "Áo khoác Uniqlo" (bỏ thương hiệu kiểu "Khác / không rõ")
 export const suggestName = ({ categoryName, brandName }) =>
@@ -35,19 +23,22 @@ export const missingSlots = (item) =>
     .filter((s) => s.required && !item.photos?.[s.key])
     .map((s) => s.label);
 
-// Một món trong app → body POST /consignment-forms (photoUrls truyền vào sau khi upload)
+// Một món trong app → body POST /consignment-forms (photoUrls truyền vào sau khi upload).
+// Size, tình trạng là cột riêng (BE d10db3c); mô tả chỉ còn ghi chú của Member
 export const toCreatePayload = (item, warehouseId, photoUrls) => ({
   categoryId: item.categoryId,
   brandId: item.brandId,
   productName: item.productName.trim(),
-  description: composeDescription(item),
+  description: item.note?.trim() || null,
   desiredPrice: item.desiredPrice,
+  size: sizeValue(item.size),
+  condition: item.condition || null,
   warehouseId,
   photoUrls,
 });
 // Yêu cầu cũ (API 17, bị từ chối / hết hạn) → 1 món để ký gửi lại.
 // Ảnh cũ là URL đã upload: 3 ảnh đầu điền vào 3 khung bắt buộc, còn lại vào "ảnh khác".
-// Size / tình trạng yêu cầu cũ chưa có → để trống, người dùng chọn lại ở màn sửa món
+// Yêu cầu cũ chưa có size / tình trạng (tạo trước khi BE có cột) → để trống, người dùng chọn lại
 export const formToItem = (form) => {
   const urls = form.photoUrls ?? [];
   return {
@@ -64,8 +55,8 @@ export const formToItem = (form) => {
       extra: urls.slice(3),
     },
     productName: form.productName ?? "",
-    size: "",
-    condition: "",
+    size: form.size ?? "",
+    condition: form.condition ?? "",
     desiredPrice: form.desiredPrice,
     note: form.description ?? "",
   };

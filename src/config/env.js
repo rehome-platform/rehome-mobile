@@ -10,7 +10,7 @@ export const MOCK = {
   password: false, // quên mật khẩu: OTP (resend-otp + verify-otp + password/reset) hoặc link (password/forgot)
   upload: false, // POST /uploads thật (BE 7572732) — multipart + ?folder=
   organization: false, // Đăng ký / nộp lại hồ sơ tổ chức thật (BE 7572732). [CHỜ BE] GET /api/organizations/me
-  consignment: true, // [CHỜ BE] API 14–24, 44 — Phase 2
+  consignment: false, // API 14–24 thật (BE d10db3c). [CHỜ BE mục 7, 22, 23] biên nhận + số liệu kỳ
   catalog: false, // API 44 GET /categories, /brands — đã có (BE 868d933). id thật là UUID → đi cùng MOCK.products = false
   // Phase 3 — mua hàng
   products: false, // API 49 thật (BE 868d933). [CHỜ BE] Guest bị 401 — tạm test khi đã đăng nhập

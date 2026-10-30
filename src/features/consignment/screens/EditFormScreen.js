@@ -114,11 +114,14 @@ function EditFormBody({ form }) {
     mutationFn: async (values) => {
       const { photos, ...rest } = values;
       const photoUrls = await uploadPhotos(photos);
-      // API 18: body giống API 15, gửi kèm kho cũ (không đổi kho khi sửa)
+      // API 18: body giống API 15, gửi kèm kho cũ (không đổi kho khi sửa).
+      // BE ghi đè size / tình trạng theo body → màn này chưa có ô sửa nên gửi lại giá trị cũ
       return consignmentApi.updateForm(form.id, {
         ...rest,
         photoUrls,
         warehouseId: form.warehouse?.id,
+        size: form.size ?? null,
+        condition: form.condition ?? null,
       });
     },
     onSuccess: () => {
