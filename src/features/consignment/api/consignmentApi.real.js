@@ -48,6 +48,8 @@ function toProduct(p) {
     commissionRateTerm3: rates[2],
     endOfTermDeadline: p.currentTermEndsAt ?? p.endOfTermDeadline,
     lastDeadline: p.endOfTermDeadline,
+    // BE: order = { id, orderNo, payoutDueAt, payoutAt } — chỉ có khi món SOLD
+    order: p.order ? { ...p.order, code: p.order.orderNo } : null,
   };
 }
 

@@ -25,6 +25,7 @@ export const PRODUCT_STATUS = {
   UNCLAIMED: "UNCLAIMED",
   DONATED: "DONATED",
   DESTROYED: "DESTROYED",
+  RETURNED: "RETURNED", // BE 3e95bc6: người mua trả hàng hợp lệ / thất lạc, về kho chờ ReHome xử lý
 };
 
 export const END_OF_TERM_DECISION = {
@@ -42,7 +43,7 @@ export const PRODUCT_VIEW = {
   PICKUP: "PICKUP", // đã chọn nhận lại, chờ Member đến kho lấy
   WITHDRAWING: "WITHDRAWING", // đã gửi yêu cầu rút hàng (Phase 5), chờ Member đến kho lấy
   DEGRADED_DECISION: "DEGRADED_DECISION", // hàng trả về bị hỏng, chờ Member chọn cách đền (Phase 5)
-  ENDED: "ENDED", // SOLD / WITHDRAWN / UNCLAIMED / DONATED / DESTROYED
+  ENDED: "ENDED", // SOLD / WITHDRAWN / UNCLAIMED / DONATED / DESTROYED / RETURNED
 };
 
 export const CONSIGN_LIMITS = {
@@ -67,6 +68,7 @@ export const PRODUCT_ENDED_LABEL = {
   UNCLAIMED: "Vô thừa nhận",
   DONATED: "Đã quyên góp",
   DESTROYED: "Đã huỷ",
+  RETURNED: "Bị trả lại",
 };
 
 // Theo enum OrderStatus của BE — tiến trình đơn ở KG-09 "Đã có đơn"
