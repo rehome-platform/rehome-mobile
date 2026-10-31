@@ -151,7 +151,7 @@ export const seedReceipts = () => {
       withdrawalFee: 30000,
       degradedCompensationRate: 0.5,
       confirmedAt: null,
-      pdfUrl: null,
+      pdfAvailable: false,
       createdAt: iso(now.subtract(1, "hour")),
     },
   ];

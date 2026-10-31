@@ -1,5 +1,8 @@
 import dayjs from "dayjs";
+import { File, Paths } from "expo-file-system";
+import { ENV } from "@/config/env";
 import { api, unwrap } from "@/lib/api/client";
+import { tokenStorage } from "@/lib/storage/tokenStorage";
 
 // ===== Ký gửi phía Member (API 14–24) — BE d10db3c =====
 
@@ -90,6 +93,26 @@ export async function updateForm(id, payload) {
 // API 19 — không còn pdfUrl: pdfAvailable + GET /consignment-receipts/{id}/pdf (cần token)
 export async function getReceipt(id) {
   return unwrap(await api.get(`/consignment-receipts/${id}`));
+}
+
+// API 19b — PDF nhị phân, cần token → tải về bộ nhớ đệm, trả File để mở / chia sẻ.
+// Token hết hạn thì lần tải đầu lỗi → gọi 1 API qua axios cho interceptor làm mới token, tải lại
+export async function downloadReceiptPdf(receipt) {
+  const download = async () =>
+    File.downloadFileAsync(
+      `${ENV.API_BASE_URL}/consignment-receipts/${receipt.id}/pdf`,
+      new File(Paths.cache, `${receipt.receiptNo ?? receipt.id}.pdf`),
+      {
+        headers: { Authorization: `Bearer ${await tokenStorage.getAccessToken()}` },
+        idempotent: true,
+      },
+    );
+  try {
+    return await download();
+  } catch {
+    await api.get(`/consignment-receipts/${receipt.id}`);
+    return download();
+  }
 }
 
 // API 20 → { id, confirmedAt, pdfAvailable }

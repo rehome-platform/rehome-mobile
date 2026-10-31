@@ -2,10 +2,8 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
@@ -15,6 +13,8 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
+// Native: có sẵn trong Expo Go; bản dev build APK phải build lại sau khi thêm thư viện này
+import * as Sharing from "expo-sharing";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -355,45 +355,45 @@ function PendingReceipt({ receipt, header }) {
   );
 }
 
-// KG-06 Đã xác nhận. Nút PDF / Chia sẻ làm ở phần 4b
+// KG-06 Đã xác nhận
 function ConfirmedReceipt({ receipt, header }) {
   const memberCode = useAuthStore((s) => s.user?.memberCode);
   const rates = commissionRates(receipt);
   const endDate = dayjs(receipt.confirmedAt).add(totalTermDays(receipt), "day");
-  // Mở PDF bằng trình xem / trình duyệt của máy (không cần thư viện native → không phải build lại)
-  // [CHỜ BE] pdfUrl công khai hay cần token — cần token thì phải tải bằng axios trước
+  const [downloading, setDownloading] = useState(false);
+
+  // PDF cần token (BE trả file, không trả link) → tải về máy rồi mở bảng chia sẻ của hệ điều hành:
+  // xem trước, lưu vào Tệp, gửi Zalo… gộp 1 nút (link công khai không còn nên bỏ chia sẻ dạng chữ)
   const openPdf = async () => {
-    if (!receipt.pdfUrl)
+    if (receipt.pdfAvailable === false)
       return showToast("Bản PDF đang được tạo, thử lại sau ít phút");
+    setDownloading(true);
     try {
-      await Linking.openURL(receipt.pdfUrl);
+      const file = await consignmentApi.downloadReceiptPdf(receipt);
+      if (!(await Sharing.isAvailableAsync()))
+        return showToast("Máy không hỗ trợ mở file PDF");
+      await Sharing.shareAsync(file.uri, {
+        mimeType: "application/pdf",
+        UTI: "com.adobe.pdf",
+        dialogTitle: `Biên nhận ${receipt.receiptNo}`,
+      });
     } catch {
-      Alert.alert(
-        "Không mở được PDF",
-        "Máy chưa có ứng dụng xem PDF hoặc trình duyệt.",
-      );
+      Alert.alert("Không tải được PDF", "Kiểm tra mạng rồi thử lại.");
+    } finally {
+      setDownloading(false);
     }
   };
-
-  const share = () =>
-    Share.share({
-      message: `Biên nhận ký gửi ${receipt.receiptNo} — ${receipt.productName}${receipt.pdfUrl ? `\n${receipt.pdfUrl}` : ""}`,
-    });
 
   return (
     <Screen
       header={header}
       padded={false}
       footer={
-        <View style={styles.footerRow}>
-          <Button title="Tải bản PDF" onPress={openPdf} style={styles.flex} />
-          <Button
-            title="Chia sẻ"
-            variant="secondary"
-            onPress={share}
-            style={styles.flex}
-          />
-        </View>
+        <Button
+          title="Lưu / chia sẻ bản PDF"
+          loading={downloading}
+          onPress={openPdf}
+        />
       }
     >
       <ScrollView contentContainerStyle={styles.content}>
@@ -521,5 +521,4 @@ const styles = StyleSheet.create({
   },
   small: { ...textStyles.caption, color: colors.textSecondary },
   left: { textAlign: "left" },
-  footerRow: { flexDirection: "row", gap: spacing.md },
 });
