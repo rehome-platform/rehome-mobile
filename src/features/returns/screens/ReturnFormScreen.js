@@ -182,10 +182,9 @@ export default function ReturnFormScreen() {
   if (order.returnRequestId)
     return <Redirect href={`/returns/${order.returnRequestId}`} />;
 
-  const delivered = [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED].includes(
-    order.status,
-  );
-  if (!delivered || !deadline) {
+  // BE nhận đơn DELIVERED và COMPLETED (đã bấm nhận hàng vẫn trả được trong hạn)
+  const returnable = [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED];
+  if (!returnable.includes(order.status) || !deadline) {
     return (
       <Screen header={header}>
         <EmptyState

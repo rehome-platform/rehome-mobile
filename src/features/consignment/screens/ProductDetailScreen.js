@@ -22,6 +22,7 @@ import { useAuthStore } from "@/stores/authStore";
 import {
   ORDER_STEPS,
   PRODUCT_ENDED_LABEL,
+  PRODUCT_STATUS,
   PRODUCT_VIEW,
 } from "@/constants/consignment";
 import { formatVnd } from "@/utils/money";
@@ -179,15 +180,42 @@ function OrderTracker({ status }) {
 function OrderBody({ product }) {
   const order = product.order;
   const rate = order?.lockedCommissionRate ?? currentRate(product);
+  // BE giữ tiền tới hết hạn trả hàng của người mua (payoutDueAt), cộng ví xong thì có payoutAt
+  const paid = !!order?.payoutAt;
+  const holding = !paid && !!order?.payoutDueAt;
   return (
     <>
       <View style={styles.attention}>
-        <Text style={styles.boxTitle}>Đã bán — đang chờ giao hàng</Text>
+        <Text style={styles.boxTitle}>
+          {paid
+            ? "Đã bán — tiền đã vào ví"
+            : holding
+              ? "Đã bán — chờ hết hạn trả hàng"
+              : "Đã bán — đang chờ giao hàng"}
+        </Text>
         <Text style={styles.body}>
           Sản phẩm nằm trong đơn <Text style={styles.bold}>{order?.code}</Text>.
-          Trong lúc này bạn không giảm giá được.
+          {paid ? (
+            <>
+              {" "}Tiền đã cộng vào ví lúc{" "}
+              <Text style={styles.bold}>
+                {dayjs(order.payoutAt).format("DD/MM HH:mm")}
+              </Text>
+              .
+            </>
+          ) : holding ? (
+            <>
+              {" "}Tiền vào ví sau{" "}
+              <Text style={styles.bold}>
+                {dayjs(order.payoutDueAt).format("DD/MM HH:mm")}
+              </Text>{" "}
+              nếu người mua không trả hàng.
+            </>
+          ) : (
+            " Trong lúc này bạn không giảm giá được."
+          )}
         </Text>
-        {order ? <OrderTracker status={order.status} /> : null}
+        {order?.status ? <OrderTracker status={order.status} /> : null}
       </View>
 
       <PayoutBreakdown
@@ -196,7 +224,7 @@ function OrderBody({ product }) {
         priceLabel="Giá bán"
         rate={rate}
         rateLabel={`Hoa hồng kỳ ${order?.orderedTerm ?? product.currentTerm}`}
-        totalLabel="Sẽ cộng vào ví"
+        totalLabel={paid ? "Đã cộng vào ví" : "Sẽ cộng vào ví"}
       />
       <NoteBox>
         {`Hoa hồng chốt theo kỳ đang chạy lúc đơn được đặt` +
@@ -205,10 +233,12 @@ function OrderBody({ product }) {
             : "") +
           `. Đơn giao xong sang kỳ sau vẫn tính ${formatRate(rate)}.`}
       </NoteBox>
-      <Text style={styles.caption}>
-        Tiền được cộng vào ví khi đơn hoàn thành và hết thời hạn trả hàng của
-        người mua. Theo dõi đơn: sắp có.
-      </Text>
+      {paid ? null : (
+        <Text style={styles.caption}>
+          Tiền được cộng vào ví khi hết 3 ngày trả hàng của người mua (tính từ
+          lúc giao). Người mua trả hàng hợp lệ thì đơn không tính tiền.
+        </Text>
+      )}
     </>
   );
 }
@@ -492,7 +522,16 @@ export default function ProductDetailScreen() {
             </Text>
           </View>
         ) : null}
-        {view === PRODUCT_VIEW.ENDED ? (
+        {/* Đã bán: BE trả kèm order (payoutDueAt / payoutAt) → hiện mốc tiền vào ví */}
+        {view === PRODUCT_VIEW.ENDED && product.order ? (
+          <OrderBody product={product} />
+        ) : product.status === PRODUCT_STATUS.RETURNED ? (
+          <NoteBox>
+            Người mua đã trả lại món này nên đơn không tính tiền cho bạn. Hàng
+            đang ở địa điểm ký gửi, ReHome sẽ liên hệ bạn về cách xử lý tiếp
+            theo.
+          </NoteBox>
+        ) : view === PRODUCT_VIEW.ENDED ? (
           <NoteBox>{`Sản phẩm đã kết thúc ký gửi: ${PRODUCT_ENDED_LABEL[product.status] ?? product.status}.`}</NoteBox>
         ) : null}
         <MessageWarehouseButton

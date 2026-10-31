@@ -29,7 +29,7 @@ export const toCreatePayload = (item, warehouseId, photoUrls) => ({
   categoryId: item.categoryId,
   brandId: item.brandId,
   productName: item.productName.trim(),
-  description: item.note?.trim() || null,
+  description: item.note?.trim() ?? "", // cột description NOT NULL ở BE → không gửi null
   desiredPrice: item.desiredPrice,
   size: sizeValue(item.size),
   condition: item.condition || null,
