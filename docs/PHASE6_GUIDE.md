@@ -6,6 +6,16 @@
 > Ký hiệu: **[GIẢ ĐỊNH]** · **[CHỜ BE]** · **[CHỜ LEAD]** · **[KIỂM TRA]**.
 > **Trạng thái BE (Claude đọc code `develop` `a0c6abe`, 21/10):** **chưa có controller** nào của API 96–126, chưa có `/uploads`, chưa có `GET /api/organizations/me`, chưa có WebSocket/STOMP. → Phase 6 làm **toàn bộ bằng mock**. **Entity / enum đã có và khớp guide** (đặt tên field mock theo đây): `Category.tryonSlot` = `TOP | BOTTOM | DRESS` · `TryOnModelType` = `MALE | FEMALE` · `TryOnImage {modelType, topProduct, bottomProduct, dressProduct, imageUrl, createdAt}` · `Campaign {description, startTime, endTime, locationName, latitude, longitude, preferredItemTypes (chuỗi), status = OPEN}` — **không** `title`, `coverUrl` (0.5 A16) · `Conversation {type, member, counterpartId}` · `Notification {title, body, isRead}` — **không** đích (0.5 A19). Web (`rehome-frontend`) hiện chỉ có README → chưa có cách nối chat realtime nào để theo (0.5 A18 giữ REST + tự hỏi lại).
 > **Kế hoạch (chốt 21/10):** làm xong UI Phase 6 (mock) **rồi mới** quay lại nối API thật từng phase (Phase 1 tổ chức → 2 → 3 → 4 → 5), gom danh sách API cần gấp gửi BE.
+> **Cập nhật 01/11 — sau Review 2** (nguồn: _Tài liệu tổng quan sau Review 2_ + _Kế hoạch triển khai code sau Review 2_): luồng **quyên góp** của tổ chức đổi — xem **mục 0.6** trước khi làm Phần B. Trạng thái BE `develop` `7af1966` (01/11): **đã có** `GET /api/organizations/me`, `PUT /api/organizations/me/registration`; **vẫn chưa có** controller API 96–126 và API quyên góp 150–154; entity `Campaign` **chưa** có nơi nhận kiểu "địa điểm ký gửi" (chỉ `locationName`, `latitude`, `longitude`), **chưa** có entity lượt quyên góp. Enum BE: `TryOnSlot` = `TOP | BOTTOM | DRESS`, `CampaignStatus` = `OPEN | CLOSED`.
+> **Tiến độ mobile (01/11):** Phần A (nhánh 1–6) xong, đang dùng mock. Phần B **chưa làm** — `OrgHomeScreen` còn câu "Chiến dịch, bài viết và nhận quyên góp sẽ mở ở phiên bản tới". Đã nối API thật: ký gửi (Phase 2), đơn / trả hàng (Phase 3–5) — `MOCK` còn bật: `withdrawals`, `tryon`, `community`, `chat`, `notifications`.
+> **Kế hoạch & thứ tự nhánh từ 02/11 nằm ở `PHASE7_GUIDE.md`** (N7 → N13). File này giữ **spec từng màn**; bảng nhánh mục 1 bên dưới chỉ còn để tra lịch sử nhánh 1–6.
+> **Đã kiểm code 01/11** (BE `7af1966`, mobile `262844b`):
+> - `GET /api/organizations/me` trả **đủ** `representative {fullName, position, cccdNumber, cccdFrontUrl, cccdBackUrl}` và `documents [...]`, `submittedAt`, `verifiedAt` (BE `OrganizationProfileResponse.java:53-55`) → nộp lại **điền sẵn được cả 4 bước** (code hiện chỉ điền bước 1, comment "BE không trả" đã sai — `OrgHomeScreen.js:65-84`).
+> - BE đã có thư mục upload **`ORGANIZATION_LOGOS`** — mobile đang tạm upload logo vào `AVATARS` (`OrgReviewScreen.js:43-54`), hằng `src/constants/upload.js` chưa có giá trị này.
+> - `GET /warehouses` **công khai**, trả `{id, name, address, latitude, longitude, openingHours}`; `GET /warehouses/nearest` **chỉ role MEMBER** → phía tổ chức chỉ dùng `GET /warehouses` (km tự tính ở app nếu cần).
+> - `POST /uploads` (+ `/batch`) có thư mục `COMMUNITY_POSTS` cho ảnh bài viết.
+> - `Notification` BE **chưa** có `targetType/targetId`; `NotificationType` chỉ có `ORDER_UPDATE, WALLET_EVENT, TERM_EXPIRY, VERIFICATION_RESULT, QUEUE_TASK`.
+> - Chưa có controller API 96–126, 150–154; chưa có entity lượt quyên góp / note.
 
 ---
 
@@ -69,6 +79,8 @@ Theo mẫu đã có ở Phase 1: route tổ chức nằm dưới **`(org)/org/�
 | OP-02 | Sửa thông tin thường | `profile/edit.js` | 117 | F-096 |
 | OP-04 | Đổi thông tin pháp lý | `profile/legal-change.js` | 118 | F-097 |
 | OP-05 | Trạng thái yêu cầu đổi pháp lý: Chờ duyệt / Đã duyệt / Bị từ chối | `profile/legal-change-status.js` | [CHỜ BE] API đọc yêu cầu | F-097 |
+| OC-07 | **Đơn quyên góp chờ lấy** tại một điểm ký gửi của một chiến dịch (sau Review 2, mã theo wireframe 31/10) | `campaigns/[id]/donations.js?warehouseId=` | 153 [CHỜ BE] | F-166 |
+| OC-08 | **Ghi note quyên góp** khi nhận tại địa chỉ riêng (sau Review 2, mã theo wireframe 31/10) | `campaigns/[id]/donation-note.js` | 154 [CHỜ BE] | F-167 |
 
 > ✅ **Đã chốt (21/10): toàn bộ chức năng tổ chức làm trên mobile** (theo tài liệu đăng ký đề tài "Organization Mobile App" + wireframe OB/OC/OM/OP). Tài liệu tổng quan đang ghi F-096 … F-107 là **Web** → chỉ là chỗ ghi sai của tài liệu, báo lead sửa cột nền tảng cho khớp (không ảnh hưởng việc code).
 
@@ -146,6 +158,39 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | B10 | OA-06 Bị từ chối: "chỉ cần bổ sung phần thiếu, giấy tờ đã đạt giữ nguyên" | Mở lại 4 bước **điền sẵn toàn bộ**, đánh dấu giấy tờ "chưa đạt" nếu BE trả; gửi `PUT` cả body | API PUT nhận cả body (CLAUDE.md "Tổ chức" bước 3) |
 | B11 | OM-01 "Tổ chức không tự nhắn trước" | Đúng vậy — không có nút tạo hội thoại ở phía tổ chức | API 111 chỉ cho Member |
 
+### 0.6. Thay đổi sau Review 2 (01/11) — đọc trước khi làm Phần B
+
+**Nghiệp vụ mới (phần tô vàng trong tài liệu tổng quan):**
+
+1. **Bỏ hẳn kg.** Chiến dịch không có mục tiêu / tiến độ / giữ chỗ kg. Một lượt quyên góp chỉ là **ghi chú đơn giản**: tên người quyên góp **hoặc ẩn danh** + ghi chú (nếu có).
+2. **Chiến dịch** = mô tả, thời gian, loại đồ ưu tiên, **nơi nhận đồ** — tổ chức **chọn một trong hai** (UC-53, F-098):
+   - **Địa chỉ riêng** của tổ chức (điểm nhận đã khai lúc đăng ký), hoặc
+   - **Địa điểm ký gửi ReHome** (một kho của ReHome).
+3. **Hai nhánh của L-09:**
+
+| | Nhánh A — địa chỉ riêng | Nhánh B — địa điểm ký gửi ReHome |
+|---|---|---|
+| Member | Tự mang đồ tới tổ chức | Mang đồ tới quầy ReHome (**không cần tài khoản Member**) |
+| Ghi nhận | Tổ chức **có thể** ghi note — **không bắt buộc**, không theo dõi số lượng (UC-95, **F-167**, Mobile) | Moderator ghi tên / ẩn danh + ghi chú tại quầy (UC-91, F-163, Web) → lượt quyên góp **Đang chờ lấy** |
+| Sau đó | Kết thúc | Tổ chức **xem danh sách đang chờ lấy** tại điểm đã chọn (UC-94, **F-166**, Mobile) → tới lấy → Moderator **xác nhận đã bàn giao** (UC-93, F-165, Web) |
+
+4. **API** (Kế hoạch triển khai): 150–152 phía Moderator (Nguyên), **153–154 phía tổ chức** (Tài): 153 xem đồ chờ lấy tại điểm ký gửi, 154 ghi note tại địa chỉ riêng. Contract đã có trong _Mô tả API sau Review 2_ (mục 5.2), còn thiếu `campaignId` ở 150/153 và field nơi nhận ở 119/120.
+5. Tổng tài liệu: **95 use case, 167 function**. Platform F-096 … F-107 nay ghi đúng **Mobile** (câu 23 mục 11 đã xong).
+
+**Ảnh hưởng tới mobile:**
+
+| Chỗ | Trước | Sau Review 2 |
+|---|---|---|
+| OC-02 / OC-04 — nơi nhận | Chỉ đọc = điểm nhận của tổ chức (0.5 A15) | Ô **Cách nhận đồ \***: **Nhận tại địa chỉ riêng** (địa chỉ + giờ nhận trong hồ sơ tổ chức, chỉ đọc) và / hoặc **Nhận tại điểm ký gửi** — ✅ lead chốt 01/11: **chọn được nhiều kho**, **bất kỳ** kho đang hoạt động (`GET /warehouses`). Chọn **một trong hai hay được cả hai** → [CHỜ LEAD L1, PHASE7 mục 4]. Mock: `receiving: { ownAddress: boolean, warehouseIds: string[] }`, hợp lệ khi `ownAddress \|\| warehouseIds.length > 0`. Bỏ kho đang có đơn chờ lấy khi sửa → [CHỜ LEAD L4], tạm **khoá** |
+| CD-04 / OC-03 — khối "Mang đồ tới đâu" | `locationName` + câu "Bạn tự mang đồ tới — ReHome không vận chuyển và không nhận đồ hộ." | Hiện **mọi** nơi nhận của chiến dịch: địa chỉ tổ chức → câu cũ; **từng kho** → "Mang đồ tới quầy ReHome <tên kho>, nhân viên ghi nhận giúp bạn — không cần mở app" + giờ mở cửa + **Chỉ đường** |
+| Mục 6 — quy tắc "Quyên góp … ReHome **không ghi nhận**" | Đúng | Chỉ đúng với **nhánh A**. Nhánh B ReHome có ghi (Moderator, web). Member **vẫn không** có nút "Quyên góp" trong app |
+| Phần B — màn mới | — | **OC-07** Đơn quyên góp chờ lấy (F-166) và **OC-08** Ghi note quyên góp (F-167) — mã theo wireframe 31/10 (trước đây guide gọi tạm OD-01 / OD-02), spec ở mục 8 |
+| Hằng số / quy tắc mới | — | `src/constants/donation.js`: `DONATION_STATUS = { PENDING_PICKUP, HANDED_OVER }` + `donationStatusLabel()`; quy tắc chiến dịch (ngày, loại đồ, nơi nhận, giới hạn 3) gom ở `features/orgPortal/utils/campaignRules.js` + `campaignSchema` (zod) — giới hạn dùng hằng có sẵn `ORG_LIMITS.MAX_OPEN_CAMPAIGNS` (`src/constants/community.js:11`); cờ **`MOCK.orgContent`** chưa có trong `src/config/env.js` → thêm khi bắt đầu N8 |
+| Thử đồ — slot | Áo + Quần, **hoặc Đầm** (0.5 A9) | Tài liệu sau Review 2 ghi **2 slot Áo + Quần, cả hai bắt buộc**; BE enum vẫn có `DRESS`, app đang hỗ trợ Đầm → [CHỜ LEAD] giữ hay bỏ Đầm |
+| "Tủ đồ" | — | Tài liệu bỏ hẳn "tủ đồ lấy từ giỏ / đơn đã mua", chỉ còn bộ sưu tập ảnh thử đồ (AI-05) — mobile không có màn tủ đồ nên không phải sửa. **Nháp ký gửi** (BE đã có API `drafts`): ✅ lead chốt 01/11 **vẫn làm** (lưu nháp được). Gọi là "nháp ký gửi", đừng gọi "Tủ đồ" để khỏi lẫn với tủ đồ đã bỏ |
+| Thông báo cho tổ chức | Kết quả xác minh, báo cáo, chiến dịch sắp hết hạn | ✅ lead chốt 01/11: Moderator ghi một lượt quyên góp tại quầy → **tổ chức nhận thông báo** (mở OC-07 đúng chiến dịch). Loại `NotificationType` mới + đích `targetType/targetId` [CHỜ BE] |
+| Wireframe CD-04 "Mọi chiến dịch của tổ chức đều nhận đồ tại đây" | — | Không còn đúng: mỗi chiến dịch có nơi nhận riêng |
+
 ---
 
 ## 1. Nhánh Git
@@ -159,10 +204,9 @@ Chung: không chuỗi trạng thái rải rác, không mã màu trong màn hình
 | 4 | `feature/community-nearby-report` | ✅ PR #36 — CD-05, CD-06 | 27/10 |
 | 5 | `feature/chat` | ✅ PR #37 — mock chat, CH-01, CH-02 (dùng chung cho tổ chức), bật **mọi nút "Nhắn cho kho / Nhắn tin"** đã ẩn từ Phase 2–5 | 28–29/10 |
 | 6 | `feature/notifications` | ✅ PR #38 — mock thông báo (sinh từ các mock khác), PR-05, chuông + badge | 30/10 |
-| 7 | `feature/org-shell` | (cần `GET /api/organizations/me` hoặc mock) màn trạng thái OA-06, khung 4 tab, OP-01 | 31/10 |
-| 8 | `feature/org-campaigns` | OC-01 → OC-04 | 01–02/11 |
-| 9 | `feature/org-posts` | OB-01 → OB-05 | 03/11 |
-| 10 | `feature/org-messages-profile` | OM-01, OM-03, OP-02, OP-04, OP-05 | 04–05/11 |
+| 7–10 | → **chuyển sang PHASE7_GUIDE** (N7 `feature/org-shell`, N8 `feature/org-campaigns` **gồm cả OC-07, OC-08**, N9 `feature/org-posts`, N10 `feature/org-messages-profile`, N11–N13) | Lịch 4 tuần 02/11 – 27/11 | xem PHASE7 mục 1–2 |
+
+> **01/11:** nhánh tổ chức **chưa bắt đầu**. Không còn nhánh `feature/org-donations` riêng — OC-07, OC-08 làm trong N8.
 | — | nối API thật Phase 1 → 5 (rà soát từng phase) | sau khi xong UI Phase 6 (kế hoạch chốt 21/10) | từ 06/11 |
 | — | `feature/chat-realtime` (tuỳ chọn) | STOMP khi BE có | khi BE xong |
 | — | `feature/community-map` (tuỳ chọn) | bản đồ thật ở CD-05 nếu lead muốn | khi lead chốt |
@@ -413,7 +457,7 @@ Axios: request API 97 truyền `timeout: TRYON_LIMITS.REQUEST_TIMEOUT_MS` + `sig
 | 116 | `PATCH /notifications/read-all` | — | `null` | 401 | ❌ |
 | 117 | `PATCH /organizations/me` | thông tin thường | `{id, …}` | 401 | ❌ |
 | 118 | `POST /organizations/me/legal-change-requests` | `{proposedChanges:{…}}` | `{id, status:"PENDING"}` | 400 | ❌ |
-| 119 | `POST /campaigns` | `{description, startTime, endTime, locationName, latitude, longitude, preferredItemTypes[]}` | `{id, status:"OPEN"}` | 400 · 409 `CAMPAIGN_LIMIT_REACHED` (**trong message**) | ❌ |
+| 119 | `POST /campaigns` | `{description, startTime, endTime, locationName, latitude, longitude, preferredItemTypes[]}` — **sau Review 2 cần thêm** nơi nhận, đề xuất gửi BE (PHASE7 mục 5): `receiveAtOwnAddress: boolean`, `warehouseIds: string[]` (**nhiều kho** — lead chốt 01/11); địa chỉ riêng lấy từ hồ sơ tổ chức nên bỏ `locationName/latitude/longitude` tự nhập [CHỜ BE] | `{id, status:"OPEN"}` | 400 · 409 `CAMPAIGN_LIMIT_REACHED` (**trong message**) | ❌ |
 | 120 | `PUT /campaigns/{id}` | như 119 | `{id, …}` | 404 · 409 không OPEN | ❌ |
 | 121 | `POST /campaigns/{id}/close` | — | `{id, status:"CLOSED"}` | 404 | ❌ |
 | 122 | `GET /organizations/me/campaigns` | `status, page, size` | page `{content:[{id, description, status}]}` | 401 | ❌ |
@@ -421,7 +465,12 @@ Axios: request API 97 truyền `timeout: TRYON_LIMITS.REQUEST_TIMEOUT_MS` + `sig
 | 124 | `PUT /posts/{id}` | `{content, photoUrls?}` | `{id, content}` | 403 · 404 | ❌ |
 | 125 | `DELETE /posts/{id}` | — | `null` | 403 · 404 | ❌ |
 | 126 | `GET /organizations/me/posts` | `page, size` | page `{content:[{id, content, likeCount, commentCount}]}` | 401 | ❌ |
-| — | `GET /api/organizations/me` | — | `verificationStatus`, lý do từ chối, hồ sơ | — | **chưa có** (CLAUDE.md) |
+| 153 | `GET /organizations/me/donations` (F-166) | `status` (`PENDING_PICKUP` \| `HANDED_OVER`) | **mảng** (không phân trang) `[{id, warehouseId, donorName, isAnonymous, note, status, createdAt}]` | 403 không phải tổ chức đã xác minh | ❌ (contract 01/11, chưa có code) |
+| 154 | `POST /organizations/me/donation-notes` (F-167) | `{campaignId, donorName, isAnonymous, note}` | `{id, campaignId, donorName, isAnonymous, note, createdAt}` | 400 thiếu `donorName` khi `isAnonymous=false` · 404 không thấy chiến dịch | ❌ (contract 01/11, chưa có code) |
+
+> **Phía Moderator (web, để hiểu dữ liệu):** API 150 `POST /warehouses/{id}/donations` `{donorName, isAnonymous, note}` → lượt `PENDING_PICKUP`; API 151 `GET /warehouses/{id}/donations?status=`; API 152 `POST /warehouses/{id}/donations/handover` `{donationIds[], organizationId}` → `HANDED_OVER`.
+> **Lỗ hổng contract [CHỜ BE]** (đối chiếu với câu lead chốt 01/11): (a) Lead chốt F-166 **xem theo chiến dịch** → lượt quyên góp phải gắn chiến dịch, nhưng API 150 **không có** `campaignId` và API 153 không trả `campaignId` → cần thêm `campaignId` vào API 150 (Moderator chọn chiến dịch khi ghi tại quầy), API 153 (trả về + lọc `?campaignId=`); như vậy 2 tổ chức cùng chọn một kho cũng không lẫn lượt của nhau. (b) API 153 chỉ có `warehouseId`, thiếu tên / địa chỉ kho → app tự ghép với `GET /warehouses`. (c) Không có API **đọc lại** note đã ghi (API 154). (d) API 119/120/102 **chưa** có field nơi nhận — đề xuất `receiveAtOwnAddress: boolean` + **`warehouseIds[]`** (nhiều kho) [GIẢ ĐỊNH tên field]; API 102/122 trả lại kèm tên, địa chỉ, giờ mở cửa từng kho. (e) Thông báo cho tổ chức khi có lượt mới: loại mới (vd `DONATION_RECORDED`) + `targetType = CAMPAIGN`, `targetId`, kèm `warehouseId` để mở đúng OC-07. (f) API 153 trả thêm `campaignId`, `warehouseName`, `recordedBy` (mã Moderator), `handedOverAt`; query `campaignId`, `warehouseId`, `status`.
+| — | `GET /api/organizations/me` | — | `verificationStatus`, lý do từ chối, hồ sơ | — | ✅ **đã có** (`7af1966`, chỉ role ORGANIZATION) |
 | — | `POST /uploads` | multipart | `{url}` | — | **chưa có** |
 
 **Thiếu so với wireframe** (gom vào mục 11): API 50 thiếu `tryonSlot` / cờ ảnh tách nền; API 98 thiếu món trong ảnh (tên, giá, trạng thái còn bán), `modelType`, `createdAt`; API 100 thiếu logo, loại hình, phạm vi, ngày xác minh, điểm nhận đồ (địa chỉ, toạ độ, giờ nhận), số người theo dõi, số chiến dịch / bài viết; không có API chiến dịch công khai của **một tổ chức** và **tất cả** chiến dịch đang mở; API 102 thiếu tên, ảnh bìa, loại đồ cần, tổ chức (id, tên, logo), toạ độ, giờ nhận; API 104/105 thiếu thông tin tổ chức (tên, logo), ảnh, `createdAt`, số thích / bình luận, `likedByMe` (ở danh sách); API 107 thiếu người bình luận (tên, avatar), `createdAt`, `isMine`; API 110 thiếu avatar, cờ đã xác minh, thời gian tin cuối, tin cuối là của ai; API 112 không có cách đánh dấu đã đọc; API 114 thiếu `title`/`body` (DB có), đích (`targetType/targetId`), số chưa đọc; API 122/126 thiếu `createdAt`, ảnh, số theo trạng thái (cho chip "Đang diễn ra · 3").
@@ -457,6 +506,7 @@ getNotifications({ page, size }) · markRead(id) · markAllRead() · getUnreadCo
 getMyOrg() · updateMyOrg(patch) · submitLegalChange(proposedChanges) · getLegalChangeRequests()
 getMyCampaigns({ status, page, size }) · createCampaign(body) · updateCampaign(id, body) · closeCampaign(id)
 getMyPosts({ page, size }) · createPost(body) · updatePost(id, body) · deletePost(id)
+getMyDonations({ campaignId, warehouseId, status }) · createDonationNote({ campaignId, donorName, isAnonymous, note })   // sau Review 2, API 153–154
 ```
 
 ### 5.4. Mock "sống"
@@ -513,7 +563,8 @@ export const orgKeys = { me: ["org","me"], campaigns: (s) => ["org","campaigns",
 | Ảnh AI chỉ để hình dung, **không phản ánh size thật** | AI-01/03/04 | Nhãn "ẢNH DỰNG BẰNG AI" + câu nhắc |
 | Món trong outfit đã bán → báo khi thêm vào giỏ, bỏ món đó | L-08 unhappy | AI-04/06 "Không còn khả dụng", thêm outfit chỉ thêm món còn bán |
 | Chỉ hiện **tổ chức đã xác minh** | F-082, API 100 | 404 → `EmptyState` "Tổ chức không còn hoạt động" |
-| Quyên góp: **Member tự mang đồ tới**, ReHome không vận chuyển, **không ghi nhận** | L-09, API 102, CD-04 | Câu nhắc ở CD-04; không có nút "Quyên góp" |
+| Quyên góp: **Member tự mang đồ tới**, ReHome không vận chuyển. **Sau Review 2:** nơi nhận là địa chỉ tổ chức → tổ chức tự ghi note (không bắt buộc); nơi nhận là **địa điểm ký gửi ReHome** → Moderator ghi tên / ẩn danh + ghi chú tại quầy. **Không có kg** ở đâu cả | L-09, UC-91…95, F-163…167 | Câu nhắc ở CD-04 theo loại nơi nhận (mục 0.6); Member không có nút "Quyên góp" |
+| Chỉ tổ chức thấy lượt quyên góp của mình; Member không xem được | F-166, F-167 | OC-07/OC-08 chỉ ở `(org)` |
 | Chiến dịch hết hạn tự đóng | F-102 | Hiện theo `status` + "Còn n ngày"; CLOSED → nhãn "Đã đóng" |
 | Tối đa **3 chiến dịch đang chạy** / tổ chức | F-099, mục 11 | OC-01 khoá nút tạo + "Khoá vì đang có 3 / 3 chiến dịch"; vẫn xử lý 409 |
 | Báo cáo dùng chung cho bài viết / chiến dịch / tài khoản tổ chức; người bị báo cáo **không biết ai** báo | F-088, CD-06 | Một màn `report.js` theo `targetType` |
@@ -629,7 +680,7 @@ Chung: loading, `ErrorBox` + "Thử lại", kéo tải lại, lỗi mạng, 403/
 - Tên (0.5 A16) · tổ chức + Đã xác minh (bấm → CD-03).
 - Khối "Nhận đồ tới hết **30/11/2026** · Còn 50 ngày" (đã đóng: "Đã đóng dd/MM").
 - **Loại đồ đang cần** (chip đọc). **Mô tả**.
-- **Mang đồ tới đâu**: `locationName`, địa chỉ, giờ nhận, "Cách bạn khoảng 3,2 km" (0.5 A15).
+- **Mang đồ tới đâu**: `locationName`, địa chỉ, giờ nhận, "Cách bạn khoảng 3,2 km" (0.5 A15). **Sau Review 2** hiện **mọi** nơi nhận của chiến dịch (mục 0.6): địa chỉ tổ chức → câu cũ "Bạn tự mang đồ tới…"; **từng kho** → nhãn "Địa điểm ký gửi ReHome" + "Mang đồ tới quầy ReHome <kho>, nhân viên ghi nhận giúp bạn — không cần mở app" + giờ mở cửa + **Chỉ đường**. Member vẫn **không** có nút "Quyên góp".
 - Footer: **Chỉ đường** (`Linking.openURL` Google Maps theo toạ độ — như KG-04 Phase 2) · **Nhắn tin** (với tổ chức).
 - Chữ nhỏ cuối: "Bạn tự mang đồ tới — ReHome không vận chuyển và không nhận đồ hộ."
 
@@ -685,13 +736,24 @@ Chung: loading, `ErrorBox` + "Thử lại", kéo tải lại, lỗi mạng, 403/
 
 ### Điều hướng tổ chức (sửa `_layout.js` + `authStore`)
 
-Đây là bước 4, 7, 8, 9 còn dở của `feature/org-real-api` (CLAUDE.md "Khi BE xong tổ chức"):
-- Đăng nhập role ORGANIZATION → `authStore` gọi `orgPortalApi.getMyOrg()` (**không** gọi `/members/me`) → lưu `org.verificationStatus`.
-- `_layout.js`: `Stack.Protected` — chưa nộp hồ sơ → `(org)/org/registration`; `PENDING` / `REJECTED` → `(org)/org/status`; `VERIFIED` → `(org)/org/(tabs)`.
-- Chưa có `GET /api/organizations/me` → mock (`MOCK.organization`) + Khung Mock ở màn trạng thái để đổi trạng thái.
-- ⚠️ Đã có `(org)/org/index.js` (`OrgHomeScreen`, Phase 1). Khi thêm `(org)/org/(tabs)/…`, `index.js` chỉ còn làm **chuyển hướng** theo trạng thái (chưa nộp → `registration`, PENDING/REJECTED → `status`, VERIFIED → `(tabs)/campaigns`) — không để hai màn cùng là `/org`.
+Đây là bước còn dở của `feature/org-real-api` (CLAUDE.md "Khi BE xong tổ chức") — làm ở **N7** (PHASE7). **Hiện trạng code (đã kiểm 01/11):**
 
-### OA-06 · Trạng thái hồ sơ (`(org)/org/status.js`)
+| Bước | Hiện trạng | Bằng chứng |
+|---|---|---|
+| 1–2 form, 4 bước ở `(org)/org/registration` | ✅ | `src/app/(org)/org/registration/*` |
+| 3 `getMe` của tổ chức | ❌ còn lấy email từ JWT, comment "chưa có GET /me" đã cũ; `authStore` gọi `authApi.getMe()` chung mọi role | `authApi.real.js:59-66`, `authStore.js:19,32` |
+| 4 điều hướng theo `verificationStatus` | ⚠️ root `_layout.js` chỉ phân theo **role** (tổ chức → `router.replace("/org")`); trạng thái xử lý **bên trong** `OrgHomeScreen`; `(org)/_layout.js` là `Stack` trơn | `_layout.js:38-50, 71-73` |
+| 6 API thật + upload thật | ✅ POST đăng ký, PUT nộp lại, GET `/api/organizations/me`; `MOCK.organization = false`, `MOCK.upload = false` | `organizationApi.real.js:11-26`, `env.js:11-12` |
+| 7–8 màn trạng thái, nộp lại | ✅ phần lớn trong `OrgHomeScreen` (`/org`): chưa nộp / PENDING / REJECTED + lý do / VERIFIED; nộp lại **chỉ điền bước 1** | `OrgHomeScreen.js:41-145, 65-84` |
+| 9 khung 4 tab | ❌ VERIFIED còn câu "sẽ mở ở phiên bản tới" | `OrgHomeScreen.js:139-144` |
+
+Việc N7:
+- `authApi.getMe`: role ORGANIZATION gọi `organizationApi.getMyOrganization()` (**không** gọi `/members/me`), trả `{ role, email, ...org }` → `authStore.user.verificationStatus`.
+- Điều hướng: giữ `/org` (`OrgHomeScreen`) làm **màn trạng thái OA-06** cho chưa nộp / PENDING / REJECTED (không cần file `status.js` riêng — đã có sẵn); VERIFIED → `router.replace("/org/(tabs)/campaigns")`. Thêm `(org)/org/(tabs)/_layout.js`.
+- Nộp lại: điền sẵn **cả 4 bước** từ `/me` (`representative`, `documents`, điểm nhận) — sửa comment cũ ở `OrgHomeScreen.js:65`.
+- Logo tổ chức: thêm `ORGANIZATION_LOGOS` vào `src/constants/upload.js`, đổi `OrgReviewScreen.js:54` từ `AVATARS`.
+
+### OA-06 · Trạng thái hồ sơ (`(org)/org/index.js` — `OrgHomeScreen` đã có, chỉnh lại theo dưới)
 
 - **Chờ xác minh**: "ReHome cho tổ chức" · "Hồ sơ đang chờ xác minh · gửi dd/MM · thường 1–2 ngày làm việc" + kéo tải lại / nút **Kiểm tra lại** + **Đăng xuất**.
 - **Bị từ chối**: "Hồ sơ chưa được duyệt" · ngày · **Lý do từ chối** · **Giấy tờ đã nộp** (✓ đạt / ✕ chưa đủ — nếu BE trả) · "Gửi lại thì chỉ cần bổ sung phần thiếu…" · nút **Bổ sung hồ sơ** → 4 bước đăng ký điền sẵn → `PUT` (0.5 B10).
@@ -709,14 +771,43 @@ Chiến dịch · Bài viết · Tin nhắn · Hồ sơ — khai báo bằng m�
 ### OC-02 / OC-04 · Tạo / sửa chiến dịch (`campaigns/new.js`, `campaigns/[id]/edit.js`)
 
 Một `CampaignForm` cho cả hai (như `ConsignFormFields`):
-- **Tên chiến dịch \*** (nếu BE có — 0.5 A16) · **Ảnh bìa** (`PhotoPicker` 1 ảnh; nếu BE có) · **Mô tả \*** (nhiều dòng) · **Nhận đồ từ ngày — đến ngày \*** (2 `DateField`; chữ nhỏ "Hết ngày cuối, chiến dịch tự đóng — không cần bạn làm gì.") · **Loại đồ đang cần \*** (`ItemTypePicker`: chip `CAMPAIGN_ITEM_TYPES` chọn nhiều + "Thêm loại khác"; chữ nhỏ "Chọn càng đúng, người quyên góp càng ít mang nhầm đồ…") · **Địa điểm nhận đồ** (chỉ đọc = điểm nhận của tổ chức; gửi `locationName`, `latitude`, `longitude` từ hồ sơ — 0.5 A15).
-- Sửa: dữ liệu điền sẵn; **ngày bắt đầu khoá** khi đã bắt đầu (0.5 B4) + chữ nhỏ; nút Lưu mờ khi chưa sửa.
+- **Tên chiến dịch \*** (nếu BE có — 0.5 A16) · **Ảnh bìa** (`PhotoPicker` 1 ảnh; nếu BE có) · **Mô tả \*** (nhiều dòng) · **Nhận đồ từ ngày — đến ngày \*** (2 `DateField`; chữ nhỏ "Hết ngày cuối, chiến dịch tự đóng — không cần bạn làm gì.") · **Loại đồ đang cần \*** (`ItemTypePicker`: chip `CAMPAIGN_ITEM_TYPES` chọn nhiều + "Thêm loại khác"; chữ nhỏ "Chọn càng đúng, người quyên góp càng ít mang nhầm đồ…") · **Cách nhận đồ \*** (**sau Review 2**, wireframe 31/10, thay cho "chỉ đọc = điểm nhận của tổ chức"): hai lựa chọn — **Nhận tại địa chỉ riêng** (hiện địa chỉ + giờ nhận trong hồ sơ tổ chức, chỉ đọc; chữ nhỏ "Bạn có thể ghi note người quyên góp, không bắt buộc") · **Nhận tại điểm ký gửi** (bấm "Chọn kho" → danh sách **chọn nhiều** từ `GET /warehouses`, mọi kho đang hoạt động, hiện địa chỉ + giờ mở cửa; chữ nhỏ "Nhân viên ReHome nhận đồ giúp bạn tại quầy, bạn xem danh sách đồ chờ lấy rồi tới lấy"). Cho chọn **cả hai** cho tới khi lead trả lời L1; giá trị form `receiving: { ownAddress, warehouseIds[] }`, hợp lệ khi `ownAddress || warehouseIds.length > 0`. Tên field gửi BE [CHỜ BE] (mục 5.2 API 119).
+- **Chọn kho — dùng lại KG-03, phải tách trước.** `WarehouseStep` (`features/consignment/components/WarehouseStep.js:82`) hiện: chọn **một** kho (radio, `value` = 1 id, :46-60, :144); **tự chọn sẵn kho đầu tiên** (:100-104) — OC-02 không được tự chọn; gọi `consignmentApi.getNearestWarehouses` + `consignKeys` (:15-16, :94-98) — tổ chức không gọi được `/warehouses/nearest` (chỉ MEMBER); `getCoords()` viết riêng (:28-41, trùng `utils/location.js`); câu "7 ngày mang đồ đến" cứng trong component (:148-154). Tách thành: `components/warehouse/WarehouseOption` (radio | checkbox) + hook `useWarehouses({ nearest })` (dùng `utils/location.getCoords`; tổ chức → `GET /warehouses`, km tự tính haversine nếu có vị trí) + `WarehousePicker({ multiple, value | values, autoSelectFirst, note })`. KG-03 giữ hành vi cũ (`autoSelectFirst`, note 7 ngày).
+- Sửa: dữ liệu điền sẵn; **ngày bắt đầu khoá** khi đã bắt đầu (0.5 B4) + chữ nhỏ; nút Lưu mờ khi chưa sửa; lưu là áp dụng ngay. Kho **đã có đơn chờ lấy** thì **khoá, không bỏ chọn được** [GIẢ ĐỊNH — CHỜ LEAD L4].
 - Footer: **Đăng chiến dịch** / **Lưu thay đổi** (+ **Huỷ**). 409 `CAMPAIGN_LIMIT_REACHED` → `Alert` + về OC-01.
-- `campaignSchema` (zod 4): mô tả 20–2000 ký tự [GIẢ ĐỊNH], ngày kết thúc > ngày bắt đầu, ngày bắt đầu ≥ hôm nay (khi tạo), ≥ 1 loại đồ.
+- `campaignSchema` (zod 4) + `features/orgPortal/utils/campaignRules.js`: mô tả 20–2000 ký tự [GIẢ ĐỊNH], ngày kết thúc > ngày bắt đầu, ngày bắt đầu ≥ hôm nay (khi tạo), ≥ 1 loại đồ, nơi nhận hợp lệ (trên), giới hạn `ORG_LIMITS.MAX_OPEN_CAMPAIGNS`. Không viết ràng buộc rải trong màn.
 
 ### OC-03 · Chi tiết chiến dịch (`campaigns/[id]/index.js`)
 
 - Như CD-04 (dùng chung `CampaignInfo`), thêm: header nút **Sửa**; footer **Sửa chiến dịch** · **Đóng sớm** (`Alert` "Đóng chiến dịch? Chiến dịch biến khỏi Cộng đồng ngay, không chờ tới dd/MM." → `closeCampaign`). Chiến dịch CLOSED → không có 2 nút.
+- Wireframe 31/10 (từ trên xuống): header ← "Chiến dịch" + nút **Sửa** · ảnh bìa có nhãn **ĐANG NHẬN ĐỒ** · tên + "Đăng dd/mm · nhận tới dd/mm · còn n ngày" · khối số liệu (lượt xem, bài viết liên quan, lượt chia sẻ) · "Loại đồ đang cần" (chip) · "Mô tả" · footer **[Sửa chiến dịch] [Đóng sớm]** + chú thích dưới nút "Đóng sớm thì chiến dịch biến khỏi feed ngay, không chờ tới dd/mm". Wireframe **không** có khối nơi nhận đồ, **không** có lối vào OC-07 / OC-08.
+- **Sau Review 2** — khối **"NƠI NHẬN ĐỒ"** [GIẢ ĐỊNH, CHỜ LEAD L5]: đặt **đúng chỗ khối số liệu** (khối số liệu ẩn theo B1); tiêu đề nhỏ viết hoa xám như "LOẠI ĐỒ ĐANG CẦN".
+  - **Dòng địa chỉ riêng**: địa chỉ + giờ nhận, trình bày như thẻ "Nhận tại địa chỉ riêng" của OC-02; bên phải nút viền **"Ghi note"** → OC-08.
+  - **Mỗi kho một dòng**: tên kho · địa chỉ; bên phải **"n chờ lấy ›"** → OC-07 kho đó; 0 đơn → **"Chưa có đơn"**. Số đếm: [CHỜ BE] số đơn chờ lấy theo kho (PHASE7 mục 5); mock / tạm thì đếm từ API 153.
+  - Chiến dịch **CLOSED**: vẫn mở được OC-07 (xem lịch sử, cả lượt đã bàn giao); **ẩn** nút "Ghi note" [GIẢ ĐỊNH].
+- Footer: giữ chú thích dưới nút **Đóng sớm** như wireframe **và** `Alert` xác nhận khi bấm (như trên).
+
+### OC-07 · Đơn chờ lấy (`campaigns/[id]/donations.js?warehouseId=`) — sau Review 2, mã theo wireframe 31/10
+
+F-166, UC-94. **Một kho của một chiến dịch**, chỉ đọc. ✅ Lead chốt 01/11: xem **theo chiến dịch**, **có hiện cả lượt đã bàn giao**, **có thông báo** khi Moderator ghi lượt mới.
+- Mở từ OC-03 (dòng của kho) và từ thông báo "Có lượt quyên góp mới tại <kho>" (đích = chiến dịch + `warehouseId`).
+- Dữ liệu: API 153 `getMyDonations({ campaignId, warehouseId })` — mảng `{id, campaignId [CHỜ BE], warehouseId, donorName, isAnonymous, note, status, createdAt, recordedBy [CHỜ BE], handedOverAt [CHỜ BE]}`. Tên / địa chỉ / giờ mở cửa kho ghép `warehouseId` với `GET /warehouses` (đã có, public). Mock có đủ các field.
+- Đầu màn: tên chiến dịch + tên, địa chỉ kho (+ **Chỉ đường**).
+- Danh sách **mới nhất ở trên**: `isAnonymous` → **"Ẩn danh"** (chữ xám), không thì `donorName` · note trong ngoặc kép · chip **CHỜ LẤY** / **ĐÃ BÀN GIAO** (nhãn qua `donationStatusLabel`) · dòng "Ghi nhận dd/mm · hh:mm bởi <mã Moderator>" (đã bàn giao thì thêm "đã bàn giao cho tổ chức dd/mm"). **Không** có số kg / số lượng.
+- Kéo để tải lại; rỗng → "Chưa có ai mang đồ tới kho này".
+- NoteBox: "Tới quầy, nhân viên ReHome xác nhận bàn giao trên hệ thống — bạn không cần bấm gì trong app." Không có nút xác nhận đã lấy (F-165 là của Moderator trên web: QG-01 → QG-03).
+
+### OC-08 · Ghi note quyên góp (`campaigns/[id]/donation-note.js`) — sau Review 2, mã theo wireframe 31/10
+
+F-167, UC-95. Chỉ cho chiến dịch nhận tại **địa chỉ riêng**; **không bắt buộc**. Mở từ OC-03 (nút "Ghi note") → `campaignId` lấy từ route.
+- Wireframe 31/10: header ← "Ghi note quyên góp" · hộp xám giải thích · "Người quyên góp" (ô tên + ô tích Ẩn danh + chữ hướng dẫn) · "Note (tuỳ chọn)" + "Chỉ là chữ tự do…" · footer **[Lưu note] [Bỏ qua]**. Wireframe **không** nói "Bỏ qua" làm gì, **không** hiện tên chiến dịch.
+- Dải nhỏ dưới header: **tên chiến dịch** (như đầu màn OC-07) [GIẢ ĐỊNH, CHỜ LEAD L8] — vì API 154 cần `campaignId` và tổ chức có thể có nhiều chiến dịch nhận tại địa chỉ riêng.
+- Hộp xám giải thích: chỉ dành cho nhận tại địa chỉ riêng, không bắt buộc, hệ thống không theo dõi.
+- **Người quyên góp**: ô tên + ô tích **Ẩn danh** (tích thì ô tên xoá và khoá; gửi `isAnonymous: true`, **không** gửi `donorName`). Lỗi: chưa tên mà không tích → "Nhập tên người quyên góp hoặc chọn Ẩn danh" (khớp lỗi 400 API 154).
+- **Note (tuỳ chọn)**: chữ tự do, ≤ 500 ký tự [GIẢ ĐỊNH]; dòng "Chỉ là chữ tự do — không có ô số lượng hay cân nặng".
+- Footer **Lưu note** → `createDonationNote` (API 154) → toast + quay lại OC-03.
+- **Bỏ qua** và nút **←** cùng hành vi: form trống → quay lại OC-03 ngay; đã nhập tên hoặc note → `Alert` "Bỏ note đang ghi?" [Ghi tiếp] [Bỏ] (như OB-02 "Bỏ bài đang soạn?"). Giữ chữ "Bỏ qua" theo wireframe tới khi lead trả lời **L8**.
+- Xem lại các note đã ghi: **chưa có API** → không làm danh sách [CHỜ LEAD L3 / BE].
 
 ### OB-01 · Bài viết đã đăng (`(tabs)/posts.js`)
 
@@ -761,7 +852,7 @@ Một `CampaignForm` cho cả hai (như `ConsignFormFields`):
 
 - NoteBox "Gửi xong, hồ sơ công khai giữ nguyên thông tin cũ cho tới khi Moderator duyệt. Chiến dịch và bài viết vẫn chạy bình thường."
 - **Chọn thông tin muốn đổi** (`Checkbox`): Người đại diện theo pháp luật · Tên pháp lý · Loại hình. Tích mục nào hiện form mục đó; chữ nhỏ "Khai lại đầy đủ như lúc đăng ký, không sửa từng phần."
-- Từng form **dùng lại component đăng ký tổ chức** (0.5 B8), mỗi form có dòng "Hiện tại: …":
+- Từng form **dùng lại component đăng ký tổ chức** (0.5 B8), mỗi form có dòng "Hiện tại: …". **Phải tách trước:** `LegalDocCard`, `CccdSlot` đã là component (`features/organization/components/`); còn **khối người đại diện** (viết thẳng trong `OrgRepresentativeScreen.js:71-121`) và **chọn loại hình** (`RadioCard` lặp `ORG_TYPES` trong `OrgInfoScreen.js:147-163`) → tách thành `RepresentativeFields`, `OrgTypePicker` dùng chung đăng ký + OP-04.
   1. Người đại diện mới: họ tên, chức vụ, SĐT, email, CCCD 2 mặt (chụp / thư viện), họ tên trên thẻ, số CCCD, ngày cấp, nơi cấp.
   2. Tên pháp lý mới + giấy tờ pháp lý mới (`LegalDocCard`).
   3. Loại hình mới (danh sách như OA-01) + chữ "Đổi loại hình thì phải nộp giấy tờ tương ứng".
@@ -807,6 +898,12 @@ Một `CampaignForm` cho cả hai (như `ConsignFormFields`):
 - [ ] OB: đăng bài có ảnh → Member thấy ở CD-01; sửa; xoá có hỏi (nêu số thích / bình luận).
 - [ ] OM: tin Member gửi ở CH-02 hiện ở OM-01 (mock dùng chung kho).
 - [ ] OP-02 lỗi dưới ô + hộp đầu; OP-04 tích mục → form hiện; gửi → OP-05 Chờ duyệt → Khung Mock duyệt / từ chối.
+- [ ] (sau Review 2) OC-02 chọn **Địa điểm ký gửi** → chọn kho → CD-04 phía Member hiện đúng câu nhận tại quầy.
+- [ ] (sau Review 2) OC-02: chọn địa chỉ riêng, chọn nhiều kho, chọn cả hai; không chọn gì → lỗi; KG-03 ký gửi vẫn chạy như cũ sau khi tách `WarehousePicker` (tự chọn kho gần nhất, câu 7 ngày).
+- [ ] (sau Review 2) OC-03: khối "NƠI NHẬN ĐỒ" ở chỗ khối số liệu; mỗi kho một dòng "n chờ lấy ›" / "Chưa có đơn" → OC-07 đúng kho; nút "Ghi note" chỉ hiện khi có địa chỉ riêng và chiến dịch chưa CLOSED; CLOSED vẫn mở được OC-07; Đóng sớm có chú thích + Alert.
+- [ ] (sau Review 2) OC-07: Khung Mock "Moderator ghi 1 lượt" → thông báo → mở đúng chiến dịch + kho, lượt mới CHỜ LẤY ở đầu; "Moderator bàn giao" → ĐÃ BÀN GIAO + ngày. Không chỗ nào hiện kg.
+- [ ] (sau Review 2) OC-08: dải tên chiến dịch dưới header; tích Ẩn danh → ô tên xoá và khoá, request không có `donorName`; thiếu tên + không tích → lỗi; Lưu → toast + về OC-03; Bỏ qua / ← khi trống → về ngay, khi đã nhập → hỏi "Bỏ note đang ghi?".
+- [ ] (sau Review 2) Nộp lại hồ sơ bị từ chối: cả 4 bước điền sẵn từ `/me`; logo upload vào `ORGANIZATION_LOGOS`.
 
 ---
 
@@ -858,6 +955,18 @@ Mô tả PR: Đã làm · Đang dùng mock · Lệch wireframe (bảng 0.5) · C
 23. ~~Tổ chức làm web hay mobile?~~ → **Đã chốt mobile (21/10).** Nhờ lead sửa cột nền tảng F-096 … F-107 trong tài liệu tổng quan từ "Web" thành "Mobile" cho khớp (mục 0.3).
 24. CD-05: danh sách + mở Google Maps, hay cần **bản đồ trong app** (thêm thư viện, API key, build lại)? (0.5 A13)
 25. Chia sẻ ảnh thử đồ có cần cho demo không? (0.5 A5)
-26. Chiến dịch có địa điểm riêng hay luôn là điểm nhận của tổ chức? (0.5 A15)
+26. ~~Chiến dịch có địa điểm riêng hay luôn là điểm nhận của tổ chức?~~ → **Review 2 chốt:** mỗi chiến dịch chọn địa chỉ riêng của tổ chức **hoặc** địa điểm ký gửi ReHome (mục 0.6).
 27. Hộp thư kho: một hộp chung hay mỗi kho một hộp? "Nhắn hỗ trợ" ở ví gửi về đâu? (0.5 A21)
 28. Thông báo đẩy khi app đóng — cần cho demo không (thêm FCM + BE)? (0.1)
+
+**Sau Review 2 (01/11) — đã gửi BE, chờ trả lời**
+
+> Câu hỏi mới cho lead (L1–L6) và danh sách gửi BE đầy đủ: **PHASE7_GUIDE mục 4–5**. Các câu dưới giữ để tra lịch sử.
+
+29. ✅ **Lead chốt 01/11:** chọn **nhiều** kho, **bất kỳ** kho nào. Còn hỏi lead (**L1**): một chiến dịch chọn **một trong hai** kiểu nơi nhận hay **được cả hai**? Còn hỏi (**L4**): sửa chiến dịch có bỏ được kho đang có đơn chờ lấy không?
+30. ✅ **Lead chốt 01/11:** xem **theo chiến dịch**, **có hiện** lượt đã bàn giao → BE cần thêm `campaignId` (mục 5.2 lỗ hổng a).
+31. API 154 có `campaignId` bắt buộc → note gắn chiến dịch. Còn hỏi lead (**L3**): tổ chức có xem lại / sửa / xoá note đã ghi không?
+32. ✅ **Lead chốt 01/11:** **có** thông báo. Còn hỏi BE: loại `NotificationType` mới (vd `DONATION_RECORDED`) + `targetType = CAMPAIGN`, `targetId`, `warehouseId` (Notification BE hiện **chưa có** `targetType/targetId`).
+33. ~~Contract API 153–154~~ → đã có trong _Mô tả API sau Review 2_ (mục 5.2). **Còn hỏi BE:** field nơi nhận ở API 119/120/102 (đề xuất `receiveAtOwnAddress`, `warehouseIds[]`); `campaignId` ở API 150–153; `recordedBy`, `handedOverAt` ở 153; API đọc lại note (nếu L3 = có).
+35. **Lead (L2):** giữ **Tên chiến dịch** và **Ảnh bìa** không (DB Campaign chưa có cột)? **(L5):** lối vào OC-07 / OC-08 và bố cục khối "NƠI NHẬN ĐỒ" ở OC-03 như mục 8 — đồng ý không? **(L8):** OC-08 giữ chữ "Bỏ qua" hay đổi "Huỷ"; thêm dải tên chiến dịch dưới header được không?
+34. **Lead:** thử đồ còn slot **Đầm** không (tài liệu sau Review 2 chỉ ghi Áo + Quần; API 97 vẫn có `dressProductId`)? ~~Nháp ký gửi còn làm không?~~ → ✅ **lead chốt 01/11: vẫn làm.**
