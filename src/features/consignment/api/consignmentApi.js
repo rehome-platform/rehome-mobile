@@ -13,6 +13,7 @@ export const consignmentApi = {
   updateForm: impl.updateForm,
   getReceipt: impl.getReceipt,
   confirmReceipt: impl.confirmReceipt,
+  downloadReceiptPdf: impl.downloadReceiptPdf,
   getMyProducts: impl.getMyProducts,
   getProduct: impl.getProduct,
   reducePrice: impl.reducePrice,

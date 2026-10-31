@@ -1,6 +1,7 @@
 // Mock nhóm ký gửi (API 14–24) [CHỜ BE]. Cùng tên hàm + hình dạng dữ liệu với bản thật sau này.
 // Dữ liệu "sống" trong RAM: tạo/sửa thấy ngay; reload app thì về dữ liệu mẫu.
 import dayjs from "dayjs";
+import { File, Paths } from "expo-file-system";
 import { ApiError } from "@/lib/api/errors";
 import {
   CONSIGN_LIMITS,
@@ -163,6 +164,15 @@ export async function updateForm(id, payload) {
   return { ...updated };
 }
 // API 19 — GET /consignment-receipts/{id}
+// Giống bản thật: tải PDF mẫu về bộ nhớ đệm, trả File
+export async function downloadReceiptPdf(receipt) {
+  return File.downloadFileAsync(
+    SAMPLE_PDF,
+    new File(Paths.cache, `${receipt.receiptNo ?? receipt.id}.pdf`),
+    { idempotent: true },
+  );
+}
+
 export async function getReceipt(id) {
   await delay();
   const receipt = receipts.find((r) => r.id === id);
@@ -196,7 +206,7 @@ export async function confirmReceipt(id) {
   }
   const confirmedAt = new Date().toISOString();
   receipts = receipts.map((r) =>
-    r.id === id ? { ...r, confirmedAt, pdfUrl: SAMPLE_PDF } : r,
+    r.id === id ? { ...r, confirmedAt, pdfAvailable: true } : r,
   );
   forms = forms.map((f) =>
     f.receiptId === id ? { ...f, receiptConfirmed: true } : f,
@@ -230,7 +240,7 @@ export async function confirmReceipt(id) {
         : p,
     );
   }
-  return { id, confirmedAt, pdfUrl: SAMPLE_PDF };
+  return { id, confirmedAt, pdfAvailable: true };
 }
 // API 21 — GET /products/mine?page&size. Mock trả đủ field; lọc theo trạng thái làm ở app
 // (BE chưa chốt cách lọc "chờ cuối kỳ") [CHỜ BE]
@@ -387,7 +397,7 @@ export async function mockProposeNewPrice(productId) {
       previousPrice: p.currentPrice, // [CHỜ BE] giá cũ + ghi chú Moderator (KG-12)
       moderatorNote: "Hàng còn đẹp, đề xuất hạ giá để dễ bán hơn.",
       confirmedAt: null,
-      pdfUrl: null,
+      pdfAvailable: false,
       createdAt: new Date().toISOString(),
     },
     ...receipts,

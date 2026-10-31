@@ -534,6 +534,14 @@ export default function ProductDetailScreen() {
         ) : view === PRODUCT_VIEW.ENDED ? (
           <NoteBox>{`Sản phẩm đã kết thúc ký gửi: ${PRODUCT_ENDED_LABEL[product.status] ?? product.status}.`}</NoteBox>
         ) : null}
+        {/* Biên nhận đang áp dụng (hợp đồng): xem lại, tải PDF bất cứ lúc nào. [CHỜ BE] receiptId */}
+        {product.receiptId ? (
+          <Button
+            title="Xem biên nhận ký gửi"
+            variant="secondary"
+            onPress={() => router.push(`/receipts/${product.receiptId}`)}
+          />
+        ) : null}
         <MessageWarehouseButton
           warehouseId={product.warehouseId}
           warehouseName={product.warehouseName}
