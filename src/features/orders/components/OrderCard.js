@@ -7,7 +7,8 @@ import { formatCountdown } from "@/hooks/useCountdown";
 import { ORDER_STATUS as S } from "@/constants/order";
 import { useSecondsLeft } from "../hooks/useSecondsLeft";
 import { toDate } from "../utils/time";
-import { formatTimeLeft } from "../utils/orderRules";
+import { formatTimeLeft, returnDeadlineOf } from "../utils/orderRules";
+import { canRequestReturn } from "@/features/returns/utils/returnRules";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 
 // Đơn cần Member làm gì → viền đậm (như wireframe)
@@ -32,8 +33,21 @@ function PendingFooter({ order, onPay }) {
   );
 }
 
-// Dòng cuối thẻ: chữ + nút theo trạng thái (PHASE4_GUIDE mục 7 BR-10)
-function Footer({ order, onPay, onTrack, onConfirm, onRate }) {
+// Dòng cuối thẻ: chữ + nút theo trạng thái (PHASE4_GUIDE mục 7 BR-10).
+// Đã giao mà còn hạn trả → thêm nút "Trả hàng" ngay trên thẻ (giống Shopee, Lazada).
+// Hoàn thành thì không trả được nữa (BE đã chuyển tiền cho người ký gửi).
+// Không có "Mua lại": hàng ký gửi là món duy nhất, đã bán là hết
+function Footer({ order, onPay, onTrack, onConfirm, onRate, onReturn }) {
+  const returnable = canRequestReturn(order);
+  const returnBtn = returnable ? (
+    <Button
+      title="Trả hàng"
+      variant="secondary"
+      onPress={onReturn}
+      style={styles.action}
+    />
+  ) : null;
+
   switch (order.status) {
     case S.PENDING_PAYMENT:
       return <PendingFooter order={order} onPay={onPay} />;
@@ -61,13 +75,18 @@ function Footer({ order, onPay, onTrack, onConfirm, onRate }) {
       return (
         <>
           <Text style={styles.muted}>
-            Tự hoàn thành sau {formatTimeLeft(order.autoCompleteDeadline)}
+            {returnable
+              ? `Trả hàng trước ${returnDeadlineOf(order).format("DD/MM HH:mm")}`
+              : `Tự hoàn thành sau ${formatTimeLeft(order.autoCompleteDeadline)}`}
           </Text>
-          <Button
-            title="Đã nhận hàng"
-            onPress={onConfirm}
-            style={styles.action}
-          />
+          <View style={styles.actions}>
+            {returnBtn}
+            <Button
+              title="Đã nhận hàng"
+              onPress={onConfirm}
+              style={styles.action}
+            />
+          </View>
         </>
       );
     case S.COMPLETED:
@@ -219,5 +238,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.sm,
   },
+  actions: { flexDirection: "row", gap: spacing.sm },
   action: { minHeight: 36, paddingHorizontal: spacing.md },
 });

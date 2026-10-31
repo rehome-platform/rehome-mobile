@@ -7,11 +7,12 @@ import { ordersApi } from "../api/ordersApi";
 import { useOrderMutation } from "../hooks/useOrders";
 import { router } from "expo-router";
 
+// Theo BE (ReturnRequestServiceImpl, OrderServiceImpl.confirmReceipt): xác nhận = COMPLETED,
+// tiền vào ví người ký gửi ngay, đơn COMPLETED không gửi yêu cầu trả được nữa
 const POINTS = [
   "Đơn chuyển sang Hoàn thành ngay lập tức.",
-  "Bạn vẫn còn 3 ngày để gửi yêu cầu trả hàng nếu phát hiện vấn đề.",
-  // [CHỜ LEAD/BE] thời điểm tiền vào ví người ký gửi (PHASE4_GUIDE 0.4 #7, câu 12) — giữ đúng chữ wireframe
-  "Hết 3 ngày đó, tiền mới được chuyển cho người ký gửi.",
+  "Tiền được chuyển cho người ký gửi ngay.",
+  "Sau khi xác nhận, bạn không gửi yêu cầu trả hàng được nữa.",
 ];
 
 // BR-13 · Xác nhận đã nhận hàng. order: chi tiết (items) hoặc dòng danh sách (firstItem). Đóng = onClose
@@ -75,8 +76,8 @@ export function ConfirmReceiptDialog({ order, onClose }) {
           </View>
 
           <Text style={styles.note}>
-            Không bấm cũng được — hệ thống tự hoàn thành đơn sau 3 ngày kể từ
-            khi giao. Bấm sớm chỉ giúp người ký gửi nhận tiền nhanh hơn.
+            Hàng có vấn đề thì chọn "Để sau" rồi bấm Trả hàng. Không bấm gì
+            thì hệ thống tự hoàn thành đơn sau 3 ngày kể từ khi giao.
           </Text>
 
           <View style={styles.actions}>

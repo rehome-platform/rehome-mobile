@@ -288,6 +288,45 @@ export default function OrderDetailScreen() {
         <OrderStepper step={orderStepOf(order)} />
       ) : null}
 
+      {/* Phase 5: trả hàng — chỉ khi Đã giao, còn hạn (Hoàn thành thì BE không nhận).
+          Đặt ngay dưới thanh bước (không để cuối trang) cho dễ thấy */}
+      {canRequestReturn(order) ? (
+        <View style={styles.returnBox}>
+          <View style={styles.flex}>
+            <Text style={styles.strong}>Hàng có vấn đề?</Text>
+            <Text style={styles.muted}>
+              Còn {formatTimeLeft(returnDeadlineOf(order))} để yêu cầu trả hàng
+              (hạn {returnDeadlineOf(order).format("DD/MM HH:mm")})
+            </Text>
+          </View>
+          <Button
+            title="Trả hàng"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: "/returns/new",
+                params: { orderId: order.id },
+              })
+            }
+            style={styles.smallBtn}
+          />
+        </View>
+      ) : null}
+      {order.returnRequestId ? (
+        <ListGroup>
+          <ListItem
+            icon="return-down-back-outline"
+            title="Yêu cầu trả hàng"
+            description={
+              returnReq.data
+                ? RETURN_STATUS_LABEL[returnReq.data.status]
+                : undefined
+            }
+            onPress={() => router.push(`/returns/${order.returnRequestId}`)}
+          />
+        </ListGroup>
+      ) : null}
+
       {/* ---- Khối theo trạng thái ---- */}
       {order.status === S.PENDING_PAYMENT ? (
         <PendingBlock order={order} onExpire={() => query.refetch()} />
@@ -351,8 +390,8 @@ export default function OrderDetailScreen() {
             ) : null}
           </Section>
           <InfoBox title="Không huỷ đơn được nữa">
-            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bạn có 3 ngày kể từ
-            khi nhận để gửi yêu cầu trả hàng.
+            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bấm Trả hàng
+            trước khi xác nhận đã nhận (tối đa 3 ngày kể từ khi giao).
           </InfoBox>
         </>
       ) : null}
@@ -370,9 +409,12 @@ export default function OrderDetailScreen() {
             </Text>
             <View style={styles.innerNote}>
               <Text style={styles.text}>
-                Xác nhận{" "}
-                <Text style={styles.strong}>không làm mất quyền trả hàng</Text>.
-                Bạn vẫn có 3 ngày kể từ khi nhận để gửi yêu cầu trả.
+                Hàng có vấn đề thì bấm{" "}
+                <Text style={styles.strong}>Trả hàng</Text> ở trên.{" "}
+                <Text style={styles.strong}>
+                  Xác nhận rồi thì không trả hàng được nữa
+                </Text>{" "}
+                vì tiền được chuyển ngay cho người ký gửi.
               </Text>
             </View>
           </InfoBox>
@@ -430,43 +472,6 @@ export default function OrderDetailScreen() {
             </InfoBox>
           ) : null}
         </>
-      ) : null}
-      {/* Phase 5: trả hàng — theo MỐC giao, kể cả khi đơn đã Hoàn thành */}
-      {canRequestReturn(order) ? (
-        <View style={styles.returnBox}>
-          <View style={styles.flex}>
-            <Text style={styles.strong}>Hàng có vấn đề?</Text>
-            <Text style={styles.muted}>
-              Còn {formatTimeLeft(returnDeadlineOf(order))} để yêu cầu trả hàng
-              (hạn {returnDeadlineOf(order).format("DD/MM HH:mm")})
-            </Text>
-          </View>
-          <Button
-            title="Trả hàng"
-            variant="secondary"
-            onPress={() =>
-              router.push({
-                pathname: "/returns/new",
-                params: { orderId: order.id },
-              })
-            }
-            style={styles.smallBtn}
-          />
-        </View>
-      ) : null}
-      {order.returnRequestId ? (
-        <ListGroup>
-          <ListItem
-            icon="return-down-back-outline"
-            title="Yêu cầu trả hàng"
-            description={
-              returnReq.data
-                ? RETURN_STATUS_LABEL[returnReq.data.status]
-                : undefined
-            }
-            onPress={() => router.push(`/returns/${order.returnRequestId}`)}
-          />
-        </ListGroup>
       ) : null}
 
       {/* ---- Phần chung ---- */}

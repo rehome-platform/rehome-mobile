@@ -108,6 +108,12 @@ export default function OrderListScreen() {
             onTrack={() => router.push(`/orders/${item.id}/tracking`)}
             onConfirm={() => setConfirmOrder(item)}
             onRate={() => router.push(`/orders/${item.id}/rating`)}
+            onReturn={() =>
+              router.push({
+                pathname: "/returns/new",
+                params: { orderId: item.id },
+              })
+            }
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.gap} />}

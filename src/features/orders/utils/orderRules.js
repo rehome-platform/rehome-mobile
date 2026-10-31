@@ -21,9 +21,15 @@ export const canTrack = (o) =>
 export const wasRefunded = (o) =>
   o.status === S.CANCELLED && (o.refundAmount ?? 0) > 0;
 
-// Phase 5 dùng: hạn trả hàng tính theo MỐC giao, không theo trạng thái. [CHỜ BE] số ngày từ cấu hình
+// Phase 5 dùng: hạn trả hàng tính theo MỐC giao, không theo trạng thái.
+// Chi tiết đơn có returnDeadline do BE tính (app.return.request-window-days); danh sách đơn chưa có
+// → tự cộng `days` từ deliveredAt
 export const returnDeadlineOf = (o, days = 3) =>
-  o.deliveredAt ? toDate(o.deliveredAt).add(days, "day") : null;
+  o.returnDeadline
+    ? toDate(o.returnDeadline)
+    : o.deliveredAt
+      ? toDate(o.deliveredAt).add(days, "day")
+      : null;
 
 // Chỉ số bước ĐÃ XONG cuối cùng trên ORDER_STEPS (bước kế = đang diễn ra). Đã huỷ → -1 (không vẽ thanh bước)
 export const orderStepOf = (o) =>
