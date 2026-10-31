@@ -288,7 +288,7 @@ export default function OrderDetailScreen() {
         <OrderStepper step={orderStepOf(order)} />
       ) : null}
 
-      {/* Phase 5: trả hàng — chỉ khi Đã giao, còn hạn (Hoàn thành thì BE không nhận).
+      {/* Phase 5: trả hàng — Đã giao hoặc Hoàn thành, còn hạn 3 ngày kể từ lúc giao.
           Đặt ngay dưới thanh bước (không để cuối trang) cho dễ thấy */}
       {canRequestReturn(order) ? (
         <View style={styles.returnBox}>
@@ -390,8 +390,8 @@ export default function OrderDetailScreen() {
             ) : null}
           </Section>
           <InfoBox title="Không huỷ đơn được nữa">
-            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bấm Trả hàng
-            trước khi xác nhận đã nhận (tối đa 3 ngày kể từ khi giao).
+            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bạn có 3 ngày
+            kể từ khi giao để bấm Trả hàng.
           </InfoBox>
         </>
       ) : null}
@@ -410,11 +410,12 @@ export default function OrderDetailScreen() {
             <View style={styles.innerNote}>
               <Text style={styles.text}>
                 Hàng có vấn đề thì bấm{" "}
-                <Text style={styles.strong}>Trả hàng</Text> ở trên.{" "}
+                <Text style={styles.strong}>Trả hàng</Text> ở trên. Đã xác nhận
+                rồi vẫn trả được tới{" "}
                 <Text style={styles.strong}>
-                  Xác nhận rồi thì không trả hàng được nữa
-                </Text>{" "}
-                vì tiền được chuyển ngay cho người ký gửi.
+                  {returnDeadlineOf(order)?.format("DD/MM HH:mm")}
+                </Text>
+                .
               </Text>
             </View>
           </InfoBox>

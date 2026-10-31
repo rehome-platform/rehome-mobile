@@ -35,7 +35,7 @@ function PendingFooter({ order, onPay }) {
 
 // Dòng cuối thẻ: chữ + nút theo trạng thái (PHASE4_GUIDE mục 7 BR-10).
 // Đã giao mà còn hạn trả → thêm nút "Trả hàng" ngay trên thẻ (giống Shopee, Lazada).
-// Hoàn thành thì không trả được nữa (BE đã chuyển tiền cho người ký gửi).
+// Đã giao / Hoàn thành mà còn hạn 3 ngày thì có nút Trả hàng (tiền người ký gửi giữ tới hết hạn).
 // Không có "Mua lại": hàng ký gửi là món duy nhất, đã bán là hết
 function Footer({ order, onPay, onTrack, onConfirm, onRate, onReturn }) {
   const returnable = canRequestReturn(order);
@@ -90,6 +90,16 @@ function Footer({ order, onPay, onTrack, onConfirm, onRate, onReturn }) {
         </>
       );
     case S.COMPLETED:
+      // Còn hạn trả hàng thì ưu tiên nút Trả hàng; đánh giá làm trong chi tiết đơn
+      if (returnable)
+        return (
+          <>
+            <Text style={styles.muted}>
+              {`Trả hàng trước ${returnDeadlineOf(order).format("DD/MM HH:mm")}`}
+            </Text>
+            {returnBtn}
+          </>
+        );
       return order.serviceRating != null ? (
         <Text style={styles.muted}>
           ★ {order.serviceRating}/5 · Đã đánh giá

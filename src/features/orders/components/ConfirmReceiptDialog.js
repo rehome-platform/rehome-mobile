@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/Button";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import { ordersApi } from "../api/ordersApi";
+import { returnDeadlineOf } from "../utils/orderRules";
 import { useOrderMutation } from "../hooks/useOrders";
 import { router } from "expo-router";
 
-// Theo BE (ReturnRequestServiceImpl, OrderServiceImpl.confirmReceipt): xác nhận = COMPLETED,
-// tiền vào ví người ký gửi ngay, đơn COMPLETED không gửi yêu cầu trả được nữa
-const POINTS = [
+// Theo BE (OrderServiceImpl.confirmReceipt, ReturnRequestServiceImpl): xác nhận = COMPLETED,
+// tiền người ký gửi giữ tới hết hạn trả hàng, nên đơn COMPLETED vẫn trả được trong hạn
+const pointsOf = (deadline) => [
   "Đơn chuyển sang Hoàn thành ngay lập tức.",
-  "Tiền được chuyển cho người ký gửi ngay.",
-  "Sau khi xác nhận, bạn không gửi yêu cầu trả hàng được nữa.",
+  deadline
+    ? `Bạn vẫn trả hàng được tới ${deadline.format("DD/MM HH:mm")}.`
+    : "Bạn vẫn trả hàng được trong 3 ngày kể từ khi giao.",
+  "Hết hạn trả hàng, tiền mới được chuyển cho người ký gửi.",
 ];
 
 // BR-13 · Xác nhận đã nhận hàng. order: chi tiết (items) hoặc dòng danh sách (firstItem). Đóng = onClose
@@ -67,7 +70,7 @@ export function ConfirmReceiptDialog({ order, onClose }) {
           </View>
 
           <View style={styles.points}>
-            {POINTS.map((text, i) => (
+            {pointsOf(returnDeadlineOf(order)).map((text, i) => (
               <View key={text} style={styles.point}>
                 <Text style={styles.num}>{i + 1}</Text>
                 <Text style={styles.text}>{text}</Text>

@@ -5,10 +5,11 @@ import { returnDeadlineOf } from "@/features/orders/utils/orderRules";
 
 // MỌI điều kiện của trả hàng đặt ở đây. Màn hình chỉ gọi hàm.
 
-// BR-11 nút "Trả hàng": chỉ khi đơn ĐÃ GIAO mà chưa hoàn thành, còn hạn, chưa có yêu cầu nào.
-// BE chặn đơn COMPLETED (409 ORDER_NOT_RETURNABLE): hoàn thành = đã chuyển tiền cho người ký gửi
+// BR-11 nút "Trả hàng": đơn Đã giao hoặc Hoàn thành, còn hạn 3 ngày kể từ lúc GHN báo giao,
+// chưa có yêu cầu nào. Đã bấm "Đã nhận hàng" vẫn trả được: BE giữ tiền người ký gửi tới hết hạn
+const RETURNABLE = [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED];
 export const canRequestReturn = (order, now = dayjs()) =>
-  order.status === ORDER_STATUS.DELIVERED &&
+  RETURNABLE.includes(order.status) &&
   !order.returnRequestId && // [CHỜ BE câu 3] field liên kết
   !!returnDeadlineOf(order)?.isAfter(now);
 

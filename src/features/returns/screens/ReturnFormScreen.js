@@ -182,23 +182,15 @@ export default function ReturnFormScreen() {
   if (order.returnRequestId)
     return <Redirect href={`/returns/${order.returnRequestId}`} />;
 
-  // BE chỉ nhận đơn DELIVERED (409 ORDER_NOT_RETURNABLE): Hoàn thành = tiền đã chuyển cho người ký gửi
-  if (order.status !== ORDER_STATUS.DELIVERED || !deadline) {
-    const completed = order.status === ORDER_STATUS.COMPLETED;
+  // BE nhận đơn DELIVERED và COMPLETED (đã bấm nhận hàng vẫn trả được trong hạn)
+  const returnable = [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED];
+  if (!returnable.includes(order.status) || !deadline) {
     return (
       <Screen header={header}>
         <EmptyState
           icon="return-down-back-outline"
-          title={
-            completed
-              ? "Đơn đã hoàn thành, không trả hàng được nữa"
-              : "Đơn này chưa trả hàng được"
-          }
-          description={
-            completed
-              ? "Cần hỗ trợ thêm, bạn nhắn ReHome trong chi tiết đơn."
-              : "Chỉ yêu cầu trả được sau khi đã nhận hàng."
-          }
+          title="Đơn này chưa trả hàng được"
+          description="Chỉ yêu cầu trả được sau khi đã nhận hàng."
         />
       </Screen>
     );
