@@ -11,11 +11,17 @@ const TONE = {
   [FORM_STATUS.CANCELLED]: "neutral",
 };
 
-export function StatusBadge({ status }) {
+// form: BE giữ INSPECTING cả sau khi lập biên nhận → có biên nhận chưa xác nhận thì hiện "Chờ xác nhận biên nhận"
+// (CẦN BẠN làm → warning) thay vì "Đang kiểm định"
+export function StatusBadge({ form }) {
+  if (form.receiptId && !form.receiptConfirmed)
+    return <StatusChip label="Chờ xác nhận biên nhận" tone="warning" />;
+  if (form.receiptConfirmed)
+    return <StatusChip label="Đã nhận hàng" tone="success" />;
   return (
     <StatusChip
-      label={FORM_STATUS_LABEL[status] ?? status}
-      tone={TONE[status]}
+      label={FORM_STATUS_LABEL[form.status] ?? form.status}
+      tone={TONE[form.status]}
     />
   );
 }
