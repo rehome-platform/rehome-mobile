@@ -252,6 +252,12 @@ export async function updateCampaign(id, body) {
   return campaignView(c);
 }
 
+// Ảnh bìa: bản thật sẽ upload lên /uploads rồi trả URL. Mock giữ nguyên đường dẫn ảnh trong máy để vẫn hiện
+export async function uploadCover(uri) {
+  await delay(300);
+  return uri;
+}
+
 // POST /campaigns/{id}/close — đóng sớm
 export async function closeCampaign(id) {
   await seed();

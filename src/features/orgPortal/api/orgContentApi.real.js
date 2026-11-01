@@ -16,5 +16,6 @@ export const getMyCampaign = notReady;
 export const createCampaign = notReady;
 export const updateCampaign = notReady;
 export const closeCampaign = notReady;
+export const uploadCover = notReady; // [CHỜ BE] thư mục upload cho ảnh bìa (CAMPAIGN_COVERS hay COMMUNITY_POSTS)
 export const getDonations = notReady;
 export const createDonationNote = notReady;
