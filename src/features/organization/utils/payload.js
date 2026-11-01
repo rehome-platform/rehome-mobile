@@ -1,7 +1,9 @@
 import {
   formatReceivingHours,
+  parseReceivingHours,
   pickupAddress,
 } from "@/features/organization/utils/summary";
+import { fileFromUrl } from "@/features/organization/utils/files";
 
 // Ghép dữ liệu 4 bước + url tệp đã upload + toạ độ điểm nhận → body RegisterOrganizationRequest (BE 2af9d85).
 // Trường [GIẢ ĐỊNH]: BE chưa lưu (gửi lên bị bỏ qua) — đã có trong danh sách gửi BE
@@ -48,6 +50,60 @@ export function buildRegisterPayload(
       longitude: coords.longitude,
       receivingHours: formatReceivingHours(location),
       contactPhone: location.contactPhone || info.contactPhone,
+    },
+  };
+}
+
+// Ngược lại buildRegisterPayload: hồ sơ bị từ chối (GET /api/organizations/me) → dữ liệu 4 bước để nộp lại.
+// BE không trả SĐT / email người đại diện, họ tên / ngày cấp / nơi cấp trên CCCD → để trống, nhập lại
+export function registrationFromProfile(p) {
+  const rep = p.representative ?? {};
+  const hours = parseReceivingHours(p.donationPointReceivingHours);
+  const useOfficeAddress =
+    !p.donationPointAddress || p.donationPointAddress === p.address;
+  return {
+    info: {
+      legalName: p.legalName ?? "",
+      displayName: p.displayName ?? "",
+      orgType: p.orgType ?? "",
+      taxCode: p.taxCode ?? "",
+      operationScope: p.operationScope ?? "",
+      address: p.address ?? "",
+      contactPhone: p.contactPhone ?? "",
+      contactEmail: p.contactEmail ?? "",
+      website: p.website ?? "",
+      description: p.description ?? "",
+      logoUri: p.logoUrl ?? null,
+    },
+    representative: {
+      fullName: rep.fullName ?? "",
+      position: rep.position ?? "",
+      phone: "",
+      email: "",
+    },
+    documents: {
+      cccdFront: rep.cccdFrontUrl ? fileFromUrl(rep.cccdFrontUrl) : null,
+      cccdBack: rep.cccdBackUrl ? fileFromUrl(rep.cccdBackUrl) : null,
+      cccdName: rep.fullName ?? "",
+      cccdNumber: rep.cccdNumber ?? "",
+      cccdIssueDate: "",
+      cccdIssuePlace: "",
+      legalDocs: (p.documents ?? []).map((doc) => ({
+        file: fileFromUrl(doc.fileUrl),
+        docType: doc.docType ?? "",
+        docNumber: doc.docNumber ?? "",
+        issueDate: doc.issueDate ?? null,
+        issuer: doc.issuingAuthority ?? "",
+      })),
+    },
+    location: {
+      useOfficeAddress,
+      address: useOfficeAddress ? "" : p.donationPointAddress,
+      name: p.donationPointName ?? p.displayName ?? "",
+      days: hours?.days ?? [],
+      openTime: hours?.openTime ?? "08:00",
+      closeTime: hours?.closeTime ?? "17:00",
+      contactPhone: p.donationPointContactPhone ?? "",
     },
   };
 }

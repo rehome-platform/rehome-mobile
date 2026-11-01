@@ -14,6 +14,12 @@ const guessMime = (name = "") => {
 const normalizeMime = (mime, name) =>
   mime === "image/jpg" ? "image/jpeg" : (mime ?? guessMime(name));
 
+// Tệp đã upload (nộp lại hồ sơ) → cùng hình dạng tệp chọn từ máy; uri là URL nên khi gửi không upload lại
+export const fileFromUrl = (url) => {
+  const name = decodeURIComponent(url.split("?")[0].split("/").pop());
+  return { uri: url, name, mimeType: guessMime(name), size: null };
+};
+
 // Kiểm định dạng + dung lượng ngay khi chọn. Sai → ném lỗi kèm câu báo cho người dùng
 function checkFile(file) {
   if (!FILE_RULES.mimeTypes.includes(file.mimeType)) {

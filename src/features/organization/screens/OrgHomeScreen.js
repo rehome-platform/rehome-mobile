@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
@@ -10,6 +10,7 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { registrationFromProfile } from "@/features/organization/utils/payload";
 import {
   ORG_STATUS,
   useMyOrganization,
@@ -39,7 +40,7 @@ function StatusCard({
 }
 
 // Màn đầu của tài khoản Tổ chức — trạng thái hồ sơ lấy từ GET /api/organizations/me:
-// chưa nộp → mời nộp · PENDING → đang xác minh · REJECTED → lý do + nộp lại · VERIFIED → đã xác minh
+// chưa nộp → mời nộp · PENDING → đang xác minh · REJECTED → lý do + nộp lại · VERIFIED → khung 4 tab
 export default function OrgHomeScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
@@ -56,30 +57,21 @@ export default function OrgHomeScreen() {
     }, [refetch]),
   );
 
-  const status = me.data?.verificationStatus ?? null;
+  // Chưa có kết quả mới thì dùng trạng thái lấy lúc đăng nhập (authStore) → VERIFIED vào tab ngay, không nháy màn
+  const status = me.data
+    ? me.data.verificationStatus
+    : (user?.verificationStatus ?? null);
 
   const startRegister = () => {
     setMode("create");
     router.push("/org/registration/info");
   };
-  // Bị từ chối: điền sẵn bước 1 từ hồ sơ cũ. Người đại diện + giấy tờ BE không trả → nhập lại
+  // Bị từ chối: điền sẵn cả 4 bước từ hồ sơ cũ (ô BE không trả thì nhập lại)
   const startResubmit = () => {
-    const p = me.data;
+    const steps = registrationFromProfile(me.data);
     reset();
     setMode("resubmit");
-    saveStep("info", {
-      legalName: p.legalName ?? "",
-      displayName: p.displayName ?? "",
-      orgType: p.orgType ?? "",
-      taxCode: p.taxCode ?? "",
-      operationScope: p.operationScope ?? "",
-      address: p.address ?? "",
-      contactPhone: p.contactPhone ?? "",
-      contactEmail: p.contactEmail ?? "",
-      website: p.website ?? "",
-      description: p.description ?? "",
-      logoUri: p.logoUrl ?? null,
-    });
+    Object.entries(steps).forEach(([key, data]) => saveStep(key, data));
     router.push("/org/registration/info");
   };
 
@@ -88,6 +80,9 @@ export default function OrgHomeScreen() {
       { text: "Huỷ", style: "cancel" },
       { text: "Đăng xuất", style: "destructive", onPress: () => signOut() },
     ]);
+
+  // OA-06 chỉ cho chưa nộp / PENDING / REJECTED. Đã xác minh → khung 4 tab (replace: không quay lại được)
+  if (status === ORG_STATUS.VERIFIED) return <Redirect href="/org/campaigns" />;
 
   return (
     <Screen
@@ -136,12 +131,6 @@ export default function OrgHomeScreen() {
             style={styles.cta}
           />
         </StatusCard>
-      ) : status === ORG_STATUS.VERIFIED ? (
-        <StatusCard
-          icon="checkmark-circle"
-          title="Tổ chức đã được xác minh"
-          text={`${me.data.displayName} đã được ReHome xác minh. Chiến dịch, bài viết và nhận quyên góp sẽ mở ở phiên bản tới.`}
-        />
       ) : (
         <View style={styles.card}>
           <Ionicons

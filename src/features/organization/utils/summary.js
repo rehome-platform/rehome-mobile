@@ -18,6 +18,18 @@ export const formatReceivingHours = ({ days, openTime, closeTime }) => {
   return `${labels.join(", ")} · ${openTime}–${closeTime}`;
 };
 
+// Ngược lại formatReceivingHours: "T2, T4 · 08:00–17:00" → { days, openTime, closeTime }. Không đúng mẫu → null
+export const parseReceivingHours = (text) => {
+  const match = /^(.+) · (\d{2}:\d{2})–(\d{2}:\d{2})$/.exec(text ?? "");
+  if (!match) return null;
+  const labels = match[1].split(", ");
+  return {
+    days: WEEKDAYS.filter((d) => labels.includes(d.label)).map((d) => d.value),
+    openTime: match[2],
+    closeTime: match[3],
+  };
+};
+
 // Tích "dùng địa chỉ trụ sở" → lấy địa chỉ bước 1 (luôn là bản mới nhất)
 export const pickupAddress = (info, location) =>
   location.useOfficeAddress ? info.address : location.address;
