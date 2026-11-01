@@ -3,6 +3,7 @@ import { api, unwrap } from "@/lib/api/client";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { ROLES } from "@/constants/roles";
 import { OTP_PURPOSE } from "@/constants/auth";
+import { organizationApi } from "@/features/organization/api/organizationApi";
 
 // ===== Đăng ký + OTP =====
 // Member: POST /api/auth/register · Tổ chức: POST /api/organizations/register/account
@@ -55,13 +56,15 @@ export function roleFromToken(accessToken) {
   return roles.split(",")[0]?.replace("ROLE_", "") || null;
 }
 
-// BE chưa có /me chung → tự ghép user từ JWT + /members/me
+// BE chưa có /me chung → tự ghép user từ JWT + /members/me (Member) hoặc /api/organizations/me (Tổ chức)
 export async function getMe() {
   const token = await tokenStorage.getAccessToken();
   const role = roleFromToken(token);
-  // Tổ chức: chưa có GET /api/organizations/me [CHỜ BE] → tạm lấy email từ JWT (sub)
-  if (role !== ROLES.MEMBER)
-    return { role, email: token ? jwtDecode(token).sub : null };
+  const email = token ? jwtDecode(token).sub : null; // email đăng nhập; hồ sơ tổ chức chỉ có contactEmail
+  // Tổ chức: thêm verificationStatus (null = chưa nộp) để vào thẳng khung tab khi đã VERIFIED
+  if (role === ROLES.ORGANIZATION)
+    return { role, email, ...(await organizationApi.getMyOrganization()) };
+  if (role !== ROLES.MEMBER) return { role, email };
   const profile = unwrap(await api.get("/members/me")); // không có tiền tố /api
   return { role, ...profile };
 }

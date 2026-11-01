@@ -39,8 +39,7 @@ async function submitApplication(data) {
   // Toạ độ đã kiểm ở bước 1 / 4; thiếu (dữ liệu cũ) thì tra lại cho chắc
   const coords =
     location.coords ?? (await locateAddress(pickupAddress(info, location)));
-  // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF).
-  // Logo: BE chưa có thư mục riêng → tạm AVATARS [CHỜ BE]
+  // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF). Logo → ORGANIZATION_LOGOS
   const upload = (file, folder = UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS) =>
     uploadFile(file, folder).then((res) => res.url);
 
@@ -51,7 +50,7 @@ async function submitApplication(data) {
         ? info.logoUri
         : upload(
             { uri: info.logoUri, name: "logo.jpg", mimeType: "image/jpeg" },
-            UPLOAD_FOLDER.AVATARS,
+            UPLOAD_FOLDER.ORGANIZATION_LOGOS,
           ),
     upload(documents.cccdFront),
     upload(documents.cccdBack),

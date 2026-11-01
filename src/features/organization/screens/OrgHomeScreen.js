@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
@@ -39,7 +39,7 @@ function StatusCard({
 }
 
 // Màn đầu của tài khoản Tổ chức — trạng thái hồ sơ lấy từ GET /api/organizations/me:
-// chưa nộp → mời nộp · PENDING → đang xác minh · REJECTED → lý do + nộp lại · VERIFIED → đã xác minh
+// chưa nộp → mời nộp · PENDING → đang xác minh · REJECTED → lý do + nộp lại · VERIFIED → khung 4 tab
 export default function OrgHomeScreen() {
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
@@ -56,7 +56,10 @@ export default function OrgHomeScreen() {
     }, [refetch]),
   );
 
-  const status = me.data?.verificationStatus ?? null;
+  // Chưa có kết quả mới thì dùng trạng thái lấy lúc đăng nhập (authStore) → VERIFIED vào tab ngay, không nháy màn
+  const status = me.data
+    ? me.data.verificationStatus
+    : (user?.verificationStatus ?? null);
 
   const startRegister = () => {
     setMode("create");
@@ -88,6 +91,9 @@ export default function OrgHomeScreen() {
       { text: "Huỷ", style: "cancel" },
       { text: "Đăng xuất", style: "destructive", onPress: () => signOut() },
     ]);
+
+  // OA-06 chỉ cho chưa nộp / PENDING / REJECTED. Đã xác minh → khung 4 tab (replace: không quay lại được)
+  if (status === ORG_STATUS.VERIFIED) return <Redirect href="/org/campaigns" />;
 
   return (
     <Screen
@@ -136,12 +142,6 @@ export default function OrgHomeScreen() {
             style={styles.cta}
           />
         </StatusCard>
-      ) : status === ORG_STATUS.VERIFIED ? (
-        <StatusCard
-          icon="checkmark-circle"
-          title="Tổ chức đã được xác minh"
-          text={`${me.data.displayName} đã được ReHome xác minh. Chiến dịch, bài viết và nhận quyên góp sẽ mở ở phiên bản tới.`}
-        />
       ) : (
         <View style={styles.card}>
           <Ionicons
