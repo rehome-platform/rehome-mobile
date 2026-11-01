@@ -187,12 +187,13 @@ export async function createPost({ content, photoUrls, campaignId }) {
   return { id: p.id, status: CT.VISIBLE };
 }
 
-// PUT /posts/{id} — sửa nội dung, ảnh, chiến dịch
+// PUT /posts/{id} — sửa nội dung, ảnh, chiến dịch. Giữ nguyên chiến dịch cũ (dù đã đóng) thì không kiểm
 export async function updatePost(id, { content, photoUrls, campaignId }) {
   seed();
-  await checkCampaign(campaignId);
+  const p = findPost(id);
+  if (campaignId !== p.campaignId) await checkCampaign(campaignId);
   await delay(600);
-  Object.assign(findPost(id), {
+  Object.assign(p, {
     content,
     photoUrls,
     campaignId: campaignId ?? null,
