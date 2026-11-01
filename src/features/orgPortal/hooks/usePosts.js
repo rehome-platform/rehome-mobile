@@ -68,3 +68,21 @@ export function useDeletePost() {
     onSuccess: invalidate,
   });
 }
+
+// L9: tổ chức thả tim / bỏ tim bài của mình — mutate({ id, liked })
+export function useTogglePostLike() {
+  const invalidate = useInvalidateOrgContent();
+  return useMutation({
+    mutationFn: ({ id, liked }) => orgPostApi.setPostLiked(id, liked),
+    onSuccess: invalidate,
+  });
+}
+
+// L9: tổ chức bình luận / trả lời — mutate({ content, parentId })
+export function useCreateComment(postId) {
+  const invalidate = useInvalidateOrgContent();
+  return useMutation({
+    mutationFn: (body) => orgPostApi.createComment(postId, body),
+    onSuccess: invalidate,
+  });
+}

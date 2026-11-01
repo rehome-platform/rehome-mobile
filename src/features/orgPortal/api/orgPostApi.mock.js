@@ -1,26 +1,32 @@
 // Mock bài viết của tổ chức (OB-01 → OB-05) "sống" trong RAM — reload app là về dữ liệu mẫu.
-// Hình dạng theo danh sách đã gửi BE (bài viết, 01/11):
-//   post    = { id, content, photoUrls, createdAt, likeCount, commentCount, reportCount, campaignId, campaignTitle }
-//   comment = { id, content, status (VISIBLE | REMOVED — bị ẩn thì content = null), createdAt,
-//               author: { id, fullName, avatarUrl } }
+// Hình dạng theo danh sách đã gửi BE (bài viết 01/11 + L9: tổ chức thả tim, bình luận, trả lời):
+//   post    = { id, content, photoUrls, createdAt, likeCount, likedByMe, commentCount, reportCount,
+//               campaignId, campaignTitle }
+//   comment = { id, parentId (null = bình luận gốc; trả lời chỉ 1 cấp như Facebook), content,
+//               status (VISIBLE | REMOVED — bị ẩn thì content = null), createdAt,
+//               author: { id, type: MEMBER | ORGANIZATION, fullName, avatarUrl }, isMine }
 // Chiến dịch lấy từ mock chiến dịch (orgContentApi.mock) → gắn bài với đúng chiến dịch đang có
 import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
-import { CAMPAIGN_STATUS, CONTENT_STATUS as CT } from "@/constants/community";
+import {
+  CAMPAIGN_STATUS,
+  COMMENT_AUTHOR_TYPE as AT,
+  CONTENT_STATUS as CT,
+} from "@/constants/community";
 import * as campaignMock from "./orgContentApi.mock";
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
 const photo = (seed) => `https://picsum.photos/seed/${seed}/800/600`;
-const notFound = () =>
+const notFound = (what = "bài viết") =>
   new ApiError({
     status: 404,
     code: "HTTP_404",
-    message: "Không tìm thấy bài viết.",
+    message: `Không tìm thấy ${what}.`,
   });
 
 let posts = null; // null = chưa tạo dữ liệu mẫu
-let comments = {}; // postId → comment[]
+let comments = {}; // postId → comment[] (phẳng; câu trả lời có parentId)
 let nextId = 100;
 
 const post = (
@@ -37,16 +43,22 @@ const post = (
   photoUrls: photos.map((p) => photo(`${id}-${p}`)),
   createdAt: ago(days, "day"),
   likeCount,
+  likedByMe: false,
   reportCount,
   campaignId,
 });
 
-const comment = (id, name, content, hoursAgo, removed = false) => ({
+const comment = (id, name, content, hoursAgo, opts = {}) => ({
   id,
-  content: removed ? null : content,
-  status: removed ? CT.REMOVED : CT.VISIBLE,
+  parentId: opts.parentId ?? null,
+  content: opts.removed ? null : content,
+  status: opts.removed ? CT.REMOVED : CT.VISIBLE,
   createdAt: ago(hoursAgo, "hour"),
-  author: { id: `mb-${id}`, fullName: name, avatarUrl: null },
+  // isMine = tổ chức đang đăng nhập viết → màn hình lấy tên + logo từ hồ sơ
+  author: opts.mine
+    ? { id: "me", type: AT.ORGANIZATION, fullName: null, avatarUrl: null }
+    : { id: `mb-${id}`, type: AT.MEMBER, fullName: name, avatarUrl: null },
+  isMine: !!opts.mine,
 });
 
 function seed() {
@@ -98,7 +110,14 @@ function seed() {
         2,
       ),
       comment("cm-2", "Lê Thu Hà", "Bên mình nhận đồ lúc mấy giờ vậy ạ?", 5),
-      comment("cm-3", "Người dùng", "", 20, true),
+      comment(
+        "cm-2r",
+        null,
+        "Bên mình nhận từ 8h đến 17h mỗi ngày nha bạn.",
+        4,
+        { parentId: "cm-2", mine: true },
+      ),
+      comment("cm-3", null, null, 20, { removed: true }),
       comment(
         "cm-4",
         "Phạm Quốc Bảo",
@@ -124,11 +143,13 @@ async function campaignTitles() {
   return Object.fromEntries(list.map((c) => [c.id, c.title]));
 }
 
+const visibleCount = (postId) =>
+  (comments[postId] ?? []).filter((c) => c.status === CT.VISIBLE).length;
+
 const postView = (p, titles) => ({
   ...p,
   photoUrls: [...p.photoUrls],
-  commentCount: (comments[p.id] ?? []).filter((c) => c.status === CT.VISIBLE)
-    .length,
+  commentCount: visibleCount(p.id),
   campaignTitle: p.campaignId ? (titles[p.campaignId] ?? null) : null,
 });
 
@@ -180,6 +201,7 @@ export async function createPost({ content, photoUrls, campaignId }) {
     photoUrls,
     createdAt: new Date().toISOString(),
     likeCount: 0,
+    likedByMe: false,
     reportCount: 0,
     campaignId: campaignId ?? null,
   };
@@ -209,14 +231,46 @@ export async function deletePost(id) {
   posts = posts.filter((p) => p.id !== id);
 }
 
-// GET /posts/{id}/comments — mới nhất trước
+// POST / DELETE /posts/{id}/like — tổ chức thả tim bài của mình (L9)
+export async function setPostLiked(id, liked) {
+  seed();
+  await delay(200);
+  const p = findPost(id);
+  if (p.likedByMe !== liked) {
+    p.likedByMe = liked;
+    p.likeCount += liked ? 1 : -1;
+  }
+  return { likedByMe: p.likedByMe, likeCount: p.likeCount };
+}
+
+// GET /posts/{id}/comments — phẳng, mỗi câu trả lời có parentId; màn hình tự xếp nhóm
 export async function getPostComments(id) {
   seed();
   await delay();
   findPost(id);
-  return [...(comments[id] ?? [])].sort((a, b) =>
-    dayjs(b.createdAt).diff(a.createdAt),
-  );
+  return (comments[id] ?? []).map((c) => ({ ...c, author: { ...c.author } }));
+}
+
+// POST /posts/{id}/comments { content, parentId } — tổ chức bình luận / trả lời (L9).
+// Trả lời một câu trả lời → gắn vào bình luận gốc (chỉ 1 cấp như Facebook)
+export async function createComment(postId, { content, parentId }) {
+  seed();
+  await delay(400);
+  findPost(postId);
+  const list = comments[postId] ?? (comments[postId] = []);
+  let rootId = null;
+  if (parentId) {
+    const parent = list.find((c) => c.id === parentId);
+    if (!parent) throw notFound("bình luận");
+    rootId = parent.parentId ?? parent.id;
+  }
+  const c = comment(`cm-${nextId++}`, null, content.trim(), 0, {
+    parentId: rootId,
+    mine: true,
+  });
+  c.createdAt = new Date().toISOString();
+  list.push(c);
+  return { ...c, author: { ...c.author } };
 }
 
 // Ảnh bài viết: bản thật upload thư mục COMMUNITY_POSTS rồi trả URL. Mock giữ nguyên ảnh trong máy để vẫn hiện

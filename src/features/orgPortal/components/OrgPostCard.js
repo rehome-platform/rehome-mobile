@@ -1,46 +1,59 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { Avatar } from "@/components/ui/Avatar";
+import { formatRelative } from "@/utils/format";
+import { PostPhotos } from "@/features/community/components/PostPhotos";
 
-// OB-01: thẻ bài viết đã đăng — ảnh đầu · ngày · nhãn Chiến dịch · nội dung 2 dòng · ⋯ ;
-// hàng dưới: ♥ · Bình luận · "n bị báo cáo". Bấm thẻ → bình luận (OB-05)
-export function OrgPostCard({ post: p, onPress, onMenu }) {
+const COLLAPSED_LINES = 4;
+
+// active: nút Thích khi đã thích → tim đỏ, chữ đậm
+function Action({ icon, label, onPress, active = false }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      accessibilityState={{ selected: active }}
+      style={({ pressed }) => [styles.action, pressed && styles.pressed]}
     >
-      <View style={styles.top}>
-        <View style={styles.thumb}>
-          {p.photoUrls[0] ? (
-            <Image
-              source={{ uri: p.photoUrls[0] }}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : (
-            <Ionicons
-              name="document-text-outline"
-              size={24}
-              color={colors.textSecondary}
-            />
-          )}
-        </View>
-        <View style={styles.info}>
-          <View style={styles.metaRow}>
-            <Text style={styles.muted}>
-              {dayjs(p.createdAt).format("DD/MM")}
-            </Text>
-            {p.campaignId ? (
-              <Text style={styles.tag} numberOfLines={1}>
-                Chiến dịch
-              </Text>
-            ) : null}
-          </View>
-          <Text style={styles.content} numberOfLines={2}>
-            {p.content}
+      <Ionicons
+        name={icon}
+        size={18}
+        color={active ? colors.error : colors.textSecondary}
+      />
+      <Text style={[styles.actionText, active && styles.actionActive]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+// OB-01: bài viết kiểu bảng tin (như Facebook) — tổ chức + thời gian + ⋯ · nội dung 4 dòng · chiến dịch · ảnh ·
+// ♥ / bình luận / "n bị báo cáo" · nút Thích (L9), Bình luận, Sửa. org = { displayName, logoUrl } của tổ chức đang đăng nhập
+export function OrgPostCard({
+  post: p,
+  org,
+  onLike,
+  onComments,
+  onEdit,
+  onMenu,
+}) {
+  const [truncated, setTruncated] = useState(false);
+  return (
+    <View style={styles.card}>
+      <View style={styles.head}>
+        <Avatar
+          uri={org?.logoUrl}
+          name={org?.displayName}
+          size={40}
+          initialOf="first"
+        />
+        <View style={styles.flex}>
+          <Text style={styles.name} numberOfLines={1}>
+            {org?.displayName ?? "Tổ chức"}
           </Text>
+          <Text style={styles.muted}>{formatRelative(p.createdAt)}</Text>
         </View>
         <Pressable
           onPress={onMenu}
@@ -55,68 +68,137 @@ export function OrgPostCard({ post: p, onPress, onMenu }) {
           />
         </Pressable>
       </View>
-      <View style={styles.bottom}>
-        <Text style={styles.stat}>♥ {p.likeCount}</Text>
-        <Text style={styles.stat}>Bình luận {p.commentCount}</Text>
-        {p.reportCount > 0 ? (
-          <Text style={styles.report}>{p.reportCount} bị báo cáo</Text>
+
+      <Pressable onPress={onComments} style={styles.body}>
+        <Text
+          style={styles.content}
+          numberOfLines={COLLAPSED_LINES}
+          onTextLayout={(e) =>
+            setTruncated(e.nativeEvent.lines.length >= COLLAPSED_LINES)
+          }
+        >
+          {p.content}
+        </Text>
+        {truncated ? <Text style={styles.more}>Xem thêm</Text> : null}
+        {p.campaignTitle ? (
+          <View style={styles.campaign}>
+            <Ionicons
+              name="megaphone-outline"
+              size={14}
+              color={colors.primary}
+            />
+            <Text style={styles.campaignText} numberOfLines={1}>
+              Chiến dịch · {p.campaignTitle}
+            </Text>
+          </View>
         ) : null}
+        <PostPhotos urls={p.photoUrls} />
+      </Pressable>
+
+      <View style={styles.stats}>
+        <Text style={styles.muted}>♥ {p.likeCount}</Text>
+        <View style={styles.statsRight}>
+          {p.reportCount > 0 ? (
+            <Text style={styles.report}>{p.reportCount} bị báo cáo</Text>
+          ) : null}
+          <Text style={styles.muted}>{p.commentCount} bình luận</Text>
+        </View>
       </View>
-    </Pressable>
+
+      <View style={styles.actions}>
+        <Action
+          icon={p.likedByMe ? "heart" : "heart-outline"}
+          label="Thích"
+          active={p.likedByMe}
+          onPress={onLike}
+        />
+        <Action
+          icon="chatbubble-outline"
+          label="Bình luận"
+          onPress={onComments}
+        />
+        <Action icon="create-outline" label="Sửa" onPress={onEdit} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  pressed: { opacity: 0.6 },
   card: {
-    padding: spacing.md,
-    gap: spacing.md,
     borderWidth: 1,
     borderColor: colors.neutral,
     borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
-  pressed: { opacity: 0.8 },
-  top: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
-  thumb: {
-    width: 64,
-    height: 64,
-    overflow: "hidden",
+  head: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+  },
+  name: { ...textStyles.body, fontFamily: fonts.semibold, color: colors.text },
+  muted: { ...textStyles.caption, color: colors.textSecondary },
+  body: { gap: spacing.sm, paddingHorizontal: spacing.md },
+  content: { ...textStyles.body, color: colors.text },
+  more: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.textSecondary,
+  },
+  campaign: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    maxWidth: "100%",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
   },
-  info: { flex: 1, gap: spacing.xs },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  muted: { ...textStyles.caption, color: colors.textSecondary },
-  tag: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 1,
-    borderRadius: 4,
-    overflow: "hidden",
-    ...textStyles.label,
-    fontFamily: fonts.bold,
-    color: colors.surface,
-    backgroundColor: colors.primary,
+  campaignText: {
+    flexShrink: 1,
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
   },
-  content: { ...textStyles.body, color: colors.text },
-  bottom: {
+  stats: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.lg,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral,
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  stat: { ...textStyles.caption, color: colors.textSecondary },
+  statsRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   report: {
     paddingHorizontal: spacing.xs,
-    paddingVertical: 1,
     borderWidth: 1,
     borderColor: colors.error,
     borderRadius: 4,
     ...textStyles.caption,
     fontFamily: fonts.semibold,
     color: colors.error,
+  },
+  actions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral,
+  },
+  action: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  actionActive: { color: colors.error },
+  actionText: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.textSecondary,
   },
 });

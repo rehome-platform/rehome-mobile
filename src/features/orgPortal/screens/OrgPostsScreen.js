@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { showToast } from "@/utils/toast";
-import { useDeletePost, useMyPosts } from "@/features/orgPortal/hooks/usePosts";
+import { useAuthStore } from "@/stores/authStore";
+import {
+  useDeletePost,
+  useMyPosts,
+  useTogglePostLike,
+} from "@/features/orgPortal/hooks/usePosts";
 import { OrgPostCard } from "@/features/orgPortal/components/OrgPostCard";
 
 const openNew = () => router.push("/org/my-posts/new");
@@ -28,6 +33,8 @@ const excerpt = (text) => (text.length > 50 ? `${text.slice(0, 47)}…` : text);
 export default function OrgPostsScreen() {
   const query = useMyPosts();
   const remove = useDeletePost();
+  const like = useTogglePostLike();
+  const user = useAuthStore((s) => s.user); // tên + logo tổ chức cho đầu thẻ bài
 
   const confirmDelete = (p) =>
     Alert.alert(
@@ -96,7 +103,10 @@ export default function OrgPostsScreen() {
         renderItem={({ item }) => (
           <OrgPostCard
             post={item}
-            onPress={() => openComments(item)}
+            org={user}
+            onLike={() => like.mutate({ id: item.id, liked: !item.likedByMe })}
+            onComments={() => openComments(item)}
+            onEdit={() => openEdit(item)}
             onMenu={() => openMenu(item)}
           />
         )}

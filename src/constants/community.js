@@ -7,6 +7,11 @@ export const CAMPAIGN_STATUS_LABEL = {
 
 // enum ContentStatus của BE (bài viết, bình luận): REMOVED = bị gỡ (tổ chức xoá bài / Moderator ẩn bình luận)
 export const CONTENT_STATUS = { VISIBLE: "VISIBLE", REMOVED: "REMOVED" };
+// Ai viết bình luận (L9: tổ chức trả lời bình luận trên bài của mình) [CHỜ BE tên field]
+export const COMMENT_AUTHOR_TYPE = {
+  MEMBER: "MEMBER",
+  ORGANIZATION: "ORGANIZATION",
+};
 
 // [GIẢ ĐỊNH tới khi BE chốt] — OB-02, mục 11 tài liệu
 export const POST_LIMITS = { MAX_CHARS: 2000, MAX_PHOTOS: 5 };

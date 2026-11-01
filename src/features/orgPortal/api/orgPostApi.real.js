@@ -17,4 +17,6 @@ export const createPost = notReady;
 export const updatePost = notReady;
 export const deletePost = notReady;
 export const getPostComments = notReady;
+export const setPostLiked = notReady; // [CHỜ BE] POST / DELETE /posts/{id}/like cho ORGANIZATION (L9)
+export const createComment = notReady; // [CHỜ BE] POST /posts/{id}/comments cho ORGANIZATION + parentId (L9)
 export const uploadPostPhoto = notReady; // thật: uploadFile(file, UPLOAD_FOLDER.COMMUNITY_POSTS)
