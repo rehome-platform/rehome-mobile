@@ -53,7 +53,10 @@ export function useMyConsignItems() {
           kind: "form",
           key: `form-${f.id}`,
           data: f,
-          needsAction: f.status === F.APPROVED, // mang đồ tới / xác nhận biên nhận
+          // mang đồ tới / xác nhận biên nhận. BE giữ INSPECTING cả khi đã có biên nhận →
+          // dựa vào receiptId (danh sách chưa trả receiptId / receiptConfirmed — đã xin BE)
+          needsAction:
+            f.status === F.APPROVED || (!!f.receiptId && !f.receiptConfirmed),
         });
     }
 

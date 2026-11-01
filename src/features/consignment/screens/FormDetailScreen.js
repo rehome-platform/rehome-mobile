@@ -33,7 +33,13 @@ const fmtDate = (d) => dayjs(d).format("DD/MM/YYYY");
 const leftText = (n) =>
   n > 0 ? `Còn ${n} ngày` : n === 0 ? "Hạn chót hôm nay" : "Đã quá hạn";
 
-// Tiến trình theo trạng thái (chỉ PENDING / APPROVED có tiến trình)
+// Đã duyệt → (mang đồ tới) → INSPECTING: đang kiểm định tại quầy. BE GIỮ INSPECTING cả sau khi lập biên nhận
+// (không có trạng thái sau đó) → mọi chỗ xử lý biên nhận phải nhận cả hai trạng thái
+const isInProgress = (form) =>
+  form.status === FORM_STATUS.APPROVED ||
+  form.status === FORM_STATUS.INSPECTING;
+
+// Tiến trình theo trạng thái (chỉ PENDING / APPROVED / INSPECTING có tiến trình)
 function buildTimeline(form) {
   const sent = {
     title: "Đã gửi yêu cầu",
@@ -52,8 +58,10 @@ function buildTimeline(form) {
       { title: "Kiểm định & nhận hàng", state: "todo" },
     ];
   }
-  if (form.status === FORM_STATUS.APPROVED) {
-    const atWarehouse = !!form.receiptId; // đã có biên nhận = đã mang đồ đến, kho đã kiểm định
+  if (isInProgress(form)) {
+    // Đang kiểm định / đã có biên nhận = đã mang đồ đến
+    const atWarehouse =
+      form.status === FORM_STATUS.INSPECTING || !!form.receiptId;
     return [
       sent,
       { title: "ReHome đã duyệt", state: "done" },
@@ -72,7 +80,11 @@ function buildTimeline(form) {
           }
         : {
             title: "Kiểm định & nhận hàng",
-            desc: atWarehouse ? "Chờ bạn xác nhận biên nhận" : undefined,
+            desc: form.receiptId
+              ? "Chờ bạn xác nhận biên nhận"
+              : atWarehouse
+                ? "Nhân viên đang kiểm định món của bạn"
+                : undefined,
             state: atWarehouse ? "active" : "todo",
           },
     ];
@@ -96,8 +108,7 @@ function ApprovedTodo({ form }) {
       <View style={styles.todo}>
         <Text style={styles.todoTitle}>Đã xác nhận biên nhận</Text>
         <Text style={styles.todoText}>
-          Hàng đã được nhận và đang đăng bán. Theo dõi ở mục Sản phẩm ký
-          gửi.
+          Hàng đã được nhận và đang đăng bán. Theo dõi ở mục Sản phẩm ký gửi.
         </Text>
       </View>
     );
@@ -109,6 +120,18 @@ function ApprovedTodo({ form }) {
         <Text style={styles.todoTitle}>ReHome đã lập biên nhận</Text>
         <Text style={styles.todoText}>
           Đọc và xác nhận biên nhận để hàng được đăng bán.
+        </Text>
+      </View>
+    );
+  }
+
+  if (form.status === FORM_STATUS.INSPECTING) {
+    return (
+      <View style={styles.todo}>
+        <Text style={styles.todoTitle}>Đang kiểm định</Text>
+        <Text style={styles.todoText}>
+          Nhân viên đang kiểm tra món và thống nhất giá với bạn. Kiểm định xong,
+          biên nhận sẽ hiện ở đây để bạn xác nhận.
         </Text>
       </View>
     );
@@ -150,7 +173,7 @@ function Footer({ form }) {
       />
     );
   }
-  if (form.status === FORM_STATUS.APPROVED) {
+  if (isInProgress(form)) {
     return (
       <View style={styles.footerCol}>
         {form.receiptId ? (
@@ -257,12 +280,10 @@ export default function FormDetailScreen() {
           <Text style={styles.code}>
             {form.formNo ? `Mã yêu cầu ${form.formNo}` : "Yêu cầu ký gửi"}
           </Text>
-          <StatusBadge status={form.status} />
+          <StatusBadge form={form} />
         </View>
 
-        {form.status === FORM_STATUS.APPROVED ? (
-          <ApprovedTodo form={form} />
-        ) : null}
+        {isInProgress(form) ? <ApprovedTodo form={form} /> : null}
 
         {form.status === FORM_STATUS.APPROVED && !form.receiptId ? (
           <NoteBox>

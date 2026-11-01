@@ -30,8 +30,8 @@ function Footer({ form }) {
           color={left <= 2 ? colors.error : colors.primary}
         />
         <Text style={[styles.todoText, left <= 2 && styles.urgent]}>
-          Mang đồ đến địa điểm trước {dayjs(form.bringInDeadline).format("DD/MM")} ·{" "}
-          {leftText(left)}
+          Mang đồ đến địa điểm trước{" "}
+          {dayjs(form.bringInDeadline).format("DD/MM")} · {leftText(left)}
         </Text>
       </View>
     );
@@ -84,7 +84,7 @@ export function FormCard({ form, onPress }) {
           <Text style={styles.name} numberOfLines={2}>
             {form.productName}
           </Text>
-          <StatusBadge status={form.status} />
+          <StatusBadge form={form} />
           <Text style={styles.meta} numberOfLines={1}>
             Giá mong muốn {formatVnd(form.desiredPrice)}
             {form.warehouseName ? ` · ${form.warehouseName}` : ""}
