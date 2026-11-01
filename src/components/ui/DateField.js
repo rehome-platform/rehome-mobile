@@ -15,7 +15,9 @@ export function DateField({
   helper,
   error,
   placeholder = "Chọn ngày",
-  maximumDate = new Date(), // mặc định không cho chọn ngày tương lai (ngày cấp giấy tờ)
+  maximumDate = new Date(), // mặc định không cho chọn ngày tương lai (ngày cấp giấy tờ); null = không giới hạn
+  minimumDate, // vd ngày bắt đầu chiến dịch: không chọn ngày đã qua
+  disabled = false, // nền xám, không bấm được (vd ngày bắt đầu của chiến dịch đang chạy)
   style,
 }) {
   const [open, setOpen] = useState(false);
@@ -43,9 +45,11 @@ export function DateField({
 
       <Pressable
         onPress={() => setOpen(true)}
+        disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={[styles.box, { borderColor }]}
+        accessibilityState={{ disabled }}
+        style={[styles.box, { borderColor }, disabled && styles.boxDisabled]}
       >
         <Text style={[styles.value, !value && styles.placeholder]}>
           {value ? dayjs(value).format("DD/MM/YYYY") : placeholder}
@@ -67,7 +71,8 @@ export function DateField({
         <DateTimePicker
           value={value ? dayjs(value).toDate() : new Date()}
           mode="date"
-          maximumDate={maximumDate}
+          maximumDate={maximumDate ?? undefined}
+          minimumDate={minimumDate}
           onChange={handleChange}
         />
       ) : null}
@@ -89,6 +94,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
   },
+  boxDisabled: { backgroundColor: colors.neutral },
   value: { flex: 1, ...textStyles.body, fontSize: 16, color: colors.text },
   placeholder: { color: colors.textSecondary },
   helper: { ...textStyles.caption, color: colors.textSecondary },
