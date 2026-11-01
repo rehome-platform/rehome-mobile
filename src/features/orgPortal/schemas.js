@@ -1,6 +1,7 @@
 import { z } from "zod";
 import dayjs from "dayjs";
 import { CAMPAIGN_LIMITS, DONATION_NOTE_LIMITS } from "@/constants/donation";
+import { POST_LIMITS } from "@/constants/community";
 import { hasReceivingPlace } from "@/features/orgPortal/utils/campaignRules";
 
 const required = (message) => z.string().trim().min(1, message);
@@ -80,3 +81,19 @@ export const donationNoteSchema = z
     path: ["donorName"],
     error: "Nhập tên người quyên góp hoặc chọn Ẩn danh",
   });
+
+// OB-02 / OB-03: nội dung bắt buộc, tối đa POST_LIMITS ảnh; gắn chiến dịch không bắt buộc (null)
+export const postSchema = z.object({
+  content: z
+    .string()
+    .trim()
+    .min(1, "Vui lòng nhập nội dung bài viết")
+    .max(
+      POST_LIMITS.MAX_CHARS,
+      `Nội dung tối đa ${POST_LIMITS.MAX_CHARS} ký tự`,
+    ),
+  photoUris: z
+    .array(z.string())
+    .max(POST_LIMITS.MAX_PHOTOS, `Tối đa ${POST_LIMITS.MAX_PHOTOS} ảnh`),
+  campaignId: z.string().nullable(),
+});

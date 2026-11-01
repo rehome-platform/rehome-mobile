@@ -5,6 +5,9 @@ export const CAMPAIGN_STATUS_LABEL = {
   CLOSED: "Đã đóng",
 };
 
+// enum ContentStatus của BE (bài viết, bình luận): REMOVED = bị gỡ (tổ chức xoá bài / Moderator ẩn bình luận)
+export const CONTENT_STATUS = { VISIBLE: "VISIBLE", REMOVED: "REMOVED" };
+
 // [GIẢ ĐỊNH tới khi BE chốt] — OB-02, mục 11 tài liệu
 export const POST_LIMITS = { MAX_CHARS: 2000, MAX_PHOTOS: 5 };
 export const COMMENT_LIMITS = { MAX_CHARS: 500 };
