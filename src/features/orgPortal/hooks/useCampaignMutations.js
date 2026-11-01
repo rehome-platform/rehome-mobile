@@ -25,6 +25,15 @@ export function useCreateCampaign() {
   });
 }
 
+// OC-03 "Đóng sớm"
+export function useCloseCampaign(id) {
+  const invalidate = useInvalidateOrgContent();
+  return useMutation({
+    mutationFn: () => orgContentApi.closeCampaign(id),
+    onSuccess: invalidate,
+  });
+}
+
 // OC-04
 export function useUpdateCampaign(id) {
   const invalidate = useInvalidateOrgContent();
