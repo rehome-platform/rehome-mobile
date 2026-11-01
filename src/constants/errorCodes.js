@@ -25,4 +25,6 @@ export const ERROR_CODES = {
   RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) [GIẢ ĐỊNH tên mã]
   PRODUCT_ALREADY_ORDERED: "PRODUCT_ALREADY_ORDERED", // rút hàng: món vừa có người đặt (API 90, 409) — contract để trong message [CHỜ BE]
   INCOMPLETE_OUTFIT: "INCOMPLETE_OUTFIT", // thử đồ: chưa đủ Áo + Quần hoặc Đầm (API 97, 409) — contract để trong message [CHỜ BE]
+  CAMPAIGN_LIMIT_REACHED: "CAMPAIGN_LIMIT_REACHED", // chiến dịch: đã có đủ chiến dịch đang mở (409) [GIẢ ĐỊNH tên mã]
+  CAMPAIGN_WAREHOUSE_HAS_PENDING: "CAMPAIGN_WAREHOUSE_HAS_PENDING", // sửa chiến dịch: bỏ kho còn đơn chờ lấy (409) [GIẢ ĐỊNH tên mã]
 };
