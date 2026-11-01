@@ -23,6 +23,7 @@ export function PhotoPicker({
   helper = "Cần ảnh mặt trước, mặt sau, nhãn mác và tem thương hiệu. Ảnh càng rõ, ReHome duyệt càng nhanh.",
   pickTitle = "Thêm ảnh sản phẩm",
   pickMessage = "Chụp rõ, đủ sáng, thấy được nhãn mác và tem thương hiệu.",
+  required = true, // false: bỏ dấu * (vd ảnh bài viết của tổ chức không bắt buộc)
 }) {
   const { width } = useWindowDimensions();
   const size = (width - spacing.lg * 2 - spacing.sm * (COLUMNS - 1)) / COLUMNS; // trừ lề màn + khoảng cách
@@ -77,7 +78,7 @@ export function PhotoPicker({
         <Text style={styles.count}>
           ({value.length} / {max})
         </Text>
-        <Text style={styles.required}> *</Text>
+        {required ? <Text style={styles.required}> *</Text> : null}
       </Text>
       <View style={styles.grid}>
         {value.map((uri) => (
