@@ -10,6 +10,7 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { registrationFromProfile } from "@/features/organization/utils/payload";
 import {
   ORG_STATUS,
   useMyOrganization,
@@ -65,24 +66,12 @@ export default function OrgHomeScreen() {
     setMode("create");
     router.push("/org/registration/info");
   };
-  // Bị từ chối: điền sẵn bước 1 từ hồ sơ cũ. Người đại diện + giấy tờ BE không trả → nhập lại
+  // Bị từ chối: điền sẵn cả 4 bước từ hồ sơ cũ (ô BE không trả thì nhập lại)
   const startResubmit = () => {
-    const p = me.data;
+    const steps = registrationFromProfile(me.data);
     reset();
     setMode("resubmit");
-    saveStep("info", {
-      legalName: p.legalName ?? "",
-      displayName: p.displayName ?? "",
-      orgType: p.orgType ?? "",
-      taxCode: p.taxCode ?? "",
-      operationScope: p.operationScope ?? "",
-      address: p.address ?? "",
-      contactPhone: p.contactPhone ?? "",
-      contactEmail: p.contactEmail ?? "",
-      website: p.website ?? "",
-      description: p.description ?? "",
-      logoUri: p.logoUrl ?? null,
-    });
+    Object.entries(steps).forEach(([key, data]) => saveStep(key, data));
     router.push("/org/registration/info");
   };
 

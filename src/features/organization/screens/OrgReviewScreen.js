@@ -33,25 +33,26 @@ import { orgKeys } from "@/features/organization/hooks/useMyOrganization";
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
 // Toạ độ điểm nhận (BE bắt buộc) → upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → gửi hồ sơ
-const isRemote = (uri) => /^https?:\/\//.test(uri); // logo cũ (nộp lại) đã là URL trên server
+const isRemote = (uri) => /^https?:\/\//.test(uri); // tệp cũ (nộp lại) đã là URL trên server
 async function submitApplication(data) {
   const { info, documents, location } = data;
   // Toạ độ đã kiểm ở bước 1 / 4; thiếu (dữ liệu cũ) thì tra lại cho chắc
   const coords =
     location.coords ?? (await locateAddress(pickupAddress(info, location)));
-  // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF). Logo → ORGANIZATION_LOGOS
+  // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF). Logo → ORGANIZATION_LOGOS.
+  // Tệp giữ nguyên khi nộp lại đã là URL trên server → dùng lại, không upload lần nữa
   const upload = (file, folder = UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS) =>
-    uploadFile(file, folder).then((res) => res.url);
+    isRemote(file.uri)
+      ? file.uri
+      : uploadFile(file, folder).then((res) => res.url);
 
   const [logo, cccdFront, cccdBack, legalDocs] = await Promise.all([
     !info.logoUri
       ? null
-      : isRemote(info.logoUri)
-        ? info.logoUri
-        : upload(
-            { uri: info.logoUri, name: "logo.jpg", mimeType: "image/jpeg" },
-            UPLOAD_FOLDER.ORGANIZATION_LOGOS,
-          ),
+      : upload(
+          { uri: info.logoUri, name: "logo.jpg", mimeType: "image/jpeg" },
+          UPLOAD_FOLDER.ORGANIZATION_LOGOS,
+        ),
     upload(documents.cccdFront),
     upload(documents.cccdBack),
     Promise.all(documents.legalDocs.map((doc) => upload(doc.file))),
