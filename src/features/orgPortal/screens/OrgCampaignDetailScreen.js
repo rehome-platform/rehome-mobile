@@ -130,8 +130,11 @@ export default function OrgCampaignDetailScreen() {
       ],
     );
 
-  const ownAddress = user?.donationPointAddress ?? user?.address;
-  const ownHours = user?.donationPointReceivingHours;
+  // BE trả sẵn địa chỉ riêng trong chiến dịch (ownAddress); mock chưa có → lấy từ hồ sơ đăng nhập
+  const ownAddress =
+    c.ownAddress?.address ?? user?.donationPointAddress ?? user?.address;
+  const ownHours =
+    c.ownAddress?.receivingHours ?? user?.donationPointReceivingHours;
 
   return (
     <Screen
@@ -188,7 +191,10 @@ export default function OrgCampaignDetailScreen() {
           <View style={styles.titleBlock}>
             <Text style={styles.title}>{campaignTitleOf(c)}</Text>
             <Text style={styles.muted}>
-              Đăng {dayjs(c.createdAt).format("DD/MM")} ·{" "}
+              {/* [CHỜ BE] createdAt chưa có trong response → ẩn "Đăng dd/MM" */}
+              {c.createdAt
+                ? `Đăng ${dayjs(c.createdAt).format("DD/MM")} · `
+                : ""}
               {open
                 ? `nhận tới ${endLabel} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
                 : `đã đóng ${dayjs(c.endTime).format("DD/MM/YYYY")}`}
