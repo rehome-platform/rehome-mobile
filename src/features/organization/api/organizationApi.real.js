@@ -36,3 +36,13 @@ export async function getMyOrganization() {
 export async function updateMyProfile(body) {
   return unwrap(await api.patch("/api/organizations/me", body));
 }
+
+// OP-04 — gửi yêu cầu đổi pháp lý (chờ Moderator duyệt). proposedChanges = JSON tự do (đã gửi BE hình dạng):
+// { legalName?, orgType?, representative?: {...}, documents?: [{ docType, docNumber, issueDate, issuingAuthority, fileUrl }] }
+export async function requestLegalChange(proposedChanges) {
+  return unwrap(
+    await api.post("/api/organizations/me/legal-change-requests", {
+      proposedChanges,
+    }),
+  ); // { id, status }
+}

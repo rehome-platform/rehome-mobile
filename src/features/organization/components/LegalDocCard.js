@@ -8,7 +8,8 @@ import { ChipGroup } from "@/components/ui/ChipGroup";
 import { formatFileSize } from "@/features/organization/utils/files";
 
 // Một giấy tờ pháp lý: dòng tệp (ảnh nhỏ / icon PDF, tên, dung lượng, Xoá) + 4 ô thông tin.
-// Các ô nằm trong mảng legalDocs của form → tên dạng "legalDocs.0.docType"
+// Các ô nằm trong mảng fieldName của form (mặc định legalDocs) → tên dạng "legalDocs.0.docType".
+// OP-04 có 2 danh sách giấy tờ riêng (tên pháp lý mới, loại hình mới) → truyền fieldName khác
 export function LegalDocCard({
   index,
   file,
@@ -16,9 +17,10 @@ export function LegalDocCard({
   errors,
   suggestions,
   onRemove,
+  fieldName = "legalDocs",
 }) {
   const isPdf = file.mimeType === "application/pdf";
-  const name = (key) => `legalDocs.${index}.${key}`;
+  const name = (key) => `${fieldName}.${index}.${key}`;
 
   return (
     <View style={styles.card}>
