@@ -185,10 +185,13 @@ export default function DegradedCaseScreen() {
       </View>
 
       <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
-        <Text style={styles.boxTitle}>Món bị hỏng khi vận chuyển về địa điểm ký gửi</Text>
+        <Text style={styles.boxTitle}>
+          Món bị hỏng khi vận chuyển về địa điểm ký gửi
+        </Text>
         <Text style={styles.text}>
-          Người mua đã trả món này và ReHome nhận lại ngày{" "}
-          {dayjs(c.receivedAt).format("DD/MM")}. {c.description}{" "}
+          Người mua đã trả món này và ReHome đã nhận lại
+          {c.receivedAt ? ` ngày ${dayjs(c.receivedAt).format("DD/MM")}` : ""}.{" "}
+          {c.description}{" "}
           <Text style={styles.strong}>Không phải lỗi của bạn</Text>, và lần này
           không tính vào lịch sử ký gửi.
         </Text>
@@ -242,7 +245,14 @@ export default function DegradedCaseScreen() {
             Bạn đã chọn: {DEGRADED_CHOICE_LABEL[c.choice] ?? c.choice}
           </Text>
           <Text style={styles.text}>
-            Đã cộng <Text style={styles.strong}>{formatVnd(c.paidAmount)}</Text>{" "}
+            Đã cộng{" "}
+            <Text style={styles.strong}>
+              {/* BE chi tiết chưa trả paidAmount [CHỜ BE] → tính theo lựa chọn */}
+              {formatVnd(
+                c.paidAmount ??
+                  degradedAmount(c, c.choice === C.FULL_COMPENSATION),
+              )}
+            </Text>{" "}
             vào ví ReHome
             {c.decidedAt
               ? ` lúc ${dayjs(c.decidedAt).format("DD/MM HH:mm")}`

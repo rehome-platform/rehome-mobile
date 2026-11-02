@@ -10,16 +10,16 @@ export const WITHDRAWAL_STATUS_LABEL = {
   EXPIRED: "Quá hạn — hàng đăng bán lại",
 };
 
-// enum WithdrawalFeePaymentMethod của BE
+// enum WithdrawalFeePaymentMethod của BE (65d8475): chọn ĐÚNG 1 cách, không chia ví + MoMo (đã bỏ MIXED)
 export const FEE_PAYMENT_METHOD = {
   WALLET: "WALLET",
   MOMO: "MOMO",
-  MIXED: "MIXED",
+  VNPAY: "VNPAY",
 };
 export const FEE_PAYMENT_METHOD_LABEL = {
   WALLET: "trừ ví",
   MOMO: "qua MoMo",
-  MIXED: "ví + MoMo",
+  VNPAY: "qua VNPay",
 };
 
 // Dòng thời gian KG-15. [CHỜ BE câu 10] BE chưa có lịch sử trạng thái — mock tự ghi

@@ -34,9 +34,10 @@ export function getProductView(p) {
   if (dc && !dc.choice) return PRODUCT_VIEW.DEGRADED_DECISION;
   if (dc?.choice === DEGRADED_CHOICE.PARTIAL_WITH_ITEM_BACK)
     return PRODUCT_VIEW.PICKUP; // nhận lại món hỏng — dùng chung màn "Chờ nhận lại"
+  // Đang chờ đến lấy hàng rút: xét TRƯỚC status — BE đổi món sang WITHDRAWN ngay khi gửi yêu cầu (gỡ khỏi sàn)
+  if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING;
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
   if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
-  if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING; // Phase 5 [CHỜ BE câu 13] field liên kết
   const decision = p.endOfTermDecision;
   if (decision?.decision === END_OF_TERM_DECISION.TAKE_BACK)
     return PRODUCT_VIEW.PICKUP;

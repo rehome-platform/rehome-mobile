@@ -44,7 +44,7 @@ function Timeline({ w }) {
     title: WITHDRAWAL_EVENT_LABEL[e.type] ?? e.type,
     desc:
       e.type === "HANDED_OVER" ? w.warehouseName : (EVENT_DESC[e.type] ?? null),
-    right: fmt(e.at),
+    right: e.at ? fmt(e.at) : null, // BE chưa trả giờ của một số mốc (vd bàn giao)
   }));
   if (w.status === W.PENDING_PICKUP) {
     items.unshift({
@@ -145,8 +145,24 @@ export default function WithdrawalDetailScreen() {
 
   const left = Math.max(0, daysLeft(w.pickupDeadline));
 
+  // BE gỡ món khỏi sàn ngay khi tạo yêu cầu, phí trả sau → chưa trả thì mời trả tiếp
+  const unpaid =
+    w.status === W.PENDING_PICKUP && w.feeCharged > 0 && w.feePaid === false;
+
   let footer = null;
-  if (w.status === W.PENDING_PICKUP) {
+  if (unpaid) {
+    footer = (
+      <Button
+        title={`Trả phí rút hàng ${formatVnd(w.feeCharged)}`}
+        onPress={() =>
+          router.push({
+            pathname: "/withdrawals/new",
+            params: { productId: w.productId },
+          })
+        }
+      />
+    );
+  } else if (w.status === W.PENDING_PICKUP) {
     // "Huỷ yêu cầu" ẩn — chưa có API (PHASE5_GUIDE 0.4 #6)
     footer = (
       <Button
@@ -196,7 +212,9 @@ export default function WithdrawalDetailScreen() {
       {/* ---- Khối theo trạng thái ---- */}
       {w.status === W.PENDING_PICKUP ? (
         <View style={[styles.box, styles.boxStrong]}>
-          <Text style={styles.boxTitle}>Còn {left} ngày để đến địa điểm ký gửi</Text>
+          <Text style={styles.boxTitle}>
+            Còn {left} ngày để đến địa điểm ký gửi
+          </Text>
           <Text style={styles.text}>
             Hạn cuối{" "}
             <Text style={styles.strong}>
@@ -244,8 +262,8 @@ export default function WithdrawalDetailScreen() {
         <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
           <Text style={styles.boxTitle}>Đã quá hạn — hàng đăng bán lại</Text>
           <Text style={styles.text}>
-            Bạn không đến địa điểm ký gửi trong 7 ngày. Yêu cầu bị huỷ tự động, sản phẩm đã
-            quay lại sàn và kỳ ký gửi tiếp tục như cũ.
+            Bạn không đến địa điểm ký gửi trong 7 ngày. Yêu cầu bị huỷ tự động,
+            sản phẩm đã quay lại sàn và kỳ ký gửi tiếp tục như cũ.
           </Text>
         </View>
       ) : null}
@@ -263,7 +281,9 @@ export default function WithdrawalDetailScreen() {
             {formatVnd(w.feeCharged)}
             {w.feePaymentMethod
               ? ` · đã trả ${FEE_PAYMENT_METHOD_LABEL[w.feePaymentMethod]}`
-              : ""}
+              : unpaid
+                ? " · chưa trả"
+                : ""}
           </Text>
         </View>
       ) : null}
