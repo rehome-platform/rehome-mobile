@@ -29,6 +29,16 @@ export function BatchItemCard({ item, onEdit, onRemove, result }) {
           <Text style={styles.name} numberOfLines={2}>
             {item.productName}
           </Text>
+          {item.draftId && !result ? (
+            <View style={styles.draftTag}>
+              <Ionicons
+                name="cloud-done-outline"
+                size={14}
+                color={colors.primary}
+              />
+              <Text style={styles.draftText}>Đã lưu nháp</Text>
+            </View>
+          ) : null}
           <Text style={styles.meta} numberOfLines={1}>
             {item.categoryName} · {item.brandName}
           </Text>
@@ -76,6 +86,21 @@ export function BatchItemCard({ item, onEdit, onRemove, result }) {
 }
 
 const styles = StyleSheet.create({
+  draftTag: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: colors.neutral,
+  },
+  draftText: {
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
   card: {
     gap: spacing.sm,
     padding: spacing.md,

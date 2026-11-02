@@ -17,3 +17,14 @@ export async function getProduct(id) {
     inspectedAt: p.inspectionDate ?? null,
   };
 }
+
+// Phí ship GHN thật từ kho của món tới địa chỉ nhận (BE ProductController). Phí chỉ phụ thuộc KHO + địa chỉ,
+// không phụ thuộc số món → BR-08 hỏi theo 1 món đại diện mỗi kho (= mỗi đơn)
+export async function getShippingFee(productId, { wardName, provinceName }) {
+  const res = unwrap(
+    await api.get(`/products/${productId}/shipping-fee-preview`, {
+      params: { wardName, provinceName },
+    }),
+  );
+  return Number(res.shippingFee);
+}

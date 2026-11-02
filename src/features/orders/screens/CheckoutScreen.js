@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
@@ -30,6 +30,7 @@ import { useCart } from "@/features/cart/hooks/useCart";
 import { useAddresses } from "@/features/addresses/hooks/useAddresses";
 import { useProductDetail } from "@/features/products/hooks/useProductDetail";
 import { shopKeys } from "@/features/products/api/queryKeys";
+import { shippingFeeQuery } from "@/features/products/hooks/useShippingFee";
 import { ordersApi } from "../api/ordersApi";
 import { OrderGroupCard, OrderLine } from "../components/OrderGroupCard";
 
@@ -102,6 +103,33 @@ export default function CheckoutScreen() {
   const [formError, setFormError] = useState(null);
   const place = useMutation({ mutationFn: ordersApi.createOrders });
 
+  // Dữ liệu đặt hàng tính TRƯỚC các nhánh return sớm → hook phí ship bên dưới luôn được gọi
+  const inCart = cartLines(cart.data);
+  const source = buyNowId
+    ? product.data
+      ? [productLine(product.data)]
+      : []
+    : inCart;
+  const lines = source.filter((l) => ids.includes(l.productId));
+  const lost = lines.filter((l) => !l.available); // vừa bị người khác đặt / không còn bán
+  const okLines = lines.filter((l) => l.available);
+  const groups = groupLines(okLines);
+
+  const addrList = addresses.data ?? [];
+  const address =
+    addrList.find((a) => a.id === storeAddressId) ??
+    addrList.find((a) => a.isDefault) ??
+    addrList[0];
+
+  // Phí ship GHN thật từng đơn (= từng kho): hỏi theo 1 món đại diện của kho, đổi địa chỉ là tính lại
+  const feeQueries = useQueries({
+    queries: groups.map((g) => shippingFeeQuery(g.lines[0].productId, address)),
+  });
+  const feesKnown = groups.length > 0 && feeQueries.every((q) => q.isSuccess);
+  const feeTotal = feesKnown
+    ? feeQueries.reduce((s, q) => s + q.data, 0)
+    : null;
+
   if (!isAuthed) return <Redirect href="/login" />;
 
   const header = <AppHeader title="Đặt hàng" onBack={goBack} />;
@@ -116,16 +144,6 @@ export default function CheckoutScreen() {
     );
   }
 
-  const inCart = cartLines(cart.data);
-  const source = buyNowId
-    ? product.data
-      ? [productLine(product.data)]
-      : []
-    : inCart;
-  const lines = source.filter((l) => ids.includes(l.productId));
-  const lost = lines.filter((l) => !l.available); // vừa bị người khác đặt / không còn bán
-  const okLines = lines.filter((l) => l.available);
-
   if (!lines.length) {
     return (
       <Screen header={header}>
@@ -139,12 +157,6 @@ export default function CheckoutScreen() {
       </Screen>
     );
   }
-
-  const addrList = addresses.data ?? [];
-  const address =
-    addrList.find((a) => a.id === storeAddressId) ??
-    addrList.find((a) => a.isDefault) ??
-    addrList[0];
 
   const submit = (list) => {
     if (place.isPending) return; // chống bấm 2 lần: mỗi lần là tạo đơn + giữ hàng
@@ -275,7 +287,9 @@ export default function CheckoutScreen() {
   }
 
   // ---- Bình thường ----
-  const groups = groupLines(okLines);
+  const feePending = feeQueries.some(
+    (q) => q.isPending && q.fetchStatus !== "idle",
+  );
   return (
     <Screen
       scroll
@@ -289,8 +303,22 @@ export default function CheckoutScreen() {
           </View>
           <View style={styles.sumRow}>
             <Text style={styles.muted}>Vận chuyển {groups.length} đơn</Text>
-            <Text style={styles.muted}>Tính khi đặt hàng</Text>
+            <Text style={feesKnown ? styles.text : styles.muted}>
+              {feesKnown
+                ? formatVnd(feeTotal)
+                : feePending
+                  ? "Đang tính…"
+                  : "Tính khi đặt hàng"}
+            </Text>
           </View>
+          {feesKnown ? (
+            <View style={styles.sumRow}>
+              <Text style={styles.strong}>Tổng thanh toán</Text>
+              <Text style={styles.strong}>
+                {formatVnd(sum(okLines) + feeTotal)}
+              </Text>
+            </View>
+          ) : null}
           <Button
             title="Đặt hàng · giữ hàng 15 phút"
             loading={place.isPending}
@@ -322,6 +350,7 @@ export default function CheckoutScreen() {
           group={g}
           index={i}
           total={groups.length}
+          fee={feeQueries[i]}
         />
       ))}
 
@@ -330,14 +359,16 @@ export default function CheckoutScreen() {
         <PaymentMethodPicker
           value={paymentMethod}
           onChange={setPaymentMethod}
-          amount={sum(okLines)}
-          isSubtotal
+          // Đã biết phí ship → so ví với tổng thật; chưa biết → so tiền hàng và nhắc cần đủ phí ship
+          amount={sum(okLines) + (feeTotal ?? 0)}
+          isSubtotal={!feesKnown}
         />
       </View>
 
       <NoteBox>
-        Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán,
-        trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn 15 phút.
+        {feesKnown
+          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn 15 phút."
+          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn 15 phút."}
       </NoteBox>
 
       {__DEV__ && MOCK.orders ? (

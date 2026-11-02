@@ -26,6 +26,19 @@ export function useOrders(tab) {
   });
 }
 
+// Đơn đã bán (đơn có món mình ký gửi), cuộn vô hạn, mới nhất trước
+export function useSoldOrders() {
+  return useInfiniteQuery({
+    queryKey: orderKeys.sold,
+    queryFn: ({ pageParam }) =>
+      ordersApi.getSoldOrders({ page: pageParam, size: ORDER_PAGE_SIZE }),
+    initialPageParam: 0,
+    getNextPageParam: (last) =>
+      last.page + 1 < last.totalPages ? last.page + 1 : undefined,
+    select: (data) => data.pages.flatMap((p) => p.content),
+  });
+}
+
 // BR-11
 export function useOrder(id) {
   return useQuery({

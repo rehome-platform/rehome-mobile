@@ -61,3 +61,48 @@ export const formToItem = (form) => {
     note: form.description ?? "",
   };
 };
+
+// ===== Nháp ký gửi trên server =====
+
+// Một món → body POST / PUT /consignment-forms/drafts (chưa có kho; kho chọn lúc gửi)
+export const toDraftPayload = (item, photoUrls) => {
+  const { warehouseId, ...rest } = toCreatePayload(item, null, photoUrls);
+  return rest;
+};
+
+// Sau khi upload: thay uri trong máy bằng url, giữ đúng khung (mặt trước, mặt sau…). urls cùng thứ tự orderedPhotos
+export const withUploadedPhotos = (item, urls) => {
+  const photos = { extra: [] };
+  let i = 0;
+  photoSlotsOf(item.group).forEach((s) => {
+    if (item.photos?.[s.key]) photos[s.key] = urls[i++];
+  });
+  photos.extra = urls.slice(i);
+  return { ...item, photos };
+};
+
+// Nháp trên server (chi tiết form, status DRAFT) → 1 món. Ảnh lần lượt vào các khung bắt buộc, còn lại là ảnh khác
+export const draftToItem = (draft) => {
+  const group = groupOfCategory(draft.categoryName);
+  const urls = draft.photoUrls ?? [];
+  const slots = photoSlotsOf(group).filter((s) => s.required);
+  const photos = { extra: urls.slice(slots.length) };
+  slots.forEach((s, i) => {
+    if (urls[i]) photos[s.key] = urls[i];
+  });
+  return {
+    key: `draft-${draft.id}`,
+    draftId: draft.id,
+    group,
+    categoryId: draft.categoryId ?? "",
+    categoryName: draft.categoryName ?? "",
+    brandId: draft.brandId ?? "",
+    brandName: draft.brandName ?? "",
+    photos,
+    productName: draft.productName ?? "",
+    size: draft.size ?? "",
+    condition: draft.condition ?? "",
+    desiredPrice: draft.desiredPrice,
+    note: draft.description ?? "",
+  };
+};

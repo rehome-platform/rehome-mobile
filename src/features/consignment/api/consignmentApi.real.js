@@ -63,9 +63,7 @@ export async function getNearestWarehouses({ lat, lng } = {}) {
     const list = unwrap(await api.get("/warehouses"));
     return list.map((w) => ({ ...w, distanceKm: null }));
   }
-  return unwrap(
-    await api.get("/warehouses/nearest", { params: { lat, lng } }),
-  );
+  return unwrap(await api.get("/warehouses/nearest", { params: { lat, lng } }));
 }
 
 // API 16 — trang { content, page, size, totalElements, totalPages }. Không truyền status thì BE không gồm nháp
@@ -103,7 +101,9 @@ export async function downloadReceiptPdf(receipt) {
       `${ENV.API_BASE_URL}/consignment-receipts/${receipt.id}/pdf`,
       new File(Paths.cache, `${receipt.receiptNo ?? receipt.id}.pdf`),
       {
-        headers: { Authorization: `Bearer ${await tokenStorage.getAccessToken()}` },
+        headers: {
+          Authorization: `Bearer ${await tokenStorage.getAccessToken()}`,
+        },
         idempotent: true,
       },
     );
@@ -121,7 +121,11 @@ export async function confirmReceipt(id) {
 }
 
 // API 21 — pendingDecision: true = chỉ hàng đang chờ chọn cách xử lý cuối kỳ
-export async function getMyProducts({ page = 0, size = 20, pendingDecision } = {}) {
+export async function getMyProducts({
+  page = 0,
+  size = 20,
+  pendingDecision,
+} = {}) {
   const res = unwrap(
     await api.get("/products/mine", {
       params: { page, size, pendingDecision },
@@ -148,5 +152,36 @@ export async function decideEndOfTerm(decisionId, decision) {
     await api.post(`/end-of-term-decisions/${decisionId}/decide`, {
       decision,
     }),
+  );
+}
+
+// ===== Nháp ký gửi ("Tủ đồ", BE 65d8475): lưu từng món chưa cần kho, rồi chọn kho gửi cả lô =====
+// Không tính vào giới hạn 5 yêu cầu chờ duyệt cho tới lúc gửi. Body như API 15 (warehouseId bị bỏ qua)
+export async function createDraft(payload) {
+  return unwrap(await api.post("/consignment-forms/drafts", payload)); // chi tiết form (status DRAFT)
+}
+
+export async function updateDraft(id, payload) {
+  return unwrap(await api.put(`/consignment-forms/drafts/${id}`, payload));
+}
+
+export async function deleteDraft(id) {
+  await api.delete(`/consignment-forms/drafts/${id}`);
+}
+
+// Danh sách nháp chỉ có vài trường → tải chi tiết từng nháp (ảnh, danh mục, size, tình trạng…) để mở lại
+export async function getDrafts() {
+  const page = unwrap(
+    await api.get("/consignment-forms", {
+      params: { status: "DRAFT", page: 0, size: 20 },
+    }),
+  );
+  return Promise.all(page.content.map((f) => getForm(f.id)));
+}
+
+// Gửi nhiều nháp vào 1 kho (tối đa 20). Kết quả TỪNG món: { formId, success, formNo, errorCode, message }
+export async function submitDrafts({ warehouseId, formIds }) {
+  return unwrap(
+    await api.post("/consignment-forms/submit", { warehouseId, formIds }),
   );
 }

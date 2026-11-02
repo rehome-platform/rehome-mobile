@@ -33,6 +33,11 @@ export async function getTransactions({
   );
 }
 
+// VI-02 — chi tiết một giao dịch (chỉ của chính mình; không thấy → 404)
+export async function getTransaction(id) {
+  return toTx(unwrap(await api.get(`/wallet/transactions/${id}`)));
+}
+
 // month: "yyyy-MM" (không gửi = tất cả)
 export async function getRevenue({ month, page = 0, size = 20 } = {}) {
   const params = { page, size, ...(month ? { month } : {}) };

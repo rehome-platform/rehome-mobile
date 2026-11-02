@@ -40,6 +40,7 @@ import {
 import { shopKeys } from "../api/queryKeys";
 import { canTryOn } from "@/features/tryon/utils/tryonRules";
 import { ProductInfoTable } from "../components/ProductInfoTable";
+import { ShippingFeeRow } from "../components/ShippingFeeRow";
 import { useOpenConversation } from "@/features/chat/hooks/useChat";
 import { CONVERSATION_TYPE } from "@/constants/chat";
 
@@ -335,6 +336,10 @@ export default function ProductDetailScreen() {
           </View>
         ) : null}
         {info?.note ? <NoteBox>{info.note}</NoteBox> : null}
+
+        {isAuthed && state === SALE_STATE.ON_SALE && !product.isMine ? (
+          <ShippingFeeRow product={product} />
+        ) : null}
 
         <ProductInfoTable product={product} />
 

@@ -39,3 +39,25 @@ export async function getMyOrganization() {
   await delay(400);
   return { verificationStatus: null }; // mock: luôn "chưa nộp"
 }
+
+// Giống GET /api/organizations/options của BE (65d8475)
+export async function getOrgOptions() {
+  await delay(300);
+  return {
+    orgTypes: [
+      { value: "CHARITY_FUND", label: "Quỹ từ thiện" },
+      { value: "NGO", label: "Tổ chức phi chính phủ" },
+      { value: "SCHOOL_CLUB", label: "Câu lạc bộ trường học" },
+      { value: "VOLUNTEER_GROUP", label: "Nhóm tình nguyện / cộng đồng" },
+      { value: "SOCIAL_PROTECTION_CENTER", label: "Cơ sở bảo trợ xã hội" },
+      { value: "RELIGIOUS", label: "Cơ sở tôn giáo" },
+      { value: "OTHER", label: "Khác" },
+    ],
+    operationScopes: [
+      { value: "NATIONAL", label: "Toàn quốc" },
+      { value: "PROVINCE", label: "Cấp tỉnh / thành phố" },
+      { value: "DISTRICT", label: "Cấp quận / huyện" },
+      { value: "WARD", label: "Cấp phường / xã" },
+    ],
+  };
+}
