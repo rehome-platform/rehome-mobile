@@ -25,7 +25,7 @@ export const MOCK = {
   tryon: true, // [CHỜ BE] API 96–99: thử đồ AI (Phase 6)
   community: true, // [CHỜ BE] API 100–109: response BE còn thiếu logo, ảnh, ngày, tác giả… + thiếu API danh sách (đã báo 03/11)
   chat: false, // API 110–113 thật (BE 2c9533b), cả Member và Tổ chức. Nhắn tổ chức mới từ trang tổ chức chờ community thật
-  notifications: true, // [CHỜ BE] API 114–116: thông báo trong app (Phase 6)
+  notifications: false, // API 114 thật (BE 2c9533b). [CHỜ BE] tiêu đề, đích mở màn, đánh dấu đã đọc, số chưa đọc
   orgCampaigns: false, // App tổ chức: chiến dịch, lượt chờ lấy, note quyên góp — thật (BE 2c9533b). [CHỜ BE] preferredItemTypes, createdAt
   orgPosts: true, // [CHỜ BE] App tổ chức: bài viết + bình luận — response BE chưa có ảnh, ngày, người viết; tổ chức chưa thích / bình luận được (L9)
 };
