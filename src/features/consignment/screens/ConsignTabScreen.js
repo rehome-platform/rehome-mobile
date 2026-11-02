@@ -1,5 +1,6 @@
+import { useCallback } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -7,7 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
-import { usePendingFormCount } from "@/features/consignment/hooks/usePendingFormCount";
+import {
+  useDraftCount,
+  usePendingFormCount,
+} from "@/features/consignment/hooks/usePendingFormCount";
 import { Ionicons } from "@expo/vector-icons";
 import { usePendingDegradedCases } from "@/features/withdrawals/hooks/useDegradedCases";
 import { MyConsignSection } from "@/features/consignment/components/MyConsignSection";
@@ -45,6 +49,7 @@ function MemberConsign() {
       header={<AppHeader title="Ký gửi" right={<CreateFormButton />} />}
     >
       <DegradedBanner />
+      <DraftBanner />
       <MyConsignSection />
     </Screen>
   );
@@ -68,6 +73,39 @@ function DegradedBanner() {
           : `${list[0].productName} bị hỏng khi trả về địa điểm ký gửi — chọn cách đền`}
       </Text>
       <Ionicons name="chevron-forward" size={18} color={colors.text} />
+    </Pressable>
+  );
+}
+
+// Có món đã "Lưu món" nhưng chưa gửi (nháp trên server) → dải nhắc, bấm mở lại Ký gửi món mới (tự tải nháp).
+// Quay lại tab (vừa lưu / gửi / xoá nháp) → đếm lại
+function DraftBanner() {
+  const query = useDraftCount();
+  const { refetch } = query;
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+  const count = query.data ?? 0;
+  if (!count) return null;
+  return (
+    <Pressable
+      onPress={() => router.push("/consign-forms/new")}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.draft, pressed && styles.pressed]}
+    >
+      <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+      <View style={styles.flex}>
+        <Text style={styles.alertText}>
+          Bạn có {count} món lưu nháp chưa gửi
+        </Text>
+        <Text style={styles.draftSub}>
+          Chọn địa điểm rồi gửi để ReHome duyệt
+        </Text>
+      </View>
+      <Text style={styles.draftAction}>Gửi tiếp</Text>
+      <Ionicons name="chevron-forward" size={18} color={colors.primary} />
     </Pressable>
   );
 }
@@ -126,5 +164,24 @@ const styles = StyleSheet.create({
     ...textStyles.body,
     fontFamily: fonts.semibold,
     color: colors.text,
+  },
+  flex: { flex: 1 },
+  draft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  draftSub: { ...textStyles.caption, color: colors.textSecondary },
+  draftAction: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
   },
 });

@@ -423,3 +423,89 @@ export const mockFindMyProduct = (id) => {
 export const mockPatchProduct = (id, patch) => {
   products = products.map((x) => (x.id === id ? { ...x, ...patch } : x));
 };
+
+// ===== Nháp ký gửi (giống BE 65d8475) — lưu trong RAM =====
+let drafts = [];
+
+const draftFrom = (id, payload) => ({
+  id,
+  status: "DRAFT",
+  productName: payload.productName,
+  categoryId: payload.categoryId,
+  categoryName:
+    CATEGORIES.find((c) => c.id === payload.categoryId)?.name ?? null,
+  brandId: payload.brandId,
+  brandName: BRANDS.find((b) => b.id === payload.brandId)?.name ?? null,
+  description: payload.description,
+  desiredPrice: payload.desiredPrice,
+  size: payload.size,
+  condition: payload.condition,
+  photoUrls: payload.photoUrls,
+  createdAt: new Date().toISOString(),
+});
+
+export async function createDraft(payload) {
+  await delay(500);
+  const d = draftFrom(`draft-${Date.now()}`, payload);
+  drafts = [...drafts, d];
+  return d;
+}
+
+export async function updateDraft(id, payload) {
+  await delay(500);
+  const d = draftFrom(id, payload);
+  drafts = drafts.map((x) => (x.id === id ? d : x));
+  return d;
+}
+
+export async function deleteDraft(id) {
+  await delay(300);
+  drafts = drafts.filter((x) => x.id !== id);
+}
+
+export async function getDrafts() {
+  await delay(400);
+  return drafts.map((d) => ({ ...d }));
+}
+
+export async function submitDrafts({ warehouseId, formIds }) {
+  await delay(800);
+  let pending = forms.filter((f) => f.status === FORM_STATUS.PENDING).length;
+  const results = formIds.map((formId) => {
+    const d = drafts.find((x) => x.id === formId);
+    if (!d)
+      return {
+        formId,
+        success: false,
+        errorCode: "CONSIGNMENT_FORM_NOT_FOUND",
+        message: "Không tìm thấy nháp.",
+      };
+    if (pending >= CONSIGN_LIMITS.MAX_PENDING_FORMS)
+      return {
+        formId,
+        success: false,
+        errorCode: ERROR_CODES.TOO_MANY_PENDING_FORMS,
+        message: "Đã đủ số yêu cầu chờ duyệt.",
+      };
+    pending++;
+    drafts = drafts.filter((x) => x.id !== formId);
+    forms = [
+      {
+        ...d,
+        status: FORM_STATUS.PENDING,
+        warehouse: WAREHOUSES.find((w) => w.id === warehouseId) ?? null,
+        bringInDeadline: null,
+        rejectReason: null,
+        receiptId: null,
+      },
+      ...forms,
+    ];
+    return { formId, success: true, status: FORM_STATUS.PENDING };
+  });
+  return {
+    warehouseId,
+    successCount: results.filter((r) => r.success).length,
+    failureCount: results.filter((r) => !r.success).length,
+    results,
+  };
+}

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, BackHandler, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   Redirect,
   router,
@@ -18,11 +25,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
 import { CONSIGN_LIMITS } from "@/constants/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
-import { uploadPhotos } from "@/features/consignment/utils/photos";
-import {
-  orderedPhotos,
-  toCreatePayload,
-} from "@/features/consignment/utils/consignItem";
+import { saveItemDraft } from "@/features/consignment/utils/consignDraft";
+import { draftToItem } from "@/features/consignment/utils/consignItem";
 import { useConsignBatchStore } from "@/features/consignment/store/consignBatchStore";
 import { WarehouseStep } from "@/features/consignment/components/WarehouseStep";
 import { BatchItemCard } from "@/features/consignment/components/BatchItemCard";
@@ -35,17 +39,10 @@ const STEPS = ["Địa điểm", "Món", "Xem lại"];
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
 
-// Upload ảnh của 1 món → tạo 1 yêu cầu ký gửi (API 15). BE nhận 1 món / 1 yêu cầu
-async function sendItem(item, warehouseId) {
-  const photoUrls = await uploadPhotos(orderedPhotos(item));
-  return consignmentApi.createForm(
-    toCreatePayload(item, warehouseId, photoUrls),
-  );
-}
-
 // KG-02 / KG-03 · "Ký gửi món mới": Địa điểm (gần nhất lên đầu) → Món sẽ mang tới (thêm nhiều món)
-// → Xem lại & gửi (mỗi món một yêu cầu, gửi lần lượt; món lỗi giữ lại để gửi lại)
-// ?fromFormId=… → điền sẵn yêu cầu cũ thành 1 món (ký gửi lại)
+// → Xem lại & gửi. Mỗi món đã "Lưu món" là 1 nháp trên server; Gửi = POST /consignment-forms/submit cả lô
+// vào kho đã chọn (mỗi món một yêu cầu; món lỗi giữ lại kèm lý do để gửi lại).
+// Mở màn: có nháp cũ → tải về (lần trước thoát giữa chừng / tắt app). ?fromFormId=… → ký gửi lại yêu cầu cũ
 export default function CreateFormScreen() {
   const status = useAuthStore((s) => s.status);
   const queryClient = useQueryClient();
@@ -76,6 +73,24 @@ export default function CreateFormScreen() {
     router.push({ pathname: "/consign-forms/item", params: { key: item.key } });
   }, [fromFormId]);
 
+  // Mở lại nháp đã lưu trên server (chưa có món nào trong lần gửi đang soạn). Chạy 1 lần
+  const [restoring, setRestoring] = useState(false);
+  const restored = useRef(false);
+  useEffect(() => {
+    if (fromFormId || restored.current || items.length) return;
+    restored.current = true;
+    setRestoring(true);
+    consignmentApi
+      .getDrafts()
+      .then((drafts) => {
+        if (!drafts.length) return;
+        drafts.map(draftToItem).forEach(saveItem);
+        showToast(`Đã mở lại ${drafts.length} món bạn lưu nháp`);
+      })
+      .catch(() => {}) // không tải được nháp → vẫn tạo mới bình thường
+      .finally(() => setRestoring(false));
+  }, [fromFormId]);
+
   const [step, setStep] = useState(0);
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState({}); // key món → { ok, message }
@@ -93,20 +108,36 @@ export default function CreateFormScreen() {
     leave();
   };
 
-  // ← / Back Android: lùi 1 bước; ở bước đầu mà đã có món → hỏi trước khi bỏ cả lần gửi
+  // Xoá nháp trên server của các món (món chưa lưu nháp — ký gửi lại chưa bấm Lưu — không có draftId)
+  const deleteDrafts = (list) =>
+    Promise.allSettled(
+      list
+        .filter((i) => i.draftId)
+        .map((i) => consignmentApi.deleteDraft(i.draftId)),
+    );
+
+  // ← / Back Android: lùi 1 bước; ở bước đầu mà đã có món → hỏi: giữ nháp để lần sau gửi tiếp, hay xoá hết
   const onBack = useCallback(() => {
     if (sending) return;
     if (step > 0) return go(step - 1);
     if (!items.length) return quit();
     Alert.alert(
-      "Bỏ lần ký gửi này?",
-      `${items.length} món bạn vừa thêm sẽ không được lưu.`,
+      "Thoát lần ký gửi này?",
+      `${items.length} món đã được lưu nháp. Lần sau mở "Ký gửi món mới" để gửi tiếp.`,
       [
         { text: "Ở lại", style: "cancel" },
-        { text: "Bỏ", style: "destructive", onPress: quit },
+        {
+          text: "Xoá nháp",
+          style: "destructive",
+          onPress: async () => {
+            await deleteDrafts(items);
+            quit();
+          },
+        },
+        { text: "Giữ nháp", onPress: quit },
       ],
     );
-  }, [step, items.length, sending]);
+  }, [step, items, sending]);
 
   useFocusEffect(
     useCallback(() => {
@@ -124,23 +155,51 @@ export default function CreateFormScreen() {
       {
         text: "Xoá",
         style: "destructive",
-        onPress: () => removeItem(item.key),
+        onPress: async () => {
+          try {
+            if (item.draftId) await consignmentApi.deleteDraft(item.draftId);
+            removeItem(item.key);
+          } catch (e) {
+            Alert.alert("Chưa xoá được món", e.message);
+          }
+        },
       },
     ]);
 
-  // Gửi LẦN LƯỢT từng món: dễ báo lỗi riêng từng món, không dồn nhiều upload cùng lúc
+  // 1) Món chưa có nháp (ký gửi lại chưa bấm Lưu) → lưu nháp trước, lần lượt (không dồn nhiều upload)
+  // 2) Gửi cả lô 1 lần: POST /submit vào kho đã chọn → kết quả từng món
   const sendAll = async () => {
     setSending(true);
     const next = {};
+    const ready = [];
     for (const item of items) {
       try {
-        await sendItem(item, warehouse.id);
-        next[item.key] = { ok: true };
+        const synced = item.draftId ? item : await saveItemDraft(item);
+        if (synced !== item) saveItem(synced);
+        ready.push(synced);
       } catch (e) {
         next[item.key] = { ok: false, message: e.message };
       }
-      setResults({ ...next });
     }
+    if (ready.length) {
+      try {
+        const res = await consignmentApi.submitDrafts({
+          warehouseId: warehouse.id,
+          formIds: ready.map((i) => i.draftId),
+        });
+        ready.forEach((item) => {
+          const r = res.results.find((x) => x.formId === item.draftId);
+          next[item.key] = r?.success
+            ? { ok: true }
+            : { ok: false, message: r?.message ?? "Chưa gửi được món này." };
+        });
+      } catch (e) {
+        ready.forEach((item) => {
+          next[item.key] = { ok: false, message: e.message };
+        });
+      }
+    }
+    setResults(next);
     setSending(false);
     queryClient.invalidateQueries({ queryKey: ["consign", "forms"] }); // danh sách + số yêu cầu chờ
 
@@ -249,11 +308,13 @@ export default function CreateFormScreen() {
                 onRemove={() => confirmRemove(item)}
               />
             ))
+          ) : restoring ? (
+            <ActivityIndicator color={colors.primary} />
           ) : (
             <EmptyState
               icon="shirt-outline"
               title="Chưa có món nào"
-              description="Thêm từng món bạn sẽ mang tới. Mỗi món ReHome duyệt riêng."
+              description="Thêm từng món bạn sẽ mang tới. Mỗi món ReHome duyệt riêng. Món đã lưu được giữ làm nháp, thoát giữa chừng không mất."
             />
           )}
 

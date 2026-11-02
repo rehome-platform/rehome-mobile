@@ -25,6 +25,7 @@ import {
   missingSlots,
   suggestName,
 } from "@/features/consignment/utils/consignItem";
+import { saveItemDraft } from "@/features/consignment/utils/consignDraft";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { BrandPicker } from "../components/BrandPicker";
 import { SlotPhotoPicker } from "../components/SlotPhotoPicker";
@@ -35,7 +36,7 @@ const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/consign-forms/new");
 
 // "Thêm món" (có ?key=… → sửa món): Danh mục → Thương hiệu → Ảnh theo khung → Thông tin.
-// Xong → lưu vào "lần gửi" (consignBatchStore) rồi quay lại danh sách món. Chưa gọi API ở đây
+// Xong → lưu nháp lên server + vào "lần gửi" (consignBatchStore) rồi quay lại danh sách món
 export default function ItemEditorScreen() {
   const { key } = useLocalSearchParams();
   const editing = useConsignBatchStore((s) =>
@@ -126,9 +127,26 @@ export default function ItemEditorScreen() {
     go(3);
   };
 
-  const onSave = handleSubmit((values) => {
-    saveItem({ ...cat, ...brand, photos, ...values, key: editing?.key });
-    leave();
+  // Lưu món = lưu nháp lên server (upload ảnh + tạo / cập nhật nháp) → tắt app không mất, lần sau mở lại gửi tiếp
+  const [saving, setSaving] = useState(false);
+  const onSave = handleSubmit(async (values) => {
+    setSaving(true);
+    try {
+      const saved = await saveItemDraft({
+        ...cat,
+        ...brand,
+        photos,
+        ...values,
+        key: editing?.key,
+        draftId: editing?.draftId,
+      });
+      saveItem(saved);
+      leave();
+    } catch (e) {
+      Alert.alert("Chưa lưu được món", e.message);
+    } finally {
+      setSaving(false);
+    }
   });
 
   const footer = [
@@ -148,6 +166,7 @@ export default function ItemEditorScreen() {
     <Button
       key="3"
       title={editing ? "Lưu thay đổi" : "Lưu món"}
+      loading={saving}
       onPress={onSave}
     />,
   ][step];

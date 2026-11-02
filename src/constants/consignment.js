@@ -1,5 +1,6 @@
 // Theo enum BE (đã đối chiếu entity 17/10): ConsignmentFormStatus, ProductStatus, EndOfTermChoice
 export const FORM_STATUS = {
+  DRAFT: "DRAFT", // nháp ("Lưu món" ở Ký gửi món mới), chưa chọn kho, chưa gửi duyệt
   PENDING: "PENDING",
   APPROVED: "APPROVED",
   INSPECTING: "INSPECTING", // BE 51c2027: đã mang đồ tới, nhân viên đang kiểm định

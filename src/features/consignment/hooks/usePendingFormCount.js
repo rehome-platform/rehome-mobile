@@ -17,3 +17,17 @@ export function usePendingFormCount() {
     select: (data) => data.totalElements,
   });
 }
+
+// Số món nháp chưa gửi (dải nhắc "Gửi tiếp" ở tab Ký gửi) — cùng cách đếm như trên
+export function useDraftCount() {
+  return useQuery({
+    queryKey: consignKeys.draftCount(),
+    queryFn: () =>
+      consignmentApi.getMyForms({
+        status: FORM_STATUS.DRAFT,
+        page: 0,
+        size: 1,
+      }),
+    select: (data) => data.totalElements,
+  });
+}
