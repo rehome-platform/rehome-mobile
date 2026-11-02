@@ -19,7 +19,7 @@ import {
   mockAvailableBalance,
   mockChargeWithdrawalFee,
 } from "@/features/wallet/api/walletApi.mock";
-import { canWithdraw, freeWindowOf, splitFee } from "../utils/withdrawalRules";
+import { canWithdraw, freeWindowOf } from "../utils/withdrawalRules";
 import { mockNotify } from "@/features/notifications/api/notificationApi.mock";
 import {
   NOTIFICATION_TARGET as NT,
@@ -42,7 +42,12 @@ const conflict = (code, message) =>
 
 let withdrawals = [];
 
-const toView = (w) => ({ ...w, events: [...w.events] });
+// feePaid: miễn phí, hoặc đã trả (có cách trả) — như BE ItemWithdrawalDetailResponse
+const toView = (w) => ({
+  ...w,
+  feePaid: w.feeCharged === 0 || w.feePaymentMethod != null,
+  events: [...w.events],
+});
 
 const findWithdrawal = (id) => {
   const w = withdrawals.find((x) => x.id === id);
@@ -139,25 +144,25 @@ export async function createWithdrawal(productId) {
   return toView(w);
 }
 
-// ---------- API 91: MIXED — ví trước, thiếu thì MoMo ----------
-// Ví đủ → trừ luôn, trả { paid: true }. Thiếu → CHƯA trừ ví, trả phần cần MoMo (bản thật có payUrl)
-export async function payWithdrawalFee(id) {
+// ---------- API 91: đúng 1 cách — WALLET | MOMO | VNPAY (như BE 65d8475) ----------
+// Ví: thiếu số dư → 409; đủ → trừ + xong. MoMo / VNPay: chờ kết quả (bản thật mở payUrl; mock dùng mockMomoResult)
+export async function payWithdrawalFee(id, method) {
   await delay();
   const w = findWithdrawal(id);
   if (w.status != null) throw conflict("HTTP_409", "Phí rút hàng đã được trả.");
-  const { fromWallet, fromMomo } = splitFee(
-    w.feeCharged,
-    mockAvailableBalance(),
-  );
-  if (fromMomo === 0) {
-    mockChargeWithdrawalFee({ amount: fromWallet, note: feeNote(w) });
+  if (method === M.WALLET) {
+    if (mockAvailableBalance() < w.feeCharged)
+      throw conflict(
+        ERROR_CODES.INSUFFICIENT_BALANCE,
+        "Số dư ví không đủ để trả phí rút hàng.",
+      );
+    mockChargeWithdrawalFee({ amount: w.feeCharged, note: feeNote(w) });
     w.feePaymentMethod = M.WALLET;
-    w.feeFromWallet = fromWallet;
     activate(w);
-    return { paid: true, ...toView(w) };
+    return { ...toView(w), payUrl: null };
   }
-  w.pendingSplit = { fromWallet, fromMomo };
-  return { paid: false, payUrl: null, fromWallet, fromMomo };
+  w.pendingMethod = method;
+  return { ...toView(w), payUrl: null };
 }
 
 // ---------- API 92 ----------
@@ -168,23 +173,14 @@ export async function getWithdrawal(id) {
 
 // ---------- [DEV] ----------
 
-// Màn KG-14 (mock) bấm "MoMo thành công / thất bại". Thất bại → ví KHÔNG bị trừ, thử lại được
+// Màn trả phí (mock) bấm "Thanh toán thành công / thất bại" thay cho trang MoMo / VNPay thật
 export async function mockMomoResult(id, success) {
   await delay(800);
   const w = findWithdrawal(id);
-  const split = w.pendingSplit;
-  if (!split || w.status != null) return { paid: w.status != null };
+  if (!w.pendingMethod || w.status != null) return { paid: w.status != null };
   if (!success) return { paid: false };
-  if (split.fromWallet > 0) {
-    mockChargeWithdrawalFee({
-      amount: split.fromWallet,
-      note: `${feeNote(w)} (phần còn lại qua MoMo)`,
-    });
-  }
-  w.feePaymentMethod = split.fromWallet > 0 ? M.MIXED : M.MOMO;
-  w.feeFromWallet = split.fromWallet;
-  w.feeFromMomo = split.fromMomo;
-  w.pendingSplit = null;
+  w.feePaymentMethod = w.pendingMethod;
+  w.pendingMethod = null;
   activate(w);
   return { paid: true, ...toView(w) };
 }

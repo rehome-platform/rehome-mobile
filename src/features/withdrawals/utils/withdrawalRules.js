@@ -32,12 +32,6 @@ export function freeWindowOf(p, now = dayjs()) {
 export const estimateFee = (p) =>
   freeWindowOf(p).isFree ? 0 : (p.withdrawalFee ?? 0);
 
-// Trừ ví trước, thiếu mới MoMo (PHASE5_GUIDE 0.4 #1)
-export const splitFee = (fee, available) => {
-  const fromWallet = Math.min(fee, Math.max(0, available ?? 0));
-  return { fromWallet, fromMomo: fee - fromWallet };
-};
-
 // KG-13 "Có thể chờ để khỏi mất phí" — chỉ khi còn kỳ sau
 export function nextFreeWindow(p) {
   const t = productTiming(p);
