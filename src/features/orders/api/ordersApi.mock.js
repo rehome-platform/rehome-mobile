@@ -624,3 +624,54 @@ export async function mockExpireReturnWindow(id) {
   o.deliveredAt = dayjs().subtract(3, "day").add(1, "minute").toISOString();
   return toDetail(o);
 }
+
+// Mock "Đơn đã bán": 2 đơn mẫu — một đã vào ví, một đang giao (số dự kiến)
+export async function getSoldOrders({ page = 0, size = 10 } = {}) {
+  await delay();
+  const item = (id, name, price, term, rate) => ({
+    productId: id,
+    productName: name,
+    thumbnailUrl: `https://picsum.photos/seed/${id}/200/200`,
+    salePrice: price,
+    termApplied: term,
+    commissionRate: rate,
+    commission: price * rate,
+    tax: 0,
+    netAmount: price * (1 - rate),
+  });
+  const content = [
+    {
+      orderId: "so-2",
+      orderNo: "OD-2026-000031",
+      status: "SHIPPING",
+      warehouseName: "Địa điểm ký gửi - TPHCM",
+      itemCount: 1,
+      subtotal: 450000,
+      netAmount: 405000,
+      paidOut: false,
+      createdAt: ago(1, "day"),
+      items: [item("mp-2", "Áo khoác jean Levi's", 450000, 1, 0.1)],
+    },
+    {
+      orderId: "so-1",
+      orderNo: "OD-2026-000012",
+      status: "COMPLETED",
+      warehouseName: "Địa điểm ký gửi - TPHCM",
+      itemCount: 1,
+      subtotal: 320000,
+      netAmount: 272000,
+      paidOut: true,
+      createdAt: ago(9, "day"),
+      completedAt: ago(4, "day"),
+      items: [item("mp-1", "Váy hoa Zara", 320000, 2, 0.15)],
+    },
+  ];
+  return {
+    content: page === 0 ? content.slice(0, size) : [],
+    page,
+    size,
+    totalElements: content.length,
+    totalPages: 1,
+    statusCounts: { SHIPPING: 1, COMPLETED: 1 },
+  };
+}

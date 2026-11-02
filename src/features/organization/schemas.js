@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  FILE_RULES,
-  OPERATION_SCOPES,
-  ORG_TYPES,
-} from "@/features/organization/constants";
+import { FILE_RULES } from "@/features/organization/constants";
 import { PHONE_REGEX } from "@/utils/validators";
 
 const CONTACT_PHONE_REGEX = /^0\d{9,10}$/; // di động 10 số hoặc số bàn 11 số (02x xxxx xxxx)
@@ -15,10 +11,8 @@ const required = (message) => z.string().trim().min(1, message);
 export const orgInfoSchema = z.object({
   legalName: required("Vui lòng nhập tên đầy đủ theo giấy tờ"),
   displayName: required("Vui lòng nhập tên hiển thị"),
-  orgType: z.enum(
-    ORG_TYPES.map((t) => t.value),
-    { error: "Vui lòng chọn loại hình tổ chức" },
-  ),
+  // Mã lấy từ BE (useOrgOptions) → chỉ kiểm đã chọn; mã cũ không còn trong danh sách bị màn hình xoá trước
+  orgType: required("Vui lòng chọn loại hình tổ chức"),
   taxCode: z
     .string()
     .trim()
@@ -26,10 +20,7 @@ export const orgInfoSchema = z.object({
       (v) => v === "" || TAX_CODE_REGEX.test(v),
       "Mã số thuế gồm 10 số (hoặc 10 số - 3 số)",
     ),
-  operationScope: z.enum(
-    OPERATION_SCOPES.map((s) => s.value),
-    { error: "Vui lòng chọn phạm vi hoạt động" },
-  ),
+  operationScope: required("Vui lòng chọn phạm vi hoạt động"),
   address: required("Vui lòng nhập địa chỉ trụ sở"),
   contactPhone: z
     .string()

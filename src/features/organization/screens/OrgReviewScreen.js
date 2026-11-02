@@ -19,10 +19,10 @@ import { organizationApi } from "@/features/organization/api/organizationApi";
 import { buildRegisterPayload } from "@/features/organization/utils/payload";
 import {
   formatReceivingHours,
-  orgTypeLabel,
+  optionLabel,
   pickupAddress,
-  scopeLabel,
 } from "@/features/organization/utils/summary";
+import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { uploadFile } from "@/lib/api/upload";
 import { UPLOAD_FOLDER } from "@/constants/upload";
@@ -76,6 +76,7 @@ export default function OrgReviewScreen() {
   const location = useOrgRegisterStore((s) => s.location);
   const mode = useOrgRegisterStore((s) => s.mode);
   const queryClient = useQueryClient();
+  const options = useOrgOptions();
 
   const [agreed, setAgreed] = useState(false);
   const [agreeError, setAgreeError] = useState(null);
@@ -144,9 +145,18 @@ export default function OrgReviewScreen() {
             <Text style={styles.muted}>{info.legalName}</Text>
           </View>
         </View>
-        <ReviewRow label="Loại hình" value={orgTypeLabel(info.orgType)} />
+        <ReviewRow
+          label="Loại hình"
+          value={optionLabel(options.data?.orgTypes, info.orgType)}
+        />
         <ReviewRow label="Mã số thuế" value={info.taxCode} />
-        <ReviewRow label="Phạm vi" value={scopeLabel(info.operationScope)} />
+        <ReviewRow
+          label="Phạm vi"
+          value={optionLabel(
+            options.data?.operationScopes,
+            info.operationScope,
+          )}
+        />
         <ReviewRow label="Trụ sở" value={info.address} />
         <ReviewRow label="SĐT liên hệ" value={info.contactPhone} />
         <ReviewRow label="Email liên hệ" value={info.contactEmail} />

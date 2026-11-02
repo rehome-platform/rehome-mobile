@@ -232,3 +232,9 @@ export const mockProductSummary = (id) => {
     ? { ...toSummary(p), status: p.status, warehouseId: p.warehouseId }
     : null;
 };
+
+// Mock: phí cố định như OrderServiceImpl cũ
+export async function getShippingFee() {
+  await delay(300);
+  return 25000;
+}

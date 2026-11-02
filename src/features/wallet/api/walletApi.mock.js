@@ -161,6 +161,18 @@ export async function getTransactions({
   return paginate(list, page, size);
 }
 
+export async function getTransaction(id) {
+  await delay(300);
+  const t = transactions.find((x) => x.id === id);
+  if (!t)
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy giao dịch.",
+    });
+  return { ...t };
+}
+
 export async function getRevenue({ page = 0, size = 20 } = {}) {
   await delay();
   return paginate(

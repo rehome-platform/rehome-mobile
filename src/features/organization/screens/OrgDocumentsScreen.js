@@ -12,7 +12,13 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { OrgRegisterHeader } from "@/features/organization/components/OrgRegisterHeader";
 import { CccdSlot } from "@/features/organization/components/CccdSlot";
 import { LegalDocCard } from "@/features/organization/components/LegalDocCard";
-import { FILE_RULES, ORG_TYPES } from "@/features/organization/constants";
+import {
+  DEFAULT_DOC_SUGGESTIONS,
+  DOC_SUGGESTIONS,
+  FILE_RULES,
+} from "@/features/organization/constants";
+import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
+import { optionLabel } from "@/features/organization/utils/summary";
 import { orgDocumentsSchema } from "@/features/organization/schemas";
 import {
   pickDocument,
@@ -46,6 +52,7 @@ export default function OrgDocumentsScreen() {
   const representative = useOrgRegisterStore((s) => s.representative);
   const saved = useOrgRegisterStore((s) => s.documents);
   const saveStep = useOrgRegisterStore((s) => s.saveStep);
+  const options = useOrgOptions(); // tên loại hình cho dòng "Gợi ý cho …"
 
   const {
     control,
@@ -74,11 +81,10 @@ export default function OrgDocumentsScreen() {
   if (!info || !representative)
     return <Redirect href="/org/registration/info" />;
 
-  const orgType = ORG_TYPES.find((t) => t.value === info.orgType);
-  const suggestions = (orgType?.suggestedDocs ?? []).map((d) => ({
-    value: d,
-    label: d,
-  }));
+  // Gợi ý theo đúng checklist web Moderator dùng để duyệt (constants.js)
+  const suggestions = (
+    DOC_SUGGESTIONS[info.orgType] ?? DEFAULT_DOC_SUGGESTIONS
+  ).map((d) => ({ value: d, label: d }));
 
   // shouldValidate: chọn ảnh xong thì lỗi "Vui lòng thêm ảnh…" (nếu có) biến mất ngay
   const setCccd = (name) => (file) =>
@@ -231,7 +237,9 @@ export default function OrgDocumentsScreen() {
 
       {suggestions.length ? (
         <NoteBox>
-          <Text style={styles.noteTitle}>Gợi ý cho "{orgType.label}":</Text>
+          <Text style={styles.noteTitle}>
+            Gợi ý cho "{optionLabel(options.data?.orgTypes, info.orgType)}":
+          </Text>
           {suggestions.map((s) => (
             <Text key={s.value} style={styles.noteText}>
               • {s.label}

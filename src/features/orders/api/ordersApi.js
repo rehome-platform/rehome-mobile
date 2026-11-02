@@ -13,6 +13,7 @@ export const ordersApi = {
   cancelOrder: manage.cancelOrder,
   confirmReceipt: manage.confirmReceipt,
   rateOrder: manage.rateOrder,
+  getSoldOrders: manage.getSoldOrders, // đơn có món mình ký gửi
   // [DEV] chỉ dùng trong khung Mock (__DEV__)
   mockFailNextOrder: mock.mockFailNextOrder,
   mockShortenDeadline: mock.mockShortenDeadline,

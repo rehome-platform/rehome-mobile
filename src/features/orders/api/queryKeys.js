@@ -4,4 +4,5 @@ export const orderKeys = {
   list: (tabKey) => ["orders", "list", tabKey],
   detail: (id) => ["orders", "detail", id],
   tracking: (id) => ["orders", "tracking", id],
+  sold: ["orders", "sold"],
 };

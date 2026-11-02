@@ -31,8 +31,15 @@ export function OrderLine({ line, faded }) {
   );
 }
 
+// Phí ship của đơn: fee = kết quả useQueries (phí GHN thật). Chưa có địa chỉ / lỗi → "Tính khi đặt hàng"
+const feeText = (fee) => {
+  if (fee?.isSuccess) return formatVnd(fee.data);
+  if (fee?.isPending && fee.fetchStatus !== "idle") return "Đang tính…";
+  return "Tính khi đặt hàng";
+};
+
 // "Đơn 1 / 2 — Kho Quận 1": các món cùng kho = một đơn, một phí vận chuyển
-export function OrderGroupCard({ group, index, total }) {
+export function OrderGroupCard({ group, index, total, fee }) {
   return (
     <View style={styles.card}>
       <View style={styles.head}>
@@ -48,8 +55,9 @@ export function OrderGroupCard({ group, index, total }) {
         ))}
         <View style={styles.feeRow}>
           <Text style={styles.feeLabel}>Phí vận chuyển</Text>
-          {/* [CHỜ BE] API 58 checkout-preview → hiện phí thật ở đây */}
-          <Text style={styles.feeLabel}>Tính khi đặt hàng</Text>
+          <Text style={fee?.isSuccess ? styles.feeValue : styles.feeLabel}>
+            {feeText(fee)}
+          </Text>
         </View>
       </View>
     </View>
@@ -104,4 +112,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.neutral,
   },
   feeLabel: { ...textStyles.body, color: colors.textSecondary },
+  feeValue: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
 });

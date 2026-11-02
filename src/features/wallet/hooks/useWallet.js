@@ -4,7 +4,6 @@ import {
   useQueryClient,
   useMutation,
 } from "@tanstack/react-query";
-import { ApiError } from "@/lib/api/errors";
 import { useAuthStore } from "@/stores/authStore";
 import { walletApi } from "../api/walletApi";
 import { walletKeys } from "../api/queryKeys";
@@ -50,14 +49,14 @@ export function useRevenue() {
     select: (data) => data.pages.flatMap((p) => p.content),
   });
 }
-// VI-02: chưa có GET /wallet/transactions/{id} [CHỜ BE câu 13] → tìm trong các danh sách đã tải;
-// không thấy (mở bằng link) → tải trang đầu để tìm
+// VI-02: GET /wallet/transactions/{id}. Dòng đã có trong danh sách vừa tải → hiện ngay (placeholder), vẫn hỏi BE
 export function useTransaction(id) {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: ["wallet", "transaction", id],
     enabled: !!id,
-    queryFn: async () => {
+    queryFn: () => walletApi.getTransaction(id),
+    placeholderData: () => {
       for (const [, data] of queryClient.getQueriesData({
         queryKey: ["wallet", "transactions"],
       })) {
@@ -66,15 +65,7 @@ export function useTransaction(id) {
           .find((t) => t.id === id);
         if (hit) return hit;
       }
-      const page = await walletApi.getTransactions({ page: 0, size: 100 });
-      const hit = page.content.find((t) => t.id === id);
-      if (!hit)
-        throw new ApiError({
-          status: 404,
-          code: "HTTP_404",
-          message: "Không tìm thấy giao dịch.",
-        });
-      return hit;
+      return undefined;
     },
   });
 }

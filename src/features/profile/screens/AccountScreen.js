@@ -132,6 +132,11 @@ function MemberAccount() {
           onPress={() => router.push("/orders")}
         />
         <ListItem
+          icon="pricetags-outline"
+          title="Đơn đã bán"
+          onPress={() => router.push("/orders/sold")}
+        />
+        <ListItem
           icon="return-down-back-outline"
           title="Yêu cầu trả hàng"
           badge={

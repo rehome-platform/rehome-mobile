@@ -1,13 +1,8 @@
-import {
-  OPERATION_SCOPES,
-  ORG_TYPES,
-  WEEKDAYS,
-} from "@/features/organization/constants";
+import { WEEKDAYS } from "@/features/organization/constants";
 
-const labelOf = (list, value) =>
-  list.find((x) => x.value === value)?.label ?? "";
-export const orgTypeLabel = (value) => labelOf(ORG_TYPES, value);
-export const scopeLabel = (value) => labelOf(OPERATION_SCOPES, value);
+// Nhãn của một mã trong danh sách lựa chọn (useOrgOptions). Chưa tải xong / mã lạ → hiện chính mã đó
+export const optionLabel = (list, value) =>
+  list?.find((x) => x.value === value)?.label ?? value ?? "";
 
 // { days: ["WED","MON"], openTime: "08:00", closeTime: "17:00" } → "T2, T4 · 08:00–17:00"
 // Ngày xếp theo thứ tự trong tuần, không theo thứ tự bấm

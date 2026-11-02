@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { locateAddress } from "@/features/organization/utils/geocode";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,8 +13,9 @@ import { RadioCard } from "@/components/ui/RadioCard";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { Avatar } from "@/components/ui/Avatar";
 import { OrgRegisterHeader } from "@/features/organization/components/OrgRegisterHeader";
-import { OPERATION_SCOPES, ORG_TYPES } from "@/features/organization/constants";
+import { ErrorBox } from "@/components/ui/ErrorBox";
 import { orgInfoSchema } from "@/features/organization/schemas";
+import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -52,6 +53,19 @@ export default function OrgInfoScreen() {
 
   const logoUri = watch("logoUri");
   const displayName = watch("displayName");
+
+  // Loại hình / phạm vi lấy từ BE. Hồ sơ cũ (nộp lại) mang mã không còn trong danh sách → bỏ chọn, bắt chọn lại
+  const options = useOrgOptions();
+  const orgType = watch("orgType");
+  const operationScope = watch("operationScope");
+  useEffect(() => {
+    if (!options.data) return;
+    const has = (list, v) => list.some((o) => o.value === v);
+    if (orgType && !has(options.data.orgTypes, orgType))
+      setValue("orgType", "");
+    if (operationScope && !has(options.data.operationScopes, operationScope))
+      setValue("operationScope", "");
+  }, [options.data, orgType, operationScope, setValue]);
 
   // Thoát luồng: xoá dữ liệu tạm. Đã nhập gì thì hỏi trước
   const exit = () => {
@@ -150,15 +164,27 @@ export default function OrgInfoScreen() {
             <Text style={styles.groupLabel}>
               Loại hình tổ chức<Text style={styles.required}> *</Text>
             </Text>
-            {ORG_TYPES.map((type) => (
-              <RadioCard
-                key={type.value}
-                title={type.label}
-                selected={field.value === type.value}
-                onPress={() => field.onChange(type.value)}
-                style={styles.radio}
-              />
-            ))}
+            {options.isPending ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : options.isError ? (
+              <ErrorBox message={options.error.message}>
+                <Button
+                  title="Thử lại"
+                  variant="secondary"
+                  onPress={() => options.refetch()}
+                />
+              </ErrorBox>
+            ) : (
+              options.data.orgTypes.map((type) => (
+                <RadioCard
+                  key={type.value}
+                  title={type.label}
+                  selected={field.value === type.value}
+                  onPress={() => field.onChange(type.value)}
+                  style={styles.radio}
+                />
+              ))
+            )}
             {errors.orgType ? (
               <Text style={styles.error}>{errors.orgType.message}</Text>
             ) : (
@@ -194,7 +220,7 @@ export default function OrgInfoScreen() {
               Phạm vi hoạt động<Text style={styles.required}> *</Text>
             </Text>
             <ChipGroup
-              options={OPERATION_SCOPES}
+              options={options.data?.operationScopes ?? []}
               value={field.value}
               onChange={field.onChange}
               error={errors.operationScope?.message}

@@ -80,3 +80,12 @@ export async function confirmReceipt(id) {
 export async function rateOrder(id, serviceRating) {
   return unwrap(await api.post(`/orders/${id}/rating`, { serviceRating }));
 }
+
+// Đơn đã bán: đơn có món do chính mình ký gửi (BE OrderController GET /orders/sold). Chỉ tính các món của mình;
+// netAmount = tiền nhận sau hoa hồng — paidOut = false thì là số dự kiến (chưa hết hạn trả hàng)
+export async function getSoldOrders({ status, page = 0, size = 10 } = {}) {
+  const { orders, statusCounts } = unwrap(
+    await api.get("/orders/sold", { params: { status, page, size } }),
+  );
+  return { ...orders, statusCounts };
+}
