@@ -1,8 +1,17 @@
 import { useCallback } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Redirect, router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import dayjs from "dayjs";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +20,12 @@ import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { registrationFromProfile } from "@/features/organization/utils/payload";
+import { optionLabel } from "@/features/organization/utils/summary";
+import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
+import {
+  DEFAULT_DOC_SUGGESTIONS,
+  DOC_SUGGESTIONS,
+} from "@/features/organization/constants";
 import {
   ORG_STATUS,
   useMyOrganization,
@@ -39,6 +54,74 @@ function StatusCard({
   );
 }
 
+const formatDate = (v) => dayjs(v).format("DD/MM/YYYY");
+const formatDay = (v) => dayjs(v).format("DD/MM");
+
+function DocRow({ icon, title, meta, url }) {
+  return (
+    <Pressable
+      onPress={() => url && Linking.openURL(url)}
+      disabled={!url}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.docRow, pressed && styles.pressed]}
+    >
+      <Ionicons name={icon} size={22} color={colors.primary} />
+      <View style={styles.flex}>
+        <Text style={styles.docTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        {meta ? <Text style={styles.docMeta}>{meta}</Text> : null}
+      </View>
+      {url ? <Text style={styles.link}>Xem</Text> : null}
+    </Pressable>
+  );
+}
+
+// OA-06 Bị từ chối · Giấy tờ đã nộp. BE không trả kết quả từng giấy tờ (đạt / chưa đạt) → chỉ liệt kê,
+// so số giấy tờ với checklist của loại hình (giống bảng Moderator dùng) để nhắc phần còn thiếu
+function SubmittedDocs({ profile, options }) {
+  const docs = profile.documents ?? [];
+  const rep = profile.representative;
+  const required = DOC_SUGGESTIONS[profile.orgType] ?? DEFAULT_DOC_SUGGESTIONS;
+  const missing = Math.max(0, required.length - docs.length);
+  return (
+    <View style={styles.group}>
+      <Text style={styles.label}>GIẤY TỜ ĐÃ NỘP</Text>
+      <View style={styles.docBox}>
+        {rep?.cccdFrontUrl || rep?.cccdBackUrl ? (
+          <DocRow
+            icon="card-outline"
+            title="CCCD người đại diện"
+            meta={[rep.fullName, rep.cccdNumber].filter(Boolean).join(" · ")}
+            url={rep.cccdFrontUrl ?? rep.cccdBackUrl}
+          />
+        ) : null}
+        {docs.map((d, i) => (
+          <DocRow
+            key={`${d.fileUrl}-${i}`}
+            icon="document-text-outline"
+            title={d.docType || `Giấy tờ ${i + 1}`}
+            meta={[
+              d.docNumber,
+              d.issueDate ? `cấp ${formatDate(d.issueDate)}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            url={d.fileUrl}
+          />
+        ))}
+      </View>
+      {missing > 0 ? (
+        <Text style={styles.warn}>
+          {optionLabel(options?.orgTypes, profile.orgType) || "Loại hình này"}{" "}
+          cần ít nhất {required.length} giấy tờ, hồ sơ mới có {docs.length}:{" "}
+          {required.join("; ")}.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 // Màn đầu của tài khoản Tổ chức — trạng thái hồ sơ lấy từ GET /api/organizations/me:
 // chưa nộp → mời nộp · PENDING → đang xác minh · REJECTED → lý do + nộp lại · VERIFIED → khung 4 tab
 export default function OrgHomeScreen() {
@@ -48,6 +131,7 @@ export default function OrgHomeScreen() {
   const setMode = useOrgRegisterStore((s) => s.setMode);
   const reset = useOrgRegisterStore((s) => s.reset);
   const me = useMyOrganization();
+  const options = useOrgOptions();
   const { refetch } = me;
 
   // Quay lại màn này (vừa gửi hồ sơ, Moderator vừa duyệt…) → hỏi lại BE
@@ -112,25 +196,50 @@ export default function OrgHomeScreen() {
       ) : status === ORG_STATUS.PENDING ? (
         <StatusCard
           icon="hourglass-outline"
-          title="Hồ sơ đang được xác minh"
-          text={`${me.data.displayName} đã gửi hồ sơ. Moderator phản hồi trong 5 ngày làm việc, kết quả gửi về email đăng nhập.`}
-        />
-      ) : status === ORG_STATUS.REJECTED ? (
-        <StatusCard
-          icon="close-circle-outline"
-          iconColor={colors.error}
-          title="Hồ sơ chưa được duyệt"
-          text="Moderator đã từ chối hồ sơ. Sửa theo lý do bên dưới rồi nộp lại."
+          title="Hồ sơ đang chờ xác minh"
+          text={[
+            me.data.submittedAt
+              ? `Gửi ${formatDay(me.data.submittedAt)}`
+              : null,
+            "thường xử lý trong 1–2 ngày làm việc. Kết quả gửi về email đăng nhập.",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         >
-          {me.data.rejectionReason ? (
-            <Text style={styles.reason}>Lý do: {me.data.rejectionReason}</Text>
-          ) : null}
           <Button
-            title="Sửa và nộp lại"
-            onPress={startResubmit}
+            title="Kiểm tra lại"
+            variant="secondary"
+            loading={me.isRefetching}
+            onPress={() => refetch()}
             style={styles.cta}
           />
         </StatusCard>
+      ) : status === ORG_STATUS.REJECTED ? (
+        <>
+          <StatusCard
+            icon="close-circle-outline"
+            iconColor={colors.error}
+            title="Hồ sơ chưa được duyệt"
+            // Lúc từ chối BE ghi thời điểm vào verifiedAt ("ai kết luận, lúc nào")
+            text={
+              me.data.verifiedAt
+                ? `Từ chối ngày ${formatDate(me.data.verifiedAt)}`
+                : "Moderator đã từ chối hồ sơ."
+            }
+          />
+          <View style={styles.reasonBox}>
+            <Text style={styles.label}>LÝ DO TỪ CHỐI</Text>
+            <Text style={styles.reason}>
+              {me.data.rejectionReason || "Moderator không ghi lý do."}
+            </Text>
+          </View>
+          <SubmittedDocs profile={me.data} options={options.data} />
+          <NoteBox>
+            Gửi lại thì chỉ cần bổ sung phần thiếu theo lý do trên. Thông tin và
+            giấy tờ đã nộp được điền sẵn, không phải chụp lại.
+          </NoteBox>
+          <Button title="Bổ sung hồ sơ" onPress={startResubmit} />
+        </>
       ) : (
         <View style={styles.card}>
           <Ionicons
@@ -161,10 +270,12 @@ export default function OrgHomeScreen() {
         </View>
       )}
 
-      <NoteBox>
-        Hồ sơ được duyệt trong 1–3 ngày làm việc. Kết quả gửi về email đăng
-        nhập.
-      </NoteBox>
+      {!me.isPending && !me.isError && !status ? (
+        <NoteBox>
+          Hồ sơ được duyệt trong 1–2 ngày làm việc. Kết quả gửi về email đăng
+          nhập.
+        </NoteBox>
+      ) : null}
     </Screen>
   );
 }
@@ -172,11 +283,49 @@ export default function OrgHomeScreen() {
 const styles = StyleSheet.create({
   content: { gap: spacing.lg },
   loading: { marginTop: spacing.xxl },
+  flex: { flex: 1 },
+  pressed: { opacity: 0.6 },
+  group: { gap: spacing.sm },
+  label: { ...textStyles.label, color: colors.textSecondary },
+  reasonBox: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radius.input,
+    backgroundColor: tones.danger.bg,
+  },
   reason: {
     ...textStyles.body,
     fontFamily: fonts.semibold,
-    color: colors.error,
+    color: tones.danger.fg,
   },
+  docBox: {
+    overflow: "hidden", // giấu vạch dưới của dòng cuối (trùng viền khung)
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+  },
+  docRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    marginBottom: -1,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral,
+  },
+  docTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
+  docMeta: { ...textStyles.caption, color: colors.textSecondary },
+  link: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  warn: { ...textStyles.caption, color: tones.warning.fg },
   hello: { ...textStyles.body, color: colors.textSecondary },
   card: {
     gap: spacing.sm,
