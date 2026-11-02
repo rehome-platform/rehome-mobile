@@ -26,5 +26,6 @@ export const MOCK = {
   community: true, // [CHỜ BE] API 100–109: tổ chức, chiến dịch, bài viết, bình luận, theo dõi, báo cáo (Phase 6)
   chat: true, // [CHỜ BE] API 110–113: hội thoại, tin nhắn (Phase 6)
   notifications: true, // [CHỜ BE] API 114–116: thông báo trong app (Phase 6)
-  orgContent: true, // [CHỜ BE] App tổ chức: chiến dịch kiểu mới (tên, ảnh bìa, cách nhận đồ), đơn chờ lấy, note quyên góp (PHASE7 mục 5)
+  orgCampaigns: false, // App tổ chức: chiến dịch, lượt chờ lấy, note quyên góp — thật (BE 2c9533b). [CHỜ BE] preferredItemTypes, createdAt
+  orgPosts: true, // [CHỜ BE] App tổ chức: bài viết + bình luận — response BE chưa có ảnh, ngày, người viết; tổ chức chưa thích / bình luận được (L9)
 };

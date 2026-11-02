@@ -5,6 +5,12 @@ import {
 } from "@/features/organization/utils/summary";
 import { fileFromUrl } from "@/features/organization/utils/files";
 
+// F-139 (BE 06fead3): /me không trả URL tệp nữa mà trả link có kiểm quyền "/api/organizations/{id}/legal-files/…".
+// Gửi lại link đó khi nộp lại → BE lưu nhầm link làm tệp → bỏ, để tổ chức chụp lại.
+// [CHỜ BE] cho nộp lại giữ tệp cũ thì điền sẵn lại như trước
+const reusableFile = (url) =>
+  url && /^https?:\/\//.test(url) ? fileFromUrl(url) : null;
+
 // Ghép dữ liệu 4 bước + url tệp đã upload + toạ độ điểm nhận → body RegisterOrganizationRequest (BE 2af9d85).
 // Trường [GIẢ ĐỊNH]: BE chưa lưu (gửi lên bị bỏ qua) — đã có trong danh sách gửi BE
 export function buildRegisterPayload(
@@ -82,19 +88,21 @@ export function registrationFromProfile(p) {
       email: "",
     },
     documents: {
-      cccdFront: rep.cccdFrontUrl ? fileFromUrl(rep.cccdFrontUrl) : null,
-      cccdBack: rep.cccdBackUrl ? fileFromUrl(rep.cccdBackUrl) : null,
+      cccdFront: reusableFile(rep.cccdFrontUrl),
+      cccdBack: reusableFile(rep.cccdBackUrl),
       cccdName: rep.fullName ?? "",
       cccdNumber: rep.cccdNumber ?? "",
       cccdIssueDate: "",
       cccdIssuePlace: "",
-      legalDocs: (p.documents ?? []).map((doc) => ({
-        file: fileFromUrl(doc.fileUrl),
-        docType: doc.docType ?? "",
-        docNumber: doc.docNumber ?? "",
-        issueDate: doc.issueDate ?? null,
-        issuer: doc.issuingAuthority ?? "",
-      })),
+      legalDocs: (p.documents ?? [])
+        .map((doc) => ({
+          file: reusableFile(doc.fileUrl),
+          docType: doc.docType ?? "",
+          docNumber: doc.docNumber ?? "",
+          issueDate: doc.issueDate ?? null,
+          issuer: doc.issuingAuthority ?? "",
+        }))
+        .filter((doc) => doc.file),
     },
     location: {
       useOfficeAddress,

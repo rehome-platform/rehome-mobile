@@ -57,7 +57,10 @@ function StatusCard({
 const formatDate = (v) => dayjs(v).format("DD/MM/YYYY");
 const formatDay = (v) => dayjs(v).format("DD/MM");
 
-function DocRow({ icon, title, meta, url }) {
+// F-139: /me trả link có kiểm quyền ("/api/organizations/{id}/legal-files/…"), trình duyệt không kèm đăng nhập
+// → chỉ mở được URL tệp đầy đủ (dữ liệu cũ). [CHỜ BE / N11] xem tệp trong app kèm token
+function DocRow({ icon, title, meta, url: rawUrl }) {
+  const url = rawUrl && /^https?:\/\//.test(rawUrl) ? rawUrl : null;
   return (
     <Pressable
       onPress={() => url && Linking.openURL(url)}
@@ -235,8 +238,8 @@ export default function OrgHomeScreen() {
           </View>
           <SubmittedDocs profile={me.data} options={options.data} />
           <NoteBox>
-            Gửi lại thì chỉ cần bổ sung phần thiếu theo lý do trên. Thông tin và
-            giấy tờ đã nộp được điền sẵn, không phải chụp lại.
+            Gửi lại thì sửa theo lý do trên. Thông tin đã khai được điền sẵn;
+            ảnh CCCD và giấy tờ cần thêm lại khi gửi.
           </NoteBox>
           <Button title="Bổ sung hồ sơ" onPress={startResubmit} />
         </>

@@ -11,6 +11,7 @@ import { CAMPAIGN_STATUS as CS, ORG_LIMITS } from "@/constants/community";
 import { DONATION_STATUS as DS } from "@/constants/donation";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { warehouseApi } from "@/features/warehouses/api/warehouseApi";
+import { byCampaignOrder } from "../utils/campaignRules";
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
@@ -181,16 +182,6 @@ const campaignView = (c) => ({
     };
   }),
 });
-
-// Đang nhận lên trước, rồi gần hết hạn trước; đã đóng thì mới đóng trước
-const byCampaignOrder = (a, b) =>
-  a.status !== b.status
-    ? a.status === CS.OPEN
-      ? -1
-      : 1
-    : a.status === CS.OPEN
-      ? dayjs(a.endTime).diff(b.endTime)
-      : dayjs(b.endTime).diff(a.endTime);
 
 const findCampaign = (id) => {
   const c = campaigns.find((x) => x.id === id);

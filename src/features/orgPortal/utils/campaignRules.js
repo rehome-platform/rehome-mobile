@@ -4,6 +4,16 @@ import { CAMPAIGN_STATUS, ORG_LIMITS } from "@/constants/community";
 // MỌI quy tắc chiến dịch phía tổ chức (OC-01 → OC-04) đặt ở đây. Màn hình chỉ gọi hàm.
 // Quy tắc hiển thị dùng chung với Cộng đồng (tên, còn n ngày…) giữ ở community/utils/communityRules.js
 
+// OC-01: đang nhận lên trước, rồi gần hết hạn trước; đã đóng thì mới đóng trước
+export const byCampaignOrder = (a, b) =>
+  a.status !== b.status
+    ? a.status === CAMPAIGN_STATUS.OPEN
+      ? -1
+      : 1
+    : a.status === CAMPAIGN_STATUS.OPEN
+      ? dayjs(a.endTime).diff(b.endTime)
+      : dayjs(b.endTime).diff(a.endTime);
+
 export const openCampaignCount = (campaigns = []) =>
   campaigns.filter((c) => c.status === CAMPAIGN_STATUS.OPEN).length;
 
