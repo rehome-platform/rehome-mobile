@@ -23,9 +23,9 @@ import { useMyOrganization } from "@/features/organization/hooks/useMyOrganizati
 import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { optionLabel } from "@/features/organization/utils/summary";
 
-function InfoRow({ label, value, tag }) {
+function InfoRow({ label, value, tag, first = false }) {
   return (
-    <View style={styles.infoRow}>
+    <View style={[styles.infoRow, first && styles.firstRow]}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue} numberOfLines={2}>
         {value || "—"}
@@ -87,7 +87,7 @@ export default function OrgProfileScreen() {
       footer={
         <View style={styles.footer}>
           <Button
-            title="Sửa thông tin thường"
+            title="Sửa thông tin"
             onPress={() => router.push("/org/my-profile/edit")}
             style={styles.flex}
           />
@@ -131,7 +131,7 @@ export default function OrgProfileScreen() {
           THÔNG TIN THƯỜNG · SỬA ÁP DỤNG NGAY
         </Text>
         <View style={styles.box}>
-          <InfoRow label="Tên hiển thị" value={p.displayName} />
+          <InfoRow first label="Tên hiển thị" value={p.displayName} />
           <InfoRow label="Logo" value={p.logoUrl ? "Đã có" : "Chưa có"} />
           <InfoRow label="Mô tả" value={p.description} />
           <InfoRow
@@ -145,7 +145,12 @@ export default function OrgProfileScreen() {
           THÔNG TIN PHÁP LÝ · ĐỔI CẦN MODERATOR DUYỆT
         </Text>
         <View style={[styles.box, styles.boxStrong]}>
-          <InfoRow label="Tên pháp lý" value={p.legalName} tag="cần duyệt" />
+          <InfoRow
+            first
+            label="Tên pháp lý"
+            value={p.legalName}
+            tag="cần duyệt"
+          />
           <InfoRow
             label="Loại hình"
             value={optionLabel(options.data?.orgTypes, p.orgType)}
@@ -218,8 +223,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.neutral,
-    marginTop: -1, // dòng đầu không có kẻ trên
   },
+  firstRow: { borderTopWidth: 0 }, // dòng đầu khung không kẻ trên (khung đã có viền)
   infoLabel: {
     width: 110,
     ...textStyles.caption,

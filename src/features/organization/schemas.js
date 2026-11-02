@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FILE_RULES } from "@/features/organization/constants";
+import { ORG_LIMITS } from "@/constants/community";
 import { PHONE_REGEX } from "@/utils/validators";
 
 const CONTACT_PHONE_REGEX = /^0\d{9,10}$/; // di động 10 số hoặc số bàn 11 số (02x xxxx xxxx)
@@ -129,6 +130,37 @@ export const orgLocationSchema = z
     error: "Vui lòng nhập địa chỉ nhận đồ",
   })
   // "HH:mm" so sánh chuỗi được luôn: "17:00" > "08:00"
+  .refine((d) => d.closeTime > d.openTime, {
+    path: ["closeTime"],
+    error: "Giờ kết thúc phải sau giờ bắt đầu",
+  });
+
+// OP-02 · Sửa thông tin thường (PATCH /api/organizations/me — áp dụng ngay, không cần duyệt).
+// Mô tả tối đa ORG_LIMITS.DESCRIPTION_MAX; giờ nhận đồ = ngày + khung giờ (gửi BE một chuỗi như lúc đăng ký)
+export const orgProfileEditSchema = z
+  .object({
+    logoUri: z.string().nullable(),
+    // Báo cả số ký tự đang dư (wireframe OP-02)
+    description: required("Vui lòng nhập mô tả").superRefine((v, ctx) => {
+      if (v.length > ORG_LIMITS.DESCRIPTION_MAX)
+        ctx.addIssue({
+          code: "custom",
+          message: `Mô tả tối đa ${ORG_LIMITS.DESCRIPTION_MAX} ký tự (đang dư ${v.length - ORG_LIMITS.DESCRIPTION_MAX} ký tự)`,
+        });
+    }),
+    contactPhone: z
+      .string()
+      .transform((v) => v.replace(/\s/g, ""))
+      .pipe(
+        z
+          .string()
+          .min(1, "Vui lòng nhập số điện thoại")
+          .regex(CONTACT_PHONE_REGEX, "Số điện thoại không hợp lệ"),
+      ),
+    days: z.array(z.string()).min(1, "Chọn ít nhất 1 ngày nhận đồ"),
+    openTime: z.string().min(1, "Chọn giờ bắt đầu"),
+    closeTime: z.string().min(1, "Chọn giờ kết thúc"),
+  })
   .refine((d) => d.closeTime > d.openTime, {
     path: ["closeTime"],
     error: "Giờ kết thúc phải sau giờ bắt đầu",

@@ -61,3 +61,8 @@ export async function getOrgOptions() {
     ],
   };
 }
+
+export async function updateMyProfile(body) {
+  await delay(600);
+  return { id: "mock-org", ...body };
+}

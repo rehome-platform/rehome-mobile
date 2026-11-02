@@ -30,3 +30,9 @@ export async function getOrgOptions() {
 export async function getMyOrganization() {
   return unwrap(await api.get("/api/organizations/me"));
 }
+
+// OP-02 — sửa thông tin thường, áp dụng ngay: { logoUrl, description, contactPhone, donationPointReceivingHours }.
+// [CHỜ BE] chưa sửa được displayName
+export async function updateMyProfile(body) {
+  return unwrap(await api.patch("/api/organizations/me", body));
+}
