@@ -3,7 +3,7 @@ import { MOCK } from "@/config/env";
 import * as real from "./chatApi.real";
 import * as mock from "./chatApi.mock";
 
-const impl = MOCK.chat ? mock : real; // [CHỜ BE] API 110–113
+const impl = MOCK.chat ? mock : real; // API 110–113 thật (BE 2c9533b)
 
 export const chatApi = {
   getConversations: impl.getConversations,
