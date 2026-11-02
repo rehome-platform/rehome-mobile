@@ -27,6 +27,8 @@ export const NOTIFICATION_TARGET = {
   WALLET: "WALLET",
   CAMPAIGN: "CAMPAIGN",
   POST: "POST",
+  ORGANIZATION: "ORGANIZATION", // hồ sơ tổ chức của mình (kết quả xác minh)
+  LEGAL_CHANGE: "LEGAL_CHANGE", // yêu cầu đổi pháp lý của mình
 };
 
 export const NOTIFICATION_LIMITS = { UNREAD_POLL_MS: 60000 };

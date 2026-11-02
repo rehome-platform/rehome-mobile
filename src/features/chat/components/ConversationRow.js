@@ -4,8 +4,9 @@ import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatChatTime, isWarehouse, previewOf } from "../utils/chatRules";
 
-// Một dòng ở CH-01: avatar · tên + nhãn · giờ tin cuối · tin cuối ("Bạn: …") · số chưa đọc
-export function ConversationRow({ conv, onPress }) {
+// Một dòng ở CH-01: avatar · tên + nhãn · giờ tin cuối · tin cuối ("Bạn: …") · số chưa đọc.
+// viewer="org" (OM-01): đối tác luôn là Member → nhãn "Thành viên"
+export function ConversationRow({ conv, onPress, viewer = "member" }) {
   const unread = conv.unreadCount > 0;
   const name = conv.counterpart?.displayName ?? "Hội thoại";
   return (
@@ -35,7 +36,9 @@ export function ConversationRow({ conv, onPress }) {
           <Text style={styles.name} numberOfLines={1}>
             {name}
           </Text>
-          {isWarehouse(conv) ? (
+          {viewer === "org" ? (
+            <Text style={styles.tag}>Thành viên</Text>
+          ) : isWarehouse(conv) ? (
             <Text style={styles.tag}>Hộp thư ReHome</Text>
           ) : conv.counterpart?.verified ? (
             <Text style={styles.tag}>Đã xác minh</Text>

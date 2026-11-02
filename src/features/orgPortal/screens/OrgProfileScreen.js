@@ -24,6 +24,7 @@ import { useMyOrganization } from "@/features/organization/hooks/useMyOrganizati
 import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { optionLabel } from "@/features/organization/utils/summary";
 import { useLegalChange } from "@/features/orgPortal/hooks/useLegalChange";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import {
   changedFields,
   LEGAL_CHANGE_STATUS,
@@ -102,7 +103,12 @@ export default function OrgProfileScreen() {
       { text: "Đăng xuất", style: "destructive", onPress: () => signOut() },
     ]);
 
-  const header = <AppHeader title="Hồ sơ tổ chức" />;
+  const header = (
+    <AppHeader
+      title="Hồ sơ tổ chức"
+      right={<BellButton href="/org/notifications" />}
+    />
+  );
   const p = me.data;
 
   if (!p) {

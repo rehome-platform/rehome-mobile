@@ -1,12 +1,6 @@
-import { OrgTabPlaceholder } from "@/features/organization/components/OrgTabPlaceholder";
+import ConversationListScreen from "@/features/chat/screens/ConversationListScreen";
 
-// [TẠM] N10 thay bằng OM-01
+// OM-01 · Tin nhắn với Member (dùng chung màn CH-01)
 export default function OrgMessagesTab() {
-  return (
-    <OrgTabPlaceholder
-      title="Tin nhắn"
-      icon="chatbubbles-outline"
-      description="Trò chuyện với người muốn quyên góp."
-    />
-  );
+  return <ConversationListScreen viewer="org" />;
 }

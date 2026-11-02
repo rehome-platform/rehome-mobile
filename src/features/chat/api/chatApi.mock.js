@@ -7,6 +7,23 @@ import { ApiError } from "@/lib/api/errors";
 import { CHAT_LIMITS, CONVERSATION_TYPE as C } from "@/constants/chat";
 import { WAREHOUSES } from "@/features/consignment/api/mockData";
 import { mockFindOrg } from "@/features/community/api/communityApi.mock";
+import { useAuthStore } from "@/stores/authStore";
+import { ROLES } from "@/constants/roles";
+
+// Hội thoại thuộc phía nào: "member" (đối tác là kho / tổ chức) hay "org" (tổ chức đang đăng nhập, đối tác là Member).
+// Đăng nhập vai nào thì chỉ thấy hội thoại của phía đó
+const SIDE = { MEMBER: "member", ORG: "org" };
+const currentSide = () =>
+  useAuthStore.getState().user?.role === ROLES.ORGANIZATION
+    ? SIDE.ORG
+    : SIDE.MEMBER;
+
+// Member nhắn cho tổ chức (phía tổ chức, OM-01)
+const MEMBERS = [
+  { id: "mb-thu", displayName: "Nguyễn Minh Thư" },
+  { id: "mb-khoa", displayName: "Trần Đăng Khoa" },
+  { id: "mb-linh", displayName: "Phạm Thuỳ Linh" },
+];
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
@@ -24,8 +41,13 @@ const REPLY = {
   [C.MEMBER_ORGANIZATION]:
     "Cảm ơn bạn đã nhắn! Bên mình sẽ trả lời chi tiết sớm nhé.",
 };
+const ORG_REPLY = "Dạ vâng, mình cảm ơn bên mình ạ!"; // Member trả lời tổ chức
 
-const counterpartOf = (type, id) => {
+const counterpartOf = (type, id, side = SIDE.MEMBER) => {
+  if (side === SIDE.ORG) {
+    const m = MEMBERS.find((x) => x.id === id);
+    return m ? { ...m, avatarUrl: null, verified: false } : null;
+  }
   if (type === C.MEMBER_WAREHOUSE) {
     const w = WAREHOUSES.find((x) => x.id === id);
     return w
@@ -48,12 +70,13 @@ let messages = [];
 let seq = 0;
 let failNext = false;
 
-const conv = (id, type, counterpartId, unreadCount = 0) =>
+const conv = (id, type, counterpartId, unreadCount = 0, side = SIDE.MEMBER) =>
   conversations.push({
     id,
     type,
     counterpartId,
     unreadCount,
+    side,
     createdAt: ago(30, "day"),
   });
 const msg = (conversationId, fromMe, content, minutesAgo) => {
@@ -127,6 +150,39 @@ msg(
   6 * 24 * 60,
 );
 
+// Phía tổ chức (OM-01): "me" là tổ chức đang đăng nhập, đối tác là Member
+conv("cv-org-thu", C.MEMBER_ORGANIZATION, "mb-thu", 2, SIDE.ORG);
+msg(
+  "cv-org-thu",
+  false,
+  "Chào bên mình, chiến dịch áo ấm còn nhận đồ trẻ em không ạ?",
+  50,
+);
+msg("cv-org-thu", false, "Mình có 2 túi đồ bé 5–7 tuổi ạ.", 48);
+
+conv("cv-org-khoa", C.MEMBER_ORGANIZATION, "mb-khoa", 0, SIDE.ORG);
+msg(
+  "cv-org-khoa",
+  false,
+  "Cuối tuần bên mình có nhận đồ ở trụ sở không ạ?",
+  26 * 60,
+);
+msg(
+  "cv-org-khoa",
+  true,
+  "Có bạn nhé, thứ Bảy 8h–11h. Bạn mang tới cứ báo tên là được.",
+  25 * 60,
+);
+
+conv("cv-org-linh", C.MEMBER_ORGANIZATION, "mb-linh", 0, SIDE.ORG);
+msg("cv-org-linh", false, "Mình đã gửi đồ qua GHN rồi ạ.", 5 * 24 * 60);
+msg(
+  "cv-org-linh",
+  true,
+  "Bên mình nhận được rồi, cảm ơn bạn nhiều!",
+  4 * 24 * 60,
+);
+
 // ---------- Chuyển dữ liệu ra ngoài ----------
 const toMessage = (m) => ({
   id: m.id,
@@ -145,7 +201,7 @@ const toConversation = (c) => {
   return {
     id: c.id,
     type: c.type,
-    counterpart: counterpartOf(c.type, c.counterpartId),
+    counterpart: counterpartOf(c.type, c.counterpartId, c.side),
     lastMessage: last
       ? {
           content: last.content,
@@ -157,7 +213,7 @@ const toConversation = (c) => {
   };
 };
 const findConv = (id) => {
-  const c = conversations.find((x) => x.id === id);
+  const c = conversations.find((x) => x.id === id && x.side === currentSide());
   if (!c) throw notFound();
   return c;
 };
@@ -165,12 +221,16 @@ const findConv = (id) => {
 // ---------- API 110 ---------- hộp thư kho lên đầu, rồi tin mới nhất trước
 export async function getConversations() {
   await delay();
-  return conversations.map(toConversation).sort((a, b) => {
-    const wa = a.type === C.MEMBER_WAREHOUSE;
-    const wb = b.type === C.MEMBER_WAREHOUSE;
-    if (wa !== wb) return wa ? -1 : 1;
-    return dayjs(b.lastMessage?.createdAt).diff(a.lastMessage?.createdAt);
-  });
+  const side = currentSide();
+  return conversations
+    .filter((c) => c.side === side)
+    .map(toConversation)
+    .sort((a, b) => {
+      const wa = a.type === C.MEMBER_WAREHOUSE;
+      const wb = b.type === C.MEMBER_WAREHOUSE;
+      if (wa !== wb) return wa ? -1 : 1;
+      return dayjs(b.lastMessage?.createdAt).diff(a.lastMessage?.createdAt);
+    });
 }
 
 // [CHỜ BE] chưa có GET /conversations/{id} — lấy từ danh sách
@@ -182,8 +242,12 @@ export async function getConversation(id) {
 // ---------- API 111 ---------- đã có thì trả hội thoại cũ
 export async function openConversation({ type, counterpartId }) {
   await delay();
+  // Chỉ Member mở hội thoại (tổ chức không tự nhắn trước — API 111)
   const found = conversations.find(
-    (c) => c.type === type && c.counterpartId === counterpartId,
+    (c) =>
+      c.side === SIDE.MEMBER &&
+      c.type === type &&
+      c.counterpartId === counterpartId,
   );
   if (found) return { id: found.id, type: found.type };
   if (!counterpartOf(type, counterpartId)) {
@@ -253,7 +317,7 @@ export async function sendMessage(id, content) {
         id: `msg-${seq}`,
         conversationId: id,
         senderId: "other",
-        content: REPLY[c.type],
+        content: c.side === SIDE.ORG ? ORG_REPLY : REPLY[c.type],
         createdAt: dayjs().toISOString(),
       });
       c.unreadCount += 1;

@@ -19,8 +19,9 @@ import { ConversationRow } from "../components/ConversationRow";
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/account");
 
-// CH-01 · Tin nhắn. viewer="org" dùng ở phía tổ chức (nhánh 10)
+// CH-01 · Tin nhắn. viewer="org": OM-01 — là một tab (không nút quay lại), phòng chat ở /org/my-messages/<id>
 export default function ConversationListScreen({ viewer = "member" }) {
+  const isOrg = viewer === "org";
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useConversations({ poll: true });
 
@@ -41,13 +42,24 @@ export default function ConversationListScreen({ viewer = "member" }) {
     );
   } else {
     empty = (
-      <EmptyState icon="chatbubbles-outline" title="Chưa có tin nhắn nào" />
+      <EmptyState
+        icon="chatbubbles-outline"
+        title="Chưa có tin nhắn nào"
+        description={
+          isOrg
+            ? "Hội thoại chỉ mở khi Member bấm Nhắn tin ở trang tổ chức của bạn."
+            : undefined
+        }
+      />
     );
   }
 
   return (
     <Screen
-      header={<AppHeader title="Tin nhắn" onBack={goBack} />}
+      header={
+        <AppHeader title="Tin nhắn" onBack={isOrg ? undefined : goBack} />
+      }
+      edges={isOrg ? ["top"] : undefined}
       padded={false}
     >
       <FlatList
@@ -56,14 +68,19 @@ export default function ConversationListScreen({ viewer = "member" }) {
         renderItem={({ item }) => (
           <ConversationRow
             conv={item}
-            onPress={() => router.push(`/messages/${item.id}`)}
+            viewer={viewer}
+            onPress={() =>
+              router.push(
+                isOrg ? `/org/my-messages/${item.id}` : `/messages/${item.id}`,
+              )
+            }
           />
         )}
         ListEmptyComponent={empty}
         ListFooterComponent={
           query.data?.length ? (
             <Text style={styles.note}>
-              {viewer === "org"
+              {isOrg
                 ? "Tổ chức không tự nhắn trước — hội thoại chỉ mở khi Member bấm Nhắn tin."
                 : "Hội thoại với tổ chức chỉ xuất hiện sau khi bạn bấm Nhắn tin ở trang tổ chức."}
             </Text>
