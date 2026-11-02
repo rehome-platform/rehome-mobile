@@ -1,5 +1,5 @@
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,7 @@ import {
 import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { optionLabel } from "@/features/organization/utils/summary";
 import {
+  fileFromUrl,
   pickDocument,
   pickImage,
   takePhoto,
@@ -37,6 +38,14 @@ import {
 import { CccdSlot } from "@/features/organization/components/CccdSlot";
 import { LegalDocCard } from "@/features/organization/components/LegalDocCard";
 import { saveLegalChangeRecord } from "@/features/orgPortal/utils/legalChangeRecord";
+import {
+  formFromLegalChange,
+  LEGAL_CHANGE_STATUS,
+} from "@/features/orgPortal/utils/legalChange";
+import {
+  legalChangeKeys,
+  useLegalChange,
+} from "@/features/orgPortal/hooks/useLegalChange";
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/org/profile");
@@ -80,10 +89,16 @@ async function runPicker(picker, onPicked) {
   }
 }
 
-// Upload mọi tệp (CCCD, giấy tờ) → proposedChanges gửi BE (hình dạng đã gửi BE xác nhận). Mục không tích bỏ qua
+// Upload mọi tệp (CCCD, giấy tờ) → proposedChanges gửi BE (hình dạng đã gửi BE xác nhận). Mục không tích bỏ qua.
+// Gửi lại sau khi bị từ chối: tệp giữ nguyên đã là URL trên server → dùng lại, không upload lần nữa
+const isRemote = (uri) => /^https?:\/\//.test(uri);
 async function submitChange(values) {
   const upload = (file) =>
-    uploadFile(file, UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS).then((r) => r.url);
+    isRemote(file.uri)
+      ? file.uri
+      : uploadFile(file, UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS).then(
+          (r) => r.url,
+        );
   const docs = [
     ...(values.changeLegalName ? values.legalNameDocs : []),
     ...(values.changeOrgType ? values.orgTypeDocs : []),
@@ -126,7 +141,11 @@ async function submitChange(values) {
       : {}),
   };
   const res = await organizationApi.requestLegalChange(proposedChanges);
-  return { res, proposedChanges };
+  // Số giấy tờ đầu danh sách thuộc mục tên pháp lý → gửi lại thì chia đúng về 2 mục
+  const legalNameDocCount = values.changeLegalName
+    ? values.legalNameDocs.length
+    : 0;
+  return { res, proposedChanges, legalNameDocCount };
 }
 
 function SectionHead({ index, title, current }) {
@@ -186,7 +205,7 @@ function DocList({ name, control, errors, suggestions }) {
   );
 }
 
-function LegalChangeForm({ profile }) {
+function LegalChangeForm({ profile, defaultValues = EMPTY }) {
   const owner = useAuthStore((s) => s.user?.email);
   const queryClient = useQueryClient();
   const options = useOrgOptions();
@@ -197,7 +216,7 @@ function LegalChangeForm({ profile }) {
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(makeLegalChangeSchema(profile)),
-    defaultValues: EMPTY,
+    defaultValues,
   });
   const [changeRep, changeLegalName, changeOrgType, orgType, orgTypeDocs, rep] =
     useWatch({
@@ -214,17 +233,20 @@ function LegalChangeForm({ profile }) {
 
   const send = useMutation({
     mutationFn: submitChange,
-    onSuccess: async ({ res, proposedChanges }) => {
+    onSuccess: async ({ res, proposedChanges, legalNameDocCount }) => {
       // Lưu trên máy hỏng thì yêu cầu vẫn đã gửi → không báo lỗi
       await saveLegalChangeRecord(owner, {
         id: res?.id ?? null,
-        status: res?.status ?? "PENDING",
+        status: res?.status ?? LEGAL_CHANGE_STATUS.PENDING,
         proposedChanges,
+        legalNameDocCount,
         createdAt: new Date().toISOString(),
       }).catch(() => {});
-      queryClient.invalidateQueries({ queryKey: orgKeys.me });
+      // Chuyển màn trước rồi mới làm mới: làm mới trước thì Redirect (đang chờ duyệt) cũng điều hướng lần nữa
       showToast("Đã gửi yêu cầu, chờ Moderator duyệt");
-      leave(); // [TẠM] bước sau chuyển sang OP-05 Trạng thái yêu cầu
+      router.replace("/org/my-profile/legal-status");
+      queryClient.invalidateQueries({ queryKey: orgKeys.me });
+      queryClient.invalidateQueries({ queryKey: legalChangeKeys.mine });
     },
   });
 
@@ -538,10 +560,22 @@ function LegalChangeForm({ profile }) {
 }
 
 // OP-04 · Đổi thông tin pháp lý: tích mục muốn đổi (người đại diện / tên pháp lý / loại hình) → khai đủ mục đó
-// → POST /me/legal-change-requests (chờ Moderator duyệt). Form dựng khi đã có hồ sơ (để so với thông tin hiện tại)
+// → POST /me/legal-change-requests (chờ Moderator duyệt). Form dựng khi đã có hồ sơ (để so với thông tin hiện tại).
+// Đang có yêu cầu chờ → sang OP-05 (mỗi lần một yêu cầu). ?resubmit=1 từ OP-05 Bị từ chối → điền sẵn yêu cầu cũ
 export default function OrgLegalChangeScreen() {
+  const { resubmit } = useLocalSearchParams();
   const me = useMyOrganization();
-  if (me.data) return <LegalChangeForm profile={me.data} />;
+  const request = useLegalChange();
+  const r = request.data;
+  if (r?.status === LEGAL_CHANGE_STATUS.PENDING)
+    return <Redirect href="/org/my-profile/legal-status" />;
+  if (me.data && !request.isPending) {
+    const prefill =
+      resubmit && r?.status === LEGAL_CHANGE_STATUS.REJECTED
+        ? formFromLegalChange(r, fileFromUrl)
+        : undefined;
+    return <LegalChangeForm profile={me.data} defaultValues={prefill} />;
+  }
   return (
     <Screen header={<AppHeader title="Đổi thông tin pháp lý" onBack={leave} />}>
       {me.isError ? (

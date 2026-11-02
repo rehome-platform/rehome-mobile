@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import dayjs from "dayjs";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -22,16 +23,53 @@ import { useAuthStore } from "@/stores/authStore";
 import { useMyOrganization } from "@/features/organization/hooks/useMyOrganization";
 import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
 import { optionLabel } from "@/features/organization/utils/summary";
+import { useLegalChange } from "@/features/orgPortal/hooks/useLegalChange";
+import {
+  changedFields,
+  LEGAL_CHANGE_STATUS,
+} from "@/features/orgPortal/utils/legalChange";
 
-function InfoRow({ label, value, tag, first = false }) {
+function InfoRow({ label, value, tag, pending = false, first = false }) {
   return (
     <View style={[styles.infoRow, first && styles.firstRow]}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue} numberOfLines={2}>
         {value || "—"}
       </Text>
-      {tag ? <Text style={styles.tag}>{tag}</Text> : null}
+      {pending ? (
+        <StatusChip label="chờ duyệt" tone="info" />
+      ) : tag ? (
+        <Text style={styles.tag}>{tag}</Text>
+      ) : null}
     </View>
+  );
+}
+
+// Dải báo yêu cầu đổi pháp lý (chờ duyệt / bị từ chối) → bấm mở OP-05
+function LegalChangeBanner({ status }) {
+  const rejected = status === LEGAL_CHANGE_STATUS.REJECTED;
+  return (
+    <Pressable
+      onPress={() => router.push("/org/my-profile/legal-status")}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.banner,
+        { backgroundColor: tones[rejected ? "danger" : "info"].bg },
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text
+        style={[
+          styles.bannerText,
+          { color: tones[rejected ? "danger" : "info"].fg },
+        ]}
+      >
+        {rejected
+          ? "Yêu cầu đổi pháp lý bị từ chối"
+          : "Yêu cầu đổi pháp lý đang chờ duyệt"}
+      </Text>
+      <Text style={styles.bannerLink}>Xem</Text>
+    </Pressable>
   );
 }
 
@@ -41,6 +79,7 @@ export default function OrgProfileScreen() {
   const signOut = useAuthStore((s) => s.signOut);
   const me = useMyOrganization();
   const options = useOrgOptions();
+  const legalChange = useLegalChange().data;
   const { refetch } = me;
 
   // Quay lại từ màn sửa → tải lại hồ sơ
@@ -49,6 +88,13 @@ export default function OrgProfileScreen() {
       refetch();
     }, [refetch]),
   );
+
+  // Chỉ yêu cầu đang chờ mới khoá nút Đổi pháp lý và đánh dấu dòng; bị từ chối thì chỉ hiện dải
+  const status = legalChange?.status;
+  const isPendingChange = status === LEGAL_CHANGE_STATUS.PENDING;
+  const pendingFields = isPendingChange
+    ? changedFields(legalChange.proposedChanges)
+    : {};
 
   const confirmSignOut = () =>
     Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
@@ -94,6 +140,7 @@ export default function OrgProfileScreen() {
           <Button
             title="Đổi pháp lý"
             variant="secondary"
+            disabled={isPendingChange}
             onPress={() => router.push("/org/my-profile/legal")}
             style={styles.flex}
           />
@@ -144,17 +191,23 @@ export default function OrgProfileScreen() {
         <Text style={styles.sectionTitle}>
           THÔNG TIN PHÁP LÝ · ĐỔI CẦN MODERATOR DUYỆT
         </Text>
+        {status === LEGAL_CHANGE_STATUS.PENDING ||
+        status === LEGAL_CHANGE_STATUS.REJECTED ? (
+          <LegalChangeBanner status={status} />
+        ) : null}
         <View style={[styles.box, styles.boxStrong]}>
           <InfoRow
             first
             label="Tên pháp lý"
             value={p.legalName}
             tag="cần duyệt"
+            pending={pendingFields.legalName}
           />
           <InfoRow
             label="Loại hình"
             value={optionLabel(options.data?.orgTypes, p.orgType)}
             tag="cần duyệt"
+            pending={pendingFields.orgType}
           />
           <InfoRow
             label="Người đại diện"
@@ -164,11 +217,13 @@ export default function OrgProfileScreen() {
                 : null
             }
             tag="cần duyệt"
+            pending={pendingFields.representative}
           />
           <InfoRow
             label="Giấy tờ"
             value={docCount ? `${docCount} tệp đã xác minh` : null}
             tag="cần duyệt"
+            pending={pendingFields.documents}
           />
         </View>
 
@@ -252,4 +307,17 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   footer: { flexDirection: "row", gap: spacing.md },
+  banner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.input,
+  },
+  bannerText: { flex: 1, ...textStyles.body, fontFamily: fonts.semibold },
+  bannerLink: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
 });
