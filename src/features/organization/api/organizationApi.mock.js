@@ -61,3 +61,13 @@ export async function getOrgOptions() {
     ],
   };
 }
+
+export async function updateMyProfile(body) {
+  await delay(600);
+  return { id: "mock-org", ...body };
+}
+
+export async function requestLegalChange() {
+  await delay(900);
+  return { id: `lc-${Date.now()}`, status: "PENDING" };
+}

@@ -5,12 +5,17 @@ import { NOTIFICATION_TARGET as T } from "@/constants/notification";
 export function notificationRoute(n, viewer = "member") {
   if (!n?.targetType) return null;
   const id = n.targetId;
+  // Màn con của tổ chức nằm ở my-* (tránh trùng URL với tab /org/campaigns, /org/posts…)
   if (viewer === "org") {
     switch (n.targetType) {
       case T.CAMPAIGN:
-        return `/org/campaigns/${id}`;
+        return `/org/my-campaigns/${id}`;
       case T.POST:
-        return `/org/posts/${id}/comments`;
+        return `/org/my-posts/${id}/comments`;
+      case T.ORGANIZATION:
+        return "/org/profile";
+      case T.LEGAL_CHANGE:
+        return "/org/my-profile/legal-status";
       default:
         return null;
     }

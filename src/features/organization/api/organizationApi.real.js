@@ -30,3 +30,19 @@ export async function getOrgOptions() {
 export async function getMyOrganization() {
   return unwrap(await api.get("/api/organizations/me"));
 }
+
+// OP-02 — sửa thông tin thường, áp dụng ngay: { logoUrl, description, contactPhone, donationPointReceivingHours }.
+// [CHỜ BE] chưa sửa được displayName
+export async function updateMyProfile(body) {
+  return unwrap(await api.patch("/api/organizations/me", body));
+}
+
+// OP-04 — gửi yêu cầu đổi pháp lý (chờ Moderator duyệt). proposedChanges = JSON tự do (đã gửi BE hình dạng):
+// { legalName?, orgType?, representative?: {...}, documents?: [{ docType, docNumber, issueDate, issuingAuthority, fileUrl }] }
+export async function requestLegalChange(proposedChanges) {
+  return unwrap(
+    await api.post("/api/organizations/me/legal-change-requests", {
+      proposedChanges,
+    }),
+  ); // { id, status }
+}

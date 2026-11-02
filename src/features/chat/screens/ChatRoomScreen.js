@@ -35,11 +35,12 @@ import { ChatInput } from "../components/ChatInput";
 import { ChatNotice } from "../components/ChatNotice";
 import { MessageBubble } from "../components/MessageBubble";
 
-const goBack = () =>
-  router.canGoBack() ? router.back() : router.replace("/messages");
-
-// CH-02 · Phòng chat (/messages/<id>?draft=). Dùng chung cho tổ chức (viewer="org", nhánh 10)
+// CH-02 · Phòng chat (/messages/<id>?draft=). Dùng chung cho tổ chức (viewer="org": /org/my-messages/<id>)
 export default function ChatRoomScreen({ viewer = "member" }) {
+  const goBack = () =>
+    router.canGoBack()
+      ? router.back()
+      : router.replace(viewer === "org" ? "/org/messages" : "/messages");
   const { id, draft } = useLocalSearchParams();
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const [focused, setFocused] = useState(false);

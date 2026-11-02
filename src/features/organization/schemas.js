@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FILE_RULES } from "@/features/organization/constants";
+import { ORG_LIMITS } from "@/constants/community";
 import { PHONE_REGEX } from "@/utils/validators";
 
 const CONTACT_PHONE_REGEX = /^0\d{9,10}$/; // di động 10 số hoặc số bàn 11 số (02x xxxx xxxx)
@@ -133,3 +134,145 @@ export const orgLocationSchema = z
     path: ["closeTime"],
     error: "Giờ kết thúc phải sau giờ bắt đầu",
   });
+
+// OP-02 · Sửa thông tin thường (PATCH /api/organizations/me — áp dụng ngay, không cần duyệt).
+// Mô tả tối đa ORG_LIMITS.DESCRIPTION_MAX; giờ nhận đồ = ngày + khung giờ (gửi BE một chuỗi như lúc đăng ký)
+export const orgProfileEditSchema = z
+  .object({
+    logoUri: z.string().nullable(),
+    // Báo cả số ký tự đang dư (wireframe OP-02)
+    description: required("Vui lòng nhập mô tả").superRefine((v, ctx) => {
+      if (v.length > ORG_LIMITS.DESCRIPTION_MAX)
+        ctx.addIssue({
+          code: "custom",
+          message: `Mô tả tối đa ${ORG_LIMITS.DESCRIPTION_MAX} ký tự (đang dư ${v.length - ORG_LIMITS.DESCRIPTION_MAX} ký tự)`,
+        });
+    }),
+    contactPhone: z
+      .string()
+      .transform((v) => v.replace(/\s/g, ""))
+      .pipe(
+        z
+          .string()
+          .min(1, "Vui lòng nhập số điện thoại")
+          .regex(CONTACT_PHONE_REGEX, "Số điện thoại không hợp lệ"),
+      ),
+    days: z.array(z.string()).min(1, "Chọn ít nhất 1 ngày nhận đồ"),
+    openTime: z.string().min(1, "Chọn giờ bắt đầu"),
+    closeTime: z.string().min(1, "Chọn giờ kết thúc"),
+  })
+  .refine((d) => d.closeTime > d.openTime, {
+    path: ["closeTime"],
+    error: "Giờ kết thúc phải sau giờ bắt đầu",
+  });
+
+// OP-04 · Đổi thông tin pháp lý: tích mục nào thì khai đủ mục đó (như lúc đăng ký), mục không tích bỏ qua.
+// Gửi xong chờ Moderator duyệt; hồ sơ công khai giữ thông tin cũ tới lúc duyệt
+const legalDocSchema = z.object({
+  file: fileSchema,
+  docType: required("Vui lòng nhập loại giấy tờ"),
+  docNumber: z.string().trim(),
+  issueDate: z.string().nullable(),
+  issuer: z.string().trim(),
+});
+
+export const makeLegalChangeSchema = (current) =>
+  z
+    .object({
+      changeRep: z.boolean(),
+      changeLegalName: z.boolean(),
+      changeOrgType: z.boolean(),
+      rep: z.object({
+        fullName: z.string().trim(),
+        position: z.string().trim(),
+        phone: z.string().transform((v) => v.replace(/\s/g, "")),
+        email: z.string().trim(),
+        cccdFront: fileSchema.nullable(),
+        cccdBack: fileSchema.nullable(),
+        cccdName: z.string().trim(),
+        cccdNumber: z.string().trim(),
+        cccdIssueDate: z.string(),
+        cccdIssuePlace: z.string().trim(),
+      }),
+      legalName: z.string().trim(),
+      legalNameDocs: z.array(legalDocSchema),
+      orgType: z.string(),
+      orgTypeDocs: z.array(legalDocSchema),
+    })
+    .superRefine((d, ctx) => {
+      const need = (cond, path, message) => {
+        if (cond) ctx.addIssue({ code: "custom", path, message });
+      };
+      need(
+        !d.changeRep && !d.changeLegalName && !d.changeOrgType,
+        ["changeRep"],
+        "Chọn ít nhất 1 thông tin muốn đổi",
+      );
+      if (d.changeRep) {
+        const r = d.rep;
+        need(!r.fullName, ["rep", "fullName"], "Vui lòng nhập họ và tên");
+        need(!r.position, ["rep", "position"], "Vui lòng nhập chức vụ");
+        need(
+          !PHONE_REGEX.test(r.phone),
+          ["rep", "phone"],
+          "Số điện thoại phải có 10 chữ số, bắt đầu bằng 0",
+        );
+        need(
+          !z.email().safeParse(r.email).success,
+          ["rep", "email"],
+          "Email không hợp lệ",
+        );
+        need(
+          !r.cccdFront,
+          ["rep", "cccdFront"],
+          "Vui lòng thêm ảnh mặt trước CCCD",
+        );
+        need(
+          !r.cccdBack,
+          ["rep", "cccdBack"],
+          "Vui lòng thêm ảnh mặt sau CCCD",
+        );
+        need(!r.cccdName, ["rep", "cccdName"], "Vui lòng nhập họ tên trên thẻ");
+        need(
+          !CCCD_REGEX.test(r.cccdNumber),
+          ["rep", "cccdNumber"],
+          "Số CCCD gồm 12 chữ số",
+        );
+        need(
+          !r.cccdIssueDate,
+          ["rep", "cccdIssueDate"],
+          "Vui lòng chọn ngày cấp",
+        );
+        need(
+          !r.cccdIssuePlace,
+          ["rep", "cccdIssuePlace"],
+          "Vui lòng nhập nơi cấp",
+        );
+      }
+      if (d.changeLegalName) {
+        need(!d.legalName, ["legalName"], "Vui lòng nhập tên pháp lý mới");
+        need(
+          d.legalName && d.legalName === current?.legalName,
+          ["legalName"],
+          "Tên mới đang trùng tên hiện tại",
+        );
+        need(
+          !d.legalNameDocs.length,
+          ["legalNameDocs"],
+          "Thêm ít nhất 1 giấy tờ cho tên pháp lý mới",
+        );
+      }
+      if (d.changeOrgType) {
+        need(!d.orgType, ["orgType"], "Vui lòng chọn loại hình mới");
+        need(
+          d.orgType && d.orgType === current?.orgType,
+          ["orgType"],
+          "Loại hình mới đang trùng loại hình hiện tại",
+        );
+        need(
+          !d.orgTypeDocs.length,
+          ["orgTypeDocs"],
+          "Thêm ít nhất 1 giấy tờ của loại hình mới",
+        );
+      }
+    });

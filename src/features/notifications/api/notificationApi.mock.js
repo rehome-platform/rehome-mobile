@@ -8,12 +8,22 @@ import {
   NOTIFICATION_TARGET as T,
   NOTIFICATION_TYPE as N,
 } from "@/constants/notification";
+import { ROLES } from "@/constants/roles";
+import { useAuthStore } from "@/stores/authStore";
 
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));
 const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
 
+// Thông báo thuộc phía nào: "member" hay "org" (tổ chức đang đăng nhập, OM-03). Đăng nhập vai nào thấy phía đó
+const SIDE = { MEMBER: "member", ORG: "org" };
+const currentSide = () =>
+  useAuthStore.getState().user?.role === ROLES.ORGANIZATION
+    ? SIDE.ORG
+    : SIDE.MEMBER;
+
 let seq = 0;
 let items = [];
+const mine = () => items.filter((n) => n.side === currentSide());
 
 const add = (
   type,
@@ -23,6 +33,7 @@ const add = (
   targetId,
   createdAt,
   isRead = false,
+  side = SIDE.MEMBER,
 ) => {
   seq += 1;
   items.push({
@@ -34,8 +45,11 @@ const add = (
     createdAt,
     targetType: targetType ?? null,
     targetId: targetId ?? null,
+    side,
   });
 };
+const addOrg = (type, title, body, targetType, targetId, createdAt, isRead) =>
+  add(type, title, body, targetType, targetId, createdAt, isRead, SIDE.ORG);
 
 // ---------- Dữ liệu mẫu (khớp id ở các mock khác) ----------
 add(
@@ -82,10 +96,46 @@ add(
   true,
 );
 
+// Phía tổ chức (OM-03): kết quả xác minh / đổi pháp lý, chiến dịch sắp hết hạn, xử lý báo cáo nội dung
+addOrg(
+  N.TERM_EXPIRY,
+  "Chiến dịch sắp kết thúc",
+  "Chiến dịch của bạn còn 2 ngày là hết hạn. Đóng sớm hoặc sửa ngày kết thúc nếu cần.",
+  T.CAMPAIGN,
+  "oc-1",
+  ago(2, "hour"),
+);
+addOrg(
+  N.VERIFICATION_RESULT,
+  "Đã nhận yêu cầu đổi thông tin pháp lý",
+  "Moderator sẽ xem trong 1–2 ngày làm việc. Hồ sơ công khai giữ thông tin cũ tới khi duyệt.",
+  T.LEGAL_CHANGE,
+  null,
+  ago(1, "day"),
+);
+addOrg(
+  N.VERIFICATION_RESULT,
+  "Báo cáo về bài viết đã được xử lý",
+  "Moderator xem báo cáo về bài viết của bạn và kết luận không vi phạm. Bài vẫn hiển thị.",
+  T.POST,
+  "pt-1",
+  ago(3, "day"),
+  true,
+);
+addOrg(
+  N.VERIFICATION_RESULT,
+  "Hồ sơ tổ chức đã được xác minh",
+  "Tổ chức của bạn đã được duyệt. Giờ bạn có thể mở chiến dịch và đăng bài viết.",
+  T.ORGANIZATION,
+  null,
+  ago(20, "day"),
+  true,
+);
+
 // ---------- API 114 ---------- mới nhất trước
 export async function getNotifications({ page = 0, size = 20 } = {}) {
   await delay();
-  const list = [...items]
+  const list = mine()
     .sort((a, b) => dayjs(b.createdAt).diff(a.createdAt))
     .map((n) => ({ ...n }));
   return {
@@ -100,13 +150,13 @@ export async function getNotifications({ page = 0, size = 20 } = {}) {
 // [CHỜ BE câu 17] số chưa đọc cho chuông
 export async function getUnreadCount() {
   await delay(150);
-  return { count: items.filter((n) => !n.isRead).length };
+  return { count: mine().filter((n) => !n.isRead).length };
 }
 
 // ---------- API 115 ----------
 export async function markRead(id) {
   await delay(150);
-  const n = items.find((x) => x.id === id);
+  const n = mine().find((x) => x.id === id);
   if (!n)
     throw new ApiError({
       status: 404,
@@ -120,7 +170,7 @@ export async function markRead(id) {
 // ---------- API 116 ----------
 export async function markAllRead() {
   await delay();
-  items.forEach((n) => {
+  mine().forEach((n) => {
     n.isRead = true;
   });
   return null;
@@ -128,5 +178,14 @@ export async function markAllRead() {
 
 // [MOCK] các mock khác gọi khi có sự kiện → thông báo mới, chưa đọc
 export function mockNotify({ type, title, body, targetType, targetId }) {
-  add(type, title, body, targetType, targetId, dayjs().toISOString());
+  add(
+    type,
+    title,
+    body,
+    targetType,
+    targetId,
+    dayjs().toISOString(),
+    false,
+    currentSide(),
+  );
 }
