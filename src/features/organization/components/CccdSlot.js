@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, textStyles } from "@/theme";
+import { isProtectedFile } from "@/features/organization/utils/files";
 
 // Ô ảnh CCCD (mặt trước / sau). Trống: viền đứt + icon camera. Có ảnh: xem trước + nút ✕
 export function CccdSlot({ label, file, error = false, onPress, onRemove }) {
@@ -18,7 +19,17 @@ export function CccdSlot({ label, file, error = false, onPress, onRemove }) {
             pressed && styles.pressed,
           ]}
         >
-          {file ? (
+          {file && isProtectedFile(file.uri) ? (
+            // Ảnh đã nộp (F-139) không tải xem trước được → báo "Đã nộp"; bấm vào để thay ảnh khác
+            <>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={28}
+                color={colors.primary}
+              />
+              <Text style={styles.hint}>Đã nộp</Text>
+            </>
+          ) : file ? (
             <Image source={{ uri: file.uri }} style={styles.image} />
           ) : (
             <>

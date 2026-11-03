@@ -6,11 +6,9 @@ import { CAMPAIGN_STATUS as CS, ORG_LIMITS } from "@/constants/community";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { byCampaignOrder } from "../utils/campaignRules";
 
-// Chiến dịch + quyên góp của tổ chức — API thật (BE 2c9533b). Cùng tên hàm và hình dạng dữ liệu với
-// orgContentApi.mock.js. Chỗ lệch BE (đã báo):
+// Chiến dịch + quyên góp của tổ chức — API thật (BE 41f10c8). Cùng tên hàm và hình dạng dữ liệu với
+// orgContentApi.mock.js. Chỗ lệch BE:
 // - status BE trả ACTIVE / CLOSED → đổi về OPEN / CLOSED của app
-// - [CHỜ BE] response chưa có preferredItemTypes, createdAt → [] / null
-// - lượt chờ lấy là "kho chung" (mọi tổ chức thấy) → app lọc theo chiến dịch + kho
 
 const STATUS_FROM_BE = { ACTIVE: CS.OPEN, OPEN: CS.OPEN, CLOSED: CS.CLOSED };
 
@@ -74,14 +72,9 @@ export async function createCampaign(body) {
   return friendly(api.post("/campaigns", body).then(unwrap));
 }
 
-// PUT /campaigns/{id} — field bỏ trống BE giữ nguyên. Bỏ kho còn lượt chờ lấy → 409 WAREHOUSE_HAS_PENDING_PICKUP.
-// [CHỜ BE] BE chưa trả preferredItemTypes nên form sửa luôn trống mục này → không gửi khi trống, tránh xoá mất
+// PUT /campaigns/{id} — field bỏ trống BE giữ nguyên. Bỏ kho còn lượt chờ lấy → 409 WAREHOUSE_HAS_PENDING_PICKUP
 export async function updateCampaign(id, body) {
-  const { preferredItemTypes, ...rest } = body;
-  const payload = preferredItemTypes?.length
-    ? { ...rest, preferredItemTypes }
-    : rest;
-  const res = await friendly(api.put(`/campaigns/${id}`, payload).then(unwrap));
+  const res = await friendly(api.put(`/campaigns/${id}`, body).then(unwrap));
   return toCampaign(res);
 }
 
@@ -100,23 +93,24 @@ export async function closeCampaign(id) {
   return { ...res, status: STATUS_FROM_BE[res?.status] ?? res?.status };
 }
 
-// GET /api/organizations/me/donations — lượt chờ lấy (mọi kho) + lượt tổ chức đã nhận → lọc đúng chiến dịch + kho.
-// Mới nhất trước (BE đã xếp)
+// GET /api/organizations/me/donations?campaignId&warehouseId — phân trang, mới nhất trước. Một kho một chiến dịch
+// ít lượt → lấy 1 trang lớn (BE tối đa 50). Gồm cả lượt chờ lấy lẫn đã bàn giao
 export async function getDonations({ campaignId, warehouseId }) {
-  const list = unwrap(await api.get("/api/organizations/me/donations")) ?? [];
-  return list.filter(
-    (d) => d.campaignId === campaignId && d.warehouseId === warehouseId,
+  const page = unwrap(
+    await api.get("/api/organizations/me/donations", {
+      params: { campaignId, warehouseId, size: 50 },
+    }),
   );
+  return page?.content ?? [];
 }
 
-// POST /api/organizations/me/donation-notes — note nhận đồ tại địa chỉ riêng. Ẩn danh thì không gửi tên
+// POST /campaigns/{id}/donation-notes (OC-08) — note nhận đồ tại địa chỉ riêng. Ẩn danh thì không gửi tên
 export async function createDonationNote(
   campaignId,
   { donorName, isAnonymous, note },
 ) {
   return unwrap(
-    await api.post("/api/organizations/me/donation-notes", {
-      campaignId,
+    await api.post(`/campaigns/${campaignId}/donation-notes`, {
       donorName: isAnonymous ? null : donorName.trim(),
       isAnonymous,
       note: note?.trim() || null,
