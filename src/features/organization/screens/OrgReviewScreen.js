@@ -29,20 +29,20 @@ import { UPLOAD_FOLDER } from "@/constants/upload";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { locateAddress } from "@/features/organization/utils/geocode";
 import { orgKeys } from "@/features/organization/hooks/useMyOrganization";
+import { isSubmittedFile } from "@/features/organization/utils/files";
 
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
 // Toạ độ điểm nhận (BE bắt buộc) → upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → gửi hồ sơ
-const isRemote = (uri) => /^https?:\/\//.test(uri); // tệp cũ (nộp lại) đã là URL trên server
 async function submitApplication(data) {
   const { info, documents, location } = data;
   // Toạ độ đã kiểm ở bước 1 / 4; thiếu (dữ liệu cũ) thì tra lại cho chắc
   const coords =
     location.coords ?? (await locateAddress(pickupAddress(info, location)));
   // Giấy tờ + CCCD → ORGANIZATION_DOCUMENTS (nhận cả PDF). Logo → ORGANIZATION_LOGOS.
-  // Tệp giữ nguyên khi nộp lại đã là URL trên server → dùng lại, không upload lần nữa
+  // Tệp giữ nguyên khi nộp lại đã nằm trên server (URL / link giấy tờ F-139) → gửi lại nguyên giá trị, không upload
   const upload = (file, folder = UPLOAD_FOLDER.ORGANIZATION_DOCUMENTS) =>
-    isRemote(file.uri)
+    isSubmittedFile(file.uri)
       ? file.uri
       : uploadFile(file, folder).then((res) => res.url);
 
