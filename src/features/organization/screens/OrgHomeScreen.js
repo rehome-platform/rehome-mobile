@@ -238,8 +238,8 @@ export default function OrgHomeScreen() {
           </View>
           <SubmittedDocs profile={me.data} options={options.data} />
           <NoteBox>
-            Gửi lại thì sửa theo lý do trên. Thông tin đã khai được điền sẵn;
-            ảnh CCCD và giấy tờ cần thêm lại khi gửi.
+            Gửi lại thì chỉ cần bổ sung phần thiếu theo lý do trên. Thông tin và
+            giấy tờ đã nộp được điền sẵn, không phải chụp lại.
           </NoteBox>
           <Button title="Bổ sung hồ sơ" onPress={startResubmit} />
         </>

@@ -5,11 +5,8 @@ import {
 } from "@/features/organization/utils/summary";
 import { fileFromUrl } from "@/features/organization/utils/files";
 
-// F-139 (BE 06fead3): /me không trả URL tệp nữa mà trả link có kiểm quyền "/api/organizations/{id}/legal-files/…".
-// Gửi lại link đó khi nộp lại → BE lưu nhầm link làm tệp → bỏ, để tổ chức chụp lại.
-// [CHỜ BE] cho nộp lại giữ tệp cũ thì điền sẵn lại như trước
-const reusableFile = (url) =>
-  url && /^https?:\/\//.test(url) ? fileFromUrl(url) : null;
+// Nộp lại: điền sẵn tệp cũ (F-139: link giấy tờ đã nộp, gửi lại nguyên link thì BE giữ tệp — BE 41f10c8)
+const reusableFile = (url) => (url ? fileFromUrl(url) : null);
 
 // Ghép dữ liệu 4 bước + url tệp đã upload + toạ độ điểm nhận → body RegisterOrganizationRequest (BE 2af9d85).
 // Trường [GIẢ ĐỊNH]: BE chưa lưu (gửi lên bị bỏ qua) — đã có trong danh sách gửi BE

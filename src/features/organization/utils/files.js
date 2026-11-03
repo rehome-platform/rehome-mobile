@@ -14,8 +14,24 @@ const guessMime = (name = "") => {
 const normalizeMime = (mime, name) =>
   mime === "image/jpg" ? "image/jpeg" : (mime ?? guessMime(name));
 
-// Tệp đã upload (nộp lại hồ sơ) → cùng hình dạng tệp chọn từ máy; uri là URL nên khi gửi không upload lại
+// F-139: giấy tờ đã nộp BE trả link có kiểm quyền "/api/organizations/{id}/legal-files/…" (không phải URL ảnh)
+// → không tải xem trước được; gửi lại nguyên link khi nộp lại thì BE giữ tệp cũ (BE 41f10c8)
+export const isProtectedFile = (uri) =>
+  !!uri?.startsWith("/api/organizations/");
+
+// Tệp đã nằm trên server (URL upload, hoặc link giấy tờ đã nộp) → gửi lại nguyên giá trị, không upload lần nữa
+export const isSubmittedFile = (uri) =>
+  /^https?:\/\//.test(uri ?? "") || isProtectedFile(uri);
+
+// Tệp đã upload (nộp lại hồ sơ) → cùng hình dạng tệp chọn từ máy; uri là URL / link nên khi gửi không upload lại
 export const fileFromUrl = (url) => {
+  if (isProtectedFile(url))
+    return {
+      uri: url,
+      name: "Đã nộp",
+      mimeType: "application/octet-stream", // schema cần chuỗi; loại thật không biết (ảnh hoặc PDF)
+      size: null,
+    };
   const name = decodeURIComponent(url.split("?")[0].split("/").pop());
   return { uri: url, name, mimeType: guessMime(name), size: null };
 };

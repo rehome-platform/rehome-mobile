@@ -5,7 +5,10 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { TextField } from "@/components/ui/TextField";
 import { DateField } from "@/components/ui/DateField";
 import { ChipGroup } from "@/components/ui/ChipGroup";
-import { formatFileSize } from "@/features/organization/utils/files";
+import {
+  formatFileSize,
+  isProtectedFile,
+} from "@/features/organization/utils/files";
 
 // Một giấy tờ pháp lý: dòng tệp (ảnh nhỏ / icon PDF, tên, dung lượng, Xoá) + 4 ô thông tin.
 // Các ô nằm trong mảng fieldName của form (mặc định legalDocs) → tên dạng "legalDocs.0.docType".
@@ -20,15 +23,18 @@ export function LegalDocCard({
   fieldName = "legalDocs",
 }) {
   const isPdf = file.mimeType === "application/pdf";
+  const submitted = isProtectedFile(file.uri); // giấy tờ đã nộp (F-139): không xem trước được
   const name = (key) => `${fieldName}.${index}.${key}`;
 
   return (
     <View style={styles.card}>
       <View style={styles.fileRow}>
-        {isPdf ? (
+        {isPdf || submitted ? (
           <View style={styles.thumb}>
             <Ionicons
-              name="document-text-outline"
+              name={
+                submitted ? "checkmark-circle-outline" : "document-text-outline"
+              }
               size={24}
               color={colors.primary}
             />
@@ -41,8 +47,9 @@ export function LegalDocCard({
             {file.name}
           </Text>
           <Text style={styles.fileMeta}>
-            {isPdf ? "PDF" : "Ảnh"}
-            {file.size ? ` · ${formatFileSize(file.size)}` : ""}
+            {submitted
+              ? "Giữ tệp cũ khi gửi lại"
+              : `${isPdf ? "PDF" : "Ảnh"}${file.size ? ` · ${formatFileSize(file.size)}` : ""}`}
           </Text>
         </View>
         <Text
