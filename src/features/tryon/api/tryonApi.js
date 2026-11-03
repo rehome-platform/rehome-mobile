@@ -3,7 +3,7 @@ import { MOCK } from "@/config/env";
 import * as real from "./tryonApi.real";
 import * as mock from "./tryonApi.mock";
 
-const impl = MOCK.tryon ? mock : real; // [CHỜ BE] API 96–99
+const impl = MOCK.tryon ? mock : real; // API 97–99 thật; 96 tạm thay (xem tryonApi.real.js)
 
 export const tryonApi = {
   getSuggestions: impl.getSuggestions,
