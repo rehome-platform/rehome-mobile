@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -49,7 +49,8 @@ export default function ChatRoomScreen({ viewer = "member" }) {
   const send = useSendMessage(id);
   const dropFailed = useDropFailed(id);
   const markRead = useMarkRead(id);
-  const [text, setText] = useState(draft ?? ""); // câu soạn sẵn từ đơn / ký gửi — KHÔNG tự gửi
+  const [text, setText] = useState("");
+  const draftDone = useRef(false);
 
   // Chỉ tự hỏi lại khi phòng đang mở (rời màn / app nền thì dừng)
   useFocusEffect(
@@ -61,6 +62,17 @@ export default function ChatRoomScreen({ viewer = "member" }) {
 
   const list = query.data ?? [];
   const latestTheirs = list.find((m) => !m.isMine)?.id;
+
+  // Câu soạn sẵn (từ sản phẩm / đơn / ký gửi) — KHÔNG tự gửi. Chỉ điền khi trong các tin gần nhất CHƯA có tin
+  // nào bắt đầu bằng câu đó (đã hỏi về món / đơn này rồi thì lần sau mở lại để ô trống, tránh gửi lặp — như Shopee).
+  // Chờ tải xong tin nhắn mới quyết định; chỉ quyết định 1 lần mỗi lần mở phòng
+  useEffect(() => {
+    if (draftDone.current || !draft || !query.isSuccess) return;
+    draftDone.current = true;
+    const key = draft.trim();
+    const asked = list.some((m) => m.content?.trim().startsWith(key));
+    if (!asked) setText((t) => t || draft);
+  }, [draft, query.isSuccess, list]);
 
   // Có tin mới của đối tác khi đang mở phòng → đánh dấu đã đọc
   useEffect(() => {
