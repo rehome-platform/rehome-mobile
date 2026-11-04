@@ -17,6 +17,16 @@ const VARIANTS = {
     text: { color: colors.primary },
     spinner: colors.primary,
   },
+  // Hành động lùi / huỷ (Huỷ đơn…): viền xám, chữ thường — không lẫn với hành động chính màu xanh (như Shopee)
+  neutral: {
+    container: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.neutral,
+    },
+    text: { color: colors.text },
+    spinner: colors.textSecondary,
+  },
   text: {
     container: { backgroundColor: "transparent" },
     text: { color: colors.accent },

@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { matchesSearch } from "@/utils/search";
 import {
   ActivityIndicator,
   FlatList,
@@ -23,6 +25,7 @@ import { ConfirmReceiptDialog } from "../components/ConfirmReceiptDialog";
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/account");
 const CHIPS = ORDER_TABS.map((t) => ({ value: t.key, label: t.label }));
+const SEARCH_MAX = 100; // tìm trên máy: tải tối đa 100 đơn gần nhất của mục đang chọn
 
 // BR-10 · Đơn hàng của tôi. Mở thẳng một chip: /orders?tab=SHIPPING
 export default function OrderListScreen() {
@@ -35,10 +38,26 @@ export default function OrderListScreen() {
   const query = useOrders(tab);
   const listRef = useRef(null);
   const [confirmOrder, setConfirmOrder] = useState(null); // đơn đang mở dialog BR-13
+  const [keyword, setKeyword] = useState("");
+
+  // BE chưa có tìm đơn → đang gõ thì tải tiếp các trang còn lại (tối đa SEARCH_MAX đơn) rồi lọc trên máy
+  const loaded = query.data?.length ?? 0;
+  useEffect(() => {
+    if (
+      keyword.trim() &&
+      query.hasNextPage &&
+      !query.isFetchingNextPage &&
+      loaded < SEARCH_MAX
+    )
+      query.fetchNextPage();
+  }, [keyword, loaded, query]);
 
   if (!isAuthed) return <Redirect href="/login" />;
 
-  const orders = query.data ?? [];
+  // Tìm theo mã đơn, tên món, tên kho (thẻ đơn BE chỉ trả tên món ĐẦU TIÊN của đơn)
+  const orders = (query.data ?? []).filter((o) =>
+    matchesSearch(keyword, o.orderNo, o.firstItem?.name, o.warehouseName),
+  );
   const openDetail = (o) => router.push(`/orders/${o.id}`);
 
   const changeTab = (key) => {
@@ -47,7 +66,17 @@ export default function OrderListScreen() {
   };
 
   let empty;
-  if (query.isPending) {
+  if (keyword.trim() && !query.isPending) {
+    empty = query.isFetchingNextPage ? (
+      <ActivityIndicator style={styles.loading} color={colors.primary} />
+    ) : (
+      <EmptyState
+        icon="search-outline"
+        title="Không tìm thấy đơn nào"
+        description={`Không có đơn nào khớp “${keyword.trim()}” ở mục này. Thử tên món khác hoặc mã đơn.`}
+      />
+    );
+  } else if (query.isPending) {
     empty = <ActivityIndicator style={styles.loading} color={colors.primary} />;
   } else if (query.isError) {
     empty = (
@@ -91,9 +120,17 @@ export default function OrderListScreen() {
         style={styles.chips}
         contentStyle={styles.chipsContent}
       />
+      <View style={styles.searchWrap}>
+        <SearchBar
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder="Tìm theo tên món, mã đơn…"
+        />
+      </View>
       <FlatList
         ref={listRef}
         data={orders}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(o) => o.id}
         renderItem={({ item }) => (
           <OrderCard
@@ -156,6 +193,13 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.neutral,
   },
   chipsContent: { paddingHorizontal: spacing.lg },
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral,
+  },
   list: { flexGrow: 1, padding: spacing.lg },
   gap: { height: spacing.md },
 });
