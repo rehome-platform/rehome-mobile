@@ -44,10 +44,20 @@ const FRIENDLY = {
       .replace(/^[A-Z_]+:\s*/, "")
       .replace(/^./, (ch) => ch.toUpperCase()),
 };
+// 400 kho không hợp lệ không có mã riêng → nhận theo message, gắn mã mobile để màn hình tự bỏ kho cũ
+const INVALID_WAREHOUSES = "warehouseIds không hợp lệ.";
+
 async function friendly(promise) {
   try {
     return await promise;
   } catch (e) {
+    if (e?.message === INVALID_WAREHOUSES)
+      throw new ApiError({
+        status: e.status,
+        code: ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID,
+        message:
+          "Có kho bạn chọn không còn nhận đồ nên đã được bỏ khỏi danh sách. Kiểm tra lại nơi nhận rồi bấm lại.",
+      });
     const rewrite = FRIENDLY[e.code];
     if (!rewrite) throw e;
     throw new ApiError({ status: e.status, code: e.code, message: rewrite(e) });

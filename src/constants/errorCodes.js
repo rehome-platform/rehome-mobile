@@ -27,4 +27,5 @@ export const ERROR_CODES = {
   INCOMPLETE_OUTFIT: "INCOMPLETE_OUTFIT", // thử đồ: chưa đủ Áo + Quần hoặc Đầm (API 97, 409) — contract để trong message [CHỜ BE]
   CAMPAIGN_LIMIT_REACHED: "CAMPAIGN_LIMIT_REACHED", // chiến dịch: đã có đủ chiến dịch đang mở (409) — BE 2c9533b
   CAMPAIGN_WAREHOUSE_HAS_PENDING: "WAREHOUSE_HAS_PENDING_PICKUP", // sửa chiến dịch: bỏ kho còn lượt chờ lấy (409) — BE 2c9533b
+  CAMPAIGN_WAREHOUSE_INVALID: "INVALID_WAREHOUSE_IDS", // mã mobile tự đặt: BE chỉ trả 400 "warehouseIds không hợp lệ." (kho không còn / mã kho cũ)
 };

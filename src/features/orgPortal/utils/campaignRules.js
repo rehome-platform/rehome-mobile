@@ -14,6 +14,13 @@ export const byCampaignOrder = (a, b) =>
       ? dayjs(a.endTime).diff(b.endTime)
       : dayjs(b.endTime).diff(a.endTime);
 
+// Dòng ngày của chiến dịch đã đóng. BE đóng sớm không đổi endTime, cũng không lưu ngày đóng →
+// hạn còn ở tương lai nghĩa là tổ chức đã bấm đóng sớm
+export const closedLabel = (c) =>
+  dayjs(c.endTime).isAfter(dayjs())
+    ? `Đã đóng sớm · hạn cũ ${dayjs(c.endTime).format("DD/MM/YYYY")}`
+    : `Đã đóng ${dayjs(c.endTime).format("DD/MM/YYYY")}`;
+
 export const openCampaignCount = (campaigns = []) =>
   campaigns.filter((c) => c.status === CAMPAIGN_STATUS.OPEN).length;
 
