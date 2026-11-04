@@ -94,7 +94,8 @@ export const orgDocumentsSchema = z.object({
   legalDocs: z
     .array(
       z.object({
-        file: fileSchema,
+        // Giấy "Chưa đạt" khi nộp lại vào form với file = null → bắt thêm tệp mới
+        file: requiredFile("Thêm tệp mới cho giấy tờ này"),
         docType: required("Vui lòng nhập loại giấy tờ"),
         docNumber: z.string().trim(),
         issueDate: z.string().nullable(),

@@ -71,6 +71,7 @@ export default function OrgDocumentsScreen() {
   });
   const cccdFront = watch("cccdFront");
   const cccdBack = watch("cccdBack");
+  const legalDocs = watch("legalDocs");
 
   // Tự lưu nháp (giống bước 2)
   useEffect(() => {
@@ -255,11 +256,21 @@ export default function OrgDocumentsScreen() {
         <LegalDocCard
           key={item.id}
           index={index}
-          file={item.file}
+          // Đọc tệp theo giá trị form hiện tại (item.file của useFieldArray không đổi khi gán tệp mới)
+          file={legalDocs?.[index]?.file ?? null}
           control={control}
           errors={errors.legalDocs?.[index]}
           suggestions={suggestions}
           onRemove={() => remove(index)}
+          // Giấy "Chưa đạt" khi nộp lại: thêm tệp mới vào đúng dòng đó
+          onPickFile={(source) =>
+            runPicker(source === "camera" ? takePhoto : pickDocument, (f) =>
+              setValue(`legalDocs.${index}.file`, f, {
+                shouldValidate: true,
+                shouldDirty: true,
+              }),
+            )
+          }
         />
       ))}
 
