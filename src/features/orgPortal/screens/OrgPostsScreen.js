@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +15,8 @@ import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { matchesSearch } from "@/utils/search";
 import { showToast } from "@/utils/toast";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -36,6 +39,12 @@ export default function OrgPostsScreen() {
   const remove = useDeletePost();
   const like = useTogglePostLike();
   const user = useAuthStore((s) => s.user); // tên + logo tổ chức cho đầu thẻ bài
+  const [keyword, setKeyword] = useState("");
+  const all = query.data ?? [];
+  // Lọc trên máy (đã tải đủ bài): nội dung + tên chiến dịch gắn kèm, không phân biệt dấu
+  const posts = all.filter((p) =>
+    matchesSearch(keyword, p.content, p.campaignTitle),
+  );
 
   const confirmDelete = (p) =>
     Alert.alert(
@@ -63,7 +72,15 @@ export default function OrgPostsScreen() {
     ]);
 
   let empty;
-  if (query.isPending) {
+  if (keyword.trim() && all.length) {
+    empty = (
+      <EmptyState
+        icon="search-outline"
+        title="Không tìm thấy bài viết"
+        description={`Không có bài nào khớp “${keyword.trim()}”. Thử từ khoá khác hoặc tên chiến dịch.`}
+      />
+    );
+  } else if (query.isPending) {
     empty = <ActivityIndicator style={styles.loading} color={colors.primary} />;
   } else if (query.isError) {
     empty = (
@@ -97,15 +114,21 @@ export default function OrgPostsScreen() {
       }
       // Cùng kiểu "Tạo chiến dịch mới" ở tab Chiến dịch: hành động chính là nút lớn ở chân màn
       footer={
-        query.data?.length ? (
-          <Button title="Đăng bài mới" onPress={openNew} />
-        ) : null
+        all.length ? <Button title="Đăng bài mới" onPress={openNew} /> : null
       }
       edges={["top"]}
       padded={false}
     >
+      <View style={styles.searchWrap}>
+        <SearchBar
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder="Tìm theo nội dung, tên chiến dịch…"
+        />
+      </View>
       <FlatList
-        data={query.data ?? []}
+        data={posts}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => (
           <OrgPostCard
@@ -133,6 +156,13 @@ export default function OrgPostsScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral,
+  },
   loading: { marginTop: spacing.xxl },
   list: { flexGrow: 1, padding: spacing.lg },
   gap: { height: spacing.md },
