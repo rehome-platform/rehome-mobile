@@ -44,7 +44,7 @@ export default function OrgProfileScreen() {
   const posts = useFeed(null, { orgId: id });
   const toggleFollow = useToggleFollow();
   const toggleLike = useToggleLike();
-  const { open: openChat } = useOpenConversation();
+  const { open: openChat, isOpening } = useOpenConversation();
   const [tab, setTab] = useState("CAMPAIGNS");
   const o = query.data;
   const here = `/organizations/${id}`;
@@ -149,9 +149,11 @@ export default function OrgProfileScreen() {
           }
           style={styles.flex}
         />
+        {/* Tạo / lấy hội thoại cần gọi BE → hiện đang tải, tránh bấm nhầm nút khác rồi mới bị chuyển màn */}
         <Button
           title="Nhắn tin"
           variant="secondary"
+          loading={isOpening}
           onPress={() =>
             openChat({
               type: CONVERSATION_TYPE.MEMBER_ORGANIZATION,

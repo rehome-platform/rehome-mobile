@@ -48,7 +48,7 @@ export default function CampaignScreen() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useCampaign(id);
   const c = query.data;
-  const { open: openChat } = useOpenConversation();
+  const { open: openChat, isOpening } = useOpenConversation();
   const here = `/campaigns/${id}`;
   const needLogin = () =>
     askLogin(
@@ -114,17 +114,22 @@ export default function CampaignScreen() {
   const open = isCampaignOpen(c);
   const org = c.organization;
 
+  const places = c.places ?? [];
+  // Một nơi nhận → nút Chỉ đường ở chân màn như cũ; nhiều nơi → mỗi nơi có "Chỉ đường" riêng ở mục bên dưới
   const footer = open ? (
     <View style={styles.footer}>
       <View style={styles.footerRow}>
-        <Button
-          title="Chỉ đường"
-          onPress={() => Linking.openURL(mapsUrl(c))}
-          style={styles.flex}
-        />
+        {places.length === 1 ? (
+          <Button
+            title="Chỉ đường"
+            onPress={() => Linking.openURL(mapsUrl(places[0]))}
+            style={styles.flex}
+          />
+        ) : null}
         <Button
           title="Nhắn tin"
-          variant="secondary"
+          variant={places.length === 1 ? "secondary" : "primary"}
+          loading={isOpening}
           onPress={() =>
             openChat({
               type: CONVERSATION_TYPE.MEMBER_ORGANIZATION,
@@ -199,15 +204,28 @@ export default function CampaignScreen() {
           <Text style={styles.text}>{c.description}</Text>
         </Section>
 
-        {/* Địa điểm của CHIẾN DỊCH (0.5 A15); không bản đồ trong app (A13) */}
+        {/* Nơi nhận của CHIẾN DỊCH: địa chỉ riêng tổ chức và / hoặc các kho ReHome; không bản đồ trong app (A13) */}
         <Section title="MANG ĐỒ TỚI ĐÂU">
-          <View style={styles.place}>
-            <Text style={styles.strong}>{c.locationName}</Text>
-            {c.address ? <Text style={styles.text}>{c.address}</Text> : null}
-            {c.receivingHours ? (
-              <Text style={styles.muted}>{c.receivingHours}</Text>
-            ) : null}
-          </View>
+          {places.map((pl) => (
+            <View key={pl.key} style={styles.place}>
+              <View style={styles.placeHead}>
+                <Text style={[styles.strong, styles.flex]}>{pl.title}</Text>
+                {open && places.length > 1 ? (
+                  <Text
+                    style={styles.link}
+                    onPress={() => Linking.openURL(mapsUrl(pl))}
+                    accessibilityRole="link"
+                  >
+                    Chỉ đường
+                  </Text>
+                ) : null}
+              </View>
+              {pl.address ? (
+                <Text style={styles.text}>{pl.address}</Text>
+              ) : null}
+              {pl.hours ? <Text style={styles.muted}>{pl.hours}</Text> : null}
+            </View>
+          ))}
         </Section>
       </View>
     </Screen>
@@ -267,6 +285,12 @@ const styles = StyleSheet.create({
     borderColor: colors.neutral,
     borderRadius: radius.input,
     backgroundColor: colors.surface,
+  },
+  placeHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  link: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
   },
   footer: { gap: spacing.xs },
   footerRow: { flexDirection: "row", gap: spacing.md },
