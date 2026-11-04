@@ -8,6 +8,8 @@ export const NOTIFICATION_TYPE = {
   DONATION_RECORDED: "DONATION_RECORDED", // tổ chức: Moderator ghi nhận lượt quyên góp (kèm warehouseId)
   COMMENT_REPLIED: "COMMENT_REPLIED", // Member: tổ chức trả lời bình luận của mình
   POST_COMMENTED: "POST_COMMENTED", // tổ chức: bài viết có bình luận mới
+  FOLLOWED_ORG_CAMPAIGN: "FOLLOWED_ORG_CAMPAIGN", // Member: tổ chức đang theo dõi mở chiến dịch mới (UC-44)
+  FOLLOWED_ORG_POST: "FOLLOWED_ORG_POST", // Member: tổ chức đang theo dõi đăng bài mới (UC-44)
 };
 
 // Icon theo loại (Ionicons)
@@ -20,6 +22,8 @@ export const NOTIFICATION_ICON = {
   DONATION_RECORDED: "gift-outline",
   COMMENT_REPLIED: "chatbubble-ellipses-outline",
   POST_COMMENTED: "chatbubble-ellipses-outline",
+  FOLLOWED_ORG_CAMPAIGN: "megaphone-outline",
+  FOLLOWED_ORG_POST: "newspaper-outline",
 };
 
 // Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE

@@ -55,7 +55,6 @@ export function useCommunitySearch(kind, search) {
     getNextPageParam: nextPage,
     select: flatten,
     enabled: !!search,
-    retry: (count, e) => e?.code !== "SEARCH_NOT_READY" && count < 2,
   });
 }
 

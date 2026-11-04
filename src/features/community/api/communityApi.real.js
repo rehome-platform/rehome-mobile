@@ -1,6 +1,4 @@
 import { api, unwrap } from "@/lib/api/client";
-import { ApiError } from "@/lib/api/errors";
-import { matchesSearch } from "@/utils/search";
 import { CAMPAIGN_STATUS as CS, FEED_SCOPE } from "@/constants/community";
 
 // Cộng đồng phía Member — API thật (100–109, BE edff4ae). Cùng hình dạng dữ liệu với communityApi.mock.js.
@@ -147,40 +145,23 @@ export async function getOpenCampaigns({ page = 0, size = 20 } = {}) {
   return mapPage(p, toCampaign);
 }
 
-// ---------- Tìm kiếm (CD-01 · ô "Tìm tổ chức, chiến dịch") ----------
-// [CHỜ BE] GET /api/organizations?search= (danh sách tổ chức đã xác minh) chưa có → 404/405 thì báo chờ máy chủ
+// ---------- Tìm kiếm (CD-01 · ô "Tìm tổ chức, chiến dịch") ---------- BE lọc không phân biệt dấu (#195)
+// GET /api/organizations?search= — tổ chức đã xác minh, theo tên hiển thị / tên pháp lý
 export async function searchOrganizations({ search, page = 0, size = 20 }) {
-  try {
-    const p = unwrap(
-      await api.get("/api/organizations", { params: { search, page, size } }),
-    );
-    return mapPage(p, toOrgBrief);
-  } catch (e) {
-    if (e.status === 404 || e.status === 405)
-      throw new ApiError({
-        status: 501,
-        code: "SEARCH_NOT_READY",
-        message: "Tìm tổ chức theo tên sẽ có khi máy chủ cập nhật.",
-      });
-    throw e;
-  }
+  const p = unwrap(
+    await api.get("/api/organizations", { params: { search, page, size } }),
+  );
+  return mapPage(p, toOrgBrief);
 }
 
-// [CHỜ BE] /campaigns chưa nhận ?search= (bỏ qua tham số, trả mọi chiến dịch) → lọc thêm trên máy
-// theo tên chiến dịch / tên tổ chức để kết quả luôn đúng; BE thêm search thì phần lọc này vô hại
+// GET /campaigns?status=ACTIVE&search= — chiến dịch đang nhận đồ, theo tên chiến dịch / tên tổ chức
 export async function searchCampaigns({ search, page = 0, size = 20 }) {
   const p = unwrap(
     await api.get("/campaigns", {
       params: { status: "ACTIVE", search, page, size },
     }),
   );
-  const page_ = mapPage(p, toCampaign);
-  return {
-    ...page_,
-    content: page_.content.filter((c) =>
-      matchesSearch(search, c.title, c.organization?.displayName),
-    ),
-  };
+  return mapPage(p, toCampaign);
 }
 
 // ---------- API 103 ----------
