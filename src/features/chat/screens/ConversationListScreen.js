@@ -34,16 +34,10 @@ export default function ConversationListScreen({ viewer = "member" }) {
   if (!isAuthed) return <Redirect href="/login" />;
 
   const all = query.data ?? [];
-  // Tổ chức có thể có nhiều hội thoại → lọc trên máy theo tên Member + tin cuối (như Zalo / Messenger)
-  const list = isOrg
-    ? all.filter((c) =>
-        matchesSearch(
-          keyword,
-          c.counterpart?.displayName,
-          c.lastMessage?.content,
-        ),
-      )
-    : all;
+  // Ô tìm luôn có (cả tổ chức lẫn Member, như Zalo / Messenger): lọc trên máy theo tên người nhắn + tin cuối
+  const list = all.filter((c) =>
+    matchesSearch(keyword, c.counterpart?.displayName, c.lastMessage?.content),
+  );
 
   let empty;
   if (keyword && all.length) {
@@ -91,15 +85,17 @@ export default function ConversationListScreen({ viewer = "member" }) {
       edges={isOrg ? ["top"] : undefined}
       padded={false}
     >
-      {isOrg && all.length ? (
-        <View style={styles.searchWrap}>
-          <SearchBar
-            value={keyword}
-            onChangeText={setKeyword}
-            placeholder="Tìm theo tên người nhắn, nội dung…"
-          />
-        </View>
-      ) : null}
+      <View style={styles.searchWrap}>
+        <SearchBar
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder={
+            isOrg
+              ? "Tìm theo tên người nhắn, nội dung…"
+              : "Tìm kho, tổ chức, nội dung…"
+          }
+        />
+      </View>
       <FlatList
         data={list}
         keyboardShouldPersistTaps="handled"

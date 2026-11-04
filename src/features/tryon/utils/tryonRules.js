@@ -3,7 +3,7 @@ import { TRYON_SLOT as S } from "@/constants/tryon";
 
 // MỌI quy tắc thử đồ đặt ở đây. Màn hình chỉ gọi hàm.
 
-// Slot lấy từ danh mục — [CHỜ BE PHASE6_GUIDE câu 5] API 50 trả kèm tryonSlot
+// Loại thử đồ của món: chi tiết sản phẩm (API 50) BE trả kèm tryonSlot; món ở phòng thử đồ đã được gắn sẵn
 export const slotOf = (p) => p?.tryonSlot ?? null;
 
 // BR-04: chỉ món có slot + đang bán mới thử được

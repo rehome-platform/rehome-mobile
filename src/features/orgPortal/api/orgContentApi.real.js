@@ -114,6 +114,33 @@ export async function getDonations({ campaignId, warehouseId }) {
   return page?.content ?? [];
 }
 
+// GET /campaigns/{id}/donation-notes — note đã ghi, mới nhất trước (OC-08 xem lại).
+// [CHỜ BE] chưa có GET: Spring báo "method not supported" (BE bọc thành 500) / 404 / 405 → báo chờ máy chủ
+export async function getDonationNotes(
+  campaignId,
+  { page = 0, size = 20 } = {},
+) {
+  try {
+    return unwrap(
+      await api.get(`/campaigns/${campaignId}/donation-notes`, {
+        params: { page, size },
+      }),
+    );
+  } catch (e) {
+    const notReady =
+      e.status === 404 ||
+      e.status === 405 ||
+      /not supported/i.test(e.detail ?? "");
+    if (!notReady) throw e;
+    throw new ApiError({
+      status: 501,
+      code: "NOTES_NOT_READY",
+      message:
+        "Xem lại note sẽ có khi máy chủ cập nhật. Note bạn ghi vẫn được lưu.",
+    });
+  }
+}
+
 // POST /campaigns/{id}/donation-notes (OC-08) — note nhận đồ tại địa chỉ riêng. Ẩn danh thì không gửi tên
 export async function createDonationNote(
   campaignId,

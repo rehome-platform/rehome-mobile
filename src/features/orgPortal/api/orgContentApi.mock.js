@@ -295,3 +295,23 @@ export async function createDonationNote(
   notes.push(n);
   return n;
 }
+
+// GET /campaigns/{id}/donation-notes — mới nhất trước, phân trang như BE
+export async function getDonationNotes(
+  campaignId,
+  { page = 0, size = 20 } = {},
+) {
+  await seed();
+  await delay();
+  findCampaign(campaignId);
+  const list = notes
+    .filter((n) => n.campaignId === campaignId)
+    .sort((a, b) => dayjs(b.createdAt).diff(a.createdAt));
+  return {
+    content: list.slice(page * size, (page + 1) * size),
+    page,
+    size,
+    totalElements: list.length,
+    totalPages: Math.ceil(list.length / size),
+  };
+}

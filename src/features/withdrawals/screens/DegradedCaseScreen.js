@@ -190,8 +190,9 @@ export default function DegradedCaseScreen() {
         </Text>
         <Text style={styles.text}>
           Người mua đã trả món này và ReHome đã nhận lại
-          {c.receivedAt ? ` ngày ${dayjs(c.receivedAt).format("DD/MM")}` : ""}.{" "}
-          {c.description}{" "}
+          {c.receivedAt
+            ? ` ngày ${dayjs(c.receivedAt).format("DD/MM")}`
+            : ""}. {c.description}{" "}
           <Text style={styles.strong}>Không phải lỗi của bạn</Text>, và lần này
           không tính vào lịch sử ký gửi.
         </Text>
@@ -247,7 +248,7 @@ export default function DegradedCaseScreen() {
           <Text style={styles.text}>
             Đã cộng{" "}
             <Text style={styles.strong}>
-              {/* BE chi tiết chưa trả paidAmount [CHỜ BE] → tính theo lựa chọn */}
+              {/* Số BE đã cộng (paidAmount); dữ liệu cũ thiếu thì tính theo lựa chọn */}
               {formatVnd(
                 c.paidAmount ??
                   degradedAmount(c, c.choice === C.FULL_COMPENSATION),

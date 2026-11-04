@@ -95,13 +95,11 @@ export default function CommunitySearchScreen() {
   } else if (query.isError) {
     empty = (
       <ErrorBox message={query.error.message}>
-        {query.error.code === "SEARCH_NOT_READY" ? null : (
-          <Button
-            title="Thử lại"
-            variant="secondary"
-            onPress={() => query.refetch()}
-          />
-        )}
+        <Button
+          title="Thử lại"
+          variant="secondary"
+          onPress={() => query.refetch()}
+        />
       </ErrorBox>
     );
   } else {

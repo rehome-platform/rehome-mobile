@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/Button";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { matchesSearch } from "@/utils/search";
 import { CAMPAIGN_STATUS, ORG_LIMITS } from "@/constants/community";
 import { useMyCampaigns } from "@/features/orgPortal/hooks/useMyCampaigns";
 import { OrgCampaignCard } from "@/features/orgPortal/components/OrgCampaignCard";
@@ -29,6 +31,7 @@ import {
 export default function OrgCampaignsScreen() {
   const query = useMyCampaigns();
   const [tab, setTab] = useState(CAMPAIGN_STATUS.OPEN);
+  const [keyword, setKeyword] = useState("");
   const listRef = useRef(null);
 
   const all = query.data ?? [];
@@ -40,7 +43,10 @@ export default function OrgCampaignsScreen() {
       label: `Đã đóng · ${all.length - openCount}`,
     },
   ];
-  const campaigns = all.filter((c) => c.status === tab);
+  // Ô tìm lọc trên máy trong chip đang chọn (tên + mô tả, không phân biệt dấu); số trên chip vẫn là tổng
+  const campaigns = all.filter(
+    (c) => c.status === tab && matchesSearch(keyword, c.title, c.description),
+  );
   const canCreate = canCreateCampaign(all);
 
   const changeTab = (value) => {
@@ -49,7 +55,15 @@ export default function OrgCampaignsScreen() {
   };
 
   let empty;
-  if (query.isPending) {
+  if (keyword.trim() && query.isSuccess) {
+    empty = (
+      <EmptyState
+        icon="search-outline"
+        title="Không tìm thấy chiến dịch"
+        description={`Không có chiến dịch ${tab === CAMPAIGN_STATUS.OPEN ? "đang diễn ra" : "đã đóng"} nào khớp “${keyword.trim()}”.`}
+      />
+    );
+  } else if (query.isPending) {
     empty = <ActivityIndicator style={styles.loading} color={colors.primary} />;
   } else if (query.isError) {
     empty = (
@@ -103,6 +117,13 @@ export default function OrgCampaignsScreen() {
         ) : null
       }
     >
+      <View style={styles.searchWrap}>
+        <SearchBar
+          value={keyword}
+          onChangeText={setKeyword}
+          placeholder="Tìm theo tên chiến dịch…"
+        />
+      </View>
       <ChipGroup
         horizontal
         options={chips}
@@ -114,6 +135,7 @@ export default function OrgCampaignsScreen() {
       <FlatList
         ref={listRef}
         data={campaigns}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
           <OrgCampaignCard
@@ -138,6 +160,11 @@ export default function OrgCampaignsScreen() {
 
 const styles = StyleSheet.create({
   loading: { marginTop: spacing.xxl },
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+  },
   chips: {
     paddingVertical: spacing.md,
     backgroundColor: colors.surface,

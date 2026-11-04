@@ -67,6 +67,12 @@ export async function updateMyProfile(body) {
   return { id: "mock-org", ...body };
 }
 
+// Mock không giữ yêu cầu trên server → null: hook dùng bản lưu trên máy (LegalMockPanel đổi trạng thái giả)
+export async function getLatestLegalChange() {
+  await delay(300);
+  return null;
+}
+
 export async function requestLegalChange() {
   await delay(900);
   return { id: `lc-${Date.now()}`, status: "PENDING" };

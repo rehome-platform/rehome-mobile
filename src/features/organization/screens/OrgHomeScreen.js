@@ -17,6 +17,7 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { StatusChip } from "@/components/ui/StatusChip";
 import { useAuthStore } from "@/stores/authStore";
 import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
 import { registrationFromProfile } from "@/features/organization/utils/payload";
@@ -59,34 +60,51 @@ const formatDay = (v) => dayjs(v).format("DD/MM");
 
 // F-139: /me trả link có kiểm quyền ("/api/organizations/{id}/legal-files/…"), trình duyệt không kèm đăng nhập
 // → chỉ mở được URL tệp đầy đủ (dữ liệu cũ). [CHỜ BE / N11] xem tệp trong app kèm token
-function DocRow({ icon, title, meta, url: rawUrl }) {
+// accepted: kết luận của Moderator cho riêng giấy tờ ở lần từ chối gần nhất (true / false / null = chưa chấm)
+function DocRow({ icon, title, meta, url: rawUrl, accepted = null }) {
   const url = rawUrl && /^https?:\/\//.test(rawUrl) ? rawUrl : null;
   return (
     <Pressable
       onPress={() => url && Linking.openURL(url)}
       disabled={!url}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.docRow, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.docRow,
+        accepted === false && styles.docRowRejected,
+        pressed && styles.pressed,
+      ]}
     >
-      <Ionicons name={icon} size={22} color={colors.primary} />
+      <Ionicons
+        name={icon}
+        size={22}
+        color={accepted === false ? colors.error : colors.primary}
+      />
       <View style={styles.flex}>
         <Text style={styles.docTitle} numberOfLines={2}>
           {title}
         </Text>
         {meta ? <Text style={styles.docMeta}>{meta}</Text> : null}
       </View>
+      {accepted === true ? <StatusChip label="Đạt" tone="success" /> : null}
+      {accepted === false ? (
+        <StatusChip label="Chưa đạt" tone="danger" />
+      ) : null}
       {url ? <Text style={styles.link}>Xem</Text> : null}
     </Pressable>
   );
 }
 
-// OA-06 Bị từ chối · Giấy tờ đã nộp. BE không trả kết quả từng giấy tờ (đạt / chưa đạt) → chỉ liệt kê,
-// so số giấy tờ với checklist của loại hình (giống bảng Moderator dùng) để nhắc phần còn thiếu
+// OA-06 Bị từ chối · Giấy tờ đã nộp. Moderator chấm từng giấy tờ (accepted) → nhãn Đạt / Chưa đạt, giấy chưa
+// đạt lên đầu. Hồ sơ chưa được chấm từng giấy tờ (dữ liệu cũ) → so số giấy tờ với checklist của loại hình
 function SubmittedDocs({ profile, options }) {
-  const docs = profile.documents ?? [];
+  const docs = [...(profile.documents ?? [])].sort(
+    (a, b) => (a.accepted === false ? 0 : 1) - (b.accepted === false ? 0 : 1),
+  );
   const rep = profile.representative;
+  const graded = docs.some((d) => d.accepted != null);
+  const rejectedCount = docs.filter((d) => d.accepted === false).length;
   const required = DOC_SUGGESTIONS[profile.orgType] ?? DEFAULT_DOC_SUGGESTIONS;
-  const missing = Math.max(0, required.length - docs.length);
+  const missing = graded ? 0 : Math.max(0, required.length - docs.length);
   return (
     <View style={styles.group}>
       <Text style={styles.label}>GIẤY TỜ ĐÃ NỘP</Text>
@@ -111,9 +129,16 @@ function SubmittedDocs({ profile, options }) {
               .filter(Boolean)
               .join(" · ")}
             url={d.fileUrl}
+            accepted={d.accepted}
           />
         ))}
       </View>
+      {rejectedCount > 0 ? (
+        <Text style={styles.warn}>
+          {rejectedCount} giấy tờ chưa đạt — thay bằng bản đúng khi bổ sung hồ
+          sơ. Giấy tờ đã đạt được giữ nguyên.
+        </Text>
+      ) : null}
       {missing > 0 ? (
         <Text style={styles.warn}>
           {optionLabel(options?.orgTypes, profile.orgType) || "Loại hình này"}{" "}
@@ -223,10 +248,10 @@ export default function OrgHomeScreen() {
             icon="close-circle-outline"
             iconColor={colors.error}
             title="Hồ sơ chưa được duyệt"
-            // Lúc từ chối BE ghi thời điểm vào verifiedAt ("ai kết luận, lúc nào")
+            // BE có rejectedAt riêng; dữ liệu cũ ghi thời điểm từ chối vào verifiedAt
             text={
-              me.data.verifiedAt
-                ? `Từ chối ngày ${formatDate(me.data.verifiedAt)}`
+              (me.data.rejectedAt ?? me.data.verifiedAt)
+                ? `Từ chối ngày ${formatDate(me.data.rejectedAt ?? me.data.verifiedAt)}`
                 : "Moderator đã từ chối hồ sơ."
             }
           />
@@ -317,6 +342,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral,
   },
+  docRowRejected: { backgroundColor: tones.danger.bg },
   docTitle: {
     ...textStyles.body,
     fontFamily: fonts.semibold,

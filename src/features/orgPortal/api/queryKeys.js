@@ -8,6 +8,7 @@ export const orgContentKeys = {
     campaignId,
     warehouseId,
   ],
+  donationNotes: (campaignId) => ["orgContent", "donationNotes", campaignId],
   posts: ["orgContent", "posts"],
   post: (id) => ["orgContent", "post", id],
   comments: (postId) => ["orgContent", "comments", postId],

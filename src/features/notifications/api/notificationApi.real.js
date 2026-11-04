@@ -14,6 +14,8 @@ const TITLE = {
   [N.DONATION_RECORDED]: "Có lượt quyên góp mới",
   [N.COMMENT_REPLIED]: "Có người trả lời bình luận của bạn",
   [N.POST_COMMENTED]: "Bài viết có bình luận mới",
+  [N.FOLLOWED_ORG_CAMPAIGN]: "Tổ chức bạn theo dõi mở chiến dịch mới",
+  [N.FOLLOWED_ORG_POST]: "Tổ chức bạn theo dõi có bài viết mới",
 };
 
 const toNotification = (n) => ({

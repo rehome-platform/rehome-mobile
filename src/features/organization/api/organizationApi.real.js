@@ -39,6 +39,20 @@ export async function updateMyProfile(body) {
 
 // OP-04 — gửi yêu cầu đổi pháp lý (chờ Moderator duyệt). proposedChanges = JSON tự do (đã gửi BE hình dạng):
 // { legalName?, orgType?, representative?: {...}, documents?: [{ docType, docNumber, issueDate, issuingAuthority, fileUrl }] }
+// OP-05 · GET /me/legal-change-requests/latest → { id, status, proposedChanges, rejectReason, createdAt, decidedAt }.
+// decidedAt → reviewedAt (tên màn OP-05 đang dùng). Chưa từng gửi yêu cầu → BE 404 → null
+export async function getLatestLegalChange() {
+  try {
+    const r = unwrap(
+      await api.get("/api/organizations/me/legal-change-requests/latest"),
+    );
+    return r ? { ...r, reviewedAt: r.decidedAt ?? null } : null;
+  } catch (e) {
+    if (e.status === 404) return null;
+    throw e;
+  }
+}
+
 export async function requestLegalChange(proposedChanges) {
   return unwrap(
     await api.post("/api/organizations/me/legal-change-requests", {
