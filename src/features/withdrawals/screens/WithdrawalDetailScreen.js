@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import dayjs from "dayjs";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { MOCK } from "@/config/env";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -222,6 +222,18 @@ export default function WithdrawalDetailScreen() {
             </Text>
             . Sản phẩm đã gỡ khỏi sàn, không ai mua được.
           </Text>
+          {/* Chưa trả phí: quá feePaymentDeadline thì BE tự huỷ yêu cầu và đưa món lên sàn lại (sớm hơn hạn đến kho) */}
+          {unpaid && w.feePaymentDeadline ? (
+            <View style={styles.feeDue}>
+              <Text style={styles.feeDueText}>
+                Trả phí trước{" "}
+                <Text style={styles.strong}>
+                  {dayjs(w.feePaymentDeadline).format("HH:mm DD/MM")}
+                </Text>
+                . Quá hạn mà chưa trả, yêu cầu tự huỷ và món được đăng bán lại.
+              </Text>
+            </View>
+          ) : null}
           {w.warehouseAddress ? (
             <>
               <Text style={styles.muted}>
@@ -315,6 +327,12 @@ export default function WithdrawalDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  feeDue: {
+    padding: spacing.sm,
+    borderRadius: radius.input,
+    backgroundColor: tones.warning.bg,
+  },
+  feeDueText: { ...textStyles.caption, color: tones.warning.fg },
   loading: { marginTop: spacing.xxl },
   content: { gap: spacing.lg },
   flex: { flex: 1 },

@@ -2,19 +2,19 @@ import { api, unwrap } from "@/lib/api/client";
 import { WITHDRAWAL_STATUS as W } from "@/constants/withdrawal";
 import { warehouseApi } from "@/features/warehouses/api/warehouseApi";
 
-// API 90–92 (BE ItemWithdrawalRequestController, 65d8475). Đổi dữ liệu BE về hình dạng màn hình đang dùng (giống mock).
+// API 90–92 (BE ItemWithdrawalRequestController). Đổi dữ liệu BE về hình dạng màn hình đang dùng (giống mock).
 // BE: tạo yêu cầu là PENDING_PICKUP + gỡ món khỏi sàn NGAY; phí (nếu có) trả riêng bằng ĐÚNG 1 cách WALLET | MOMO | VNPAY.
-// [CHỜ BE] chi tiết chưa có địa chỉ / giờ mở cửa kho (tạm ghép từ GET /warehouses theo tên), ảnh món,
-// lịch sử trạng thái (tạm dựng từ createdAt / status)
+// Chi tiết có sẵn địa chỉ / giờ mở cửa kho, ảnh món, completedAt, feePaymentDeadline (quá hạn chưa trả phí →
+// BE tự huỷ yêu cầu, món lên sàn lại). BE chưa có lịch sử trạng thái → dòng thời gian dựng từ createdAt / status
 
-// Dòng thời gian KG-15, mới nhất ở trên. Mốc không có giờ (BE chưa trả) → at = null
+// Dòng thời gian KG-15, mới nhất ở trên. Mốc không có giờ → at = null
 const eventsOf = (w) => {
   const base = [
     { type: "REMOVED", at: w.createdAt },
     { type: "REQUESTED", at: w.createdAt },
   ];
   if (w.status === W.COMPLETED)
-    return [{ type: "HANDED_OVER", at: null }, ...base];
+    return [{ type: "HANDED_OVER", at: w.completedAt ?? null }, ...base];
   if (w.status === W.EXPIRED)
     return [
       { type: "RELISTED", at: w.pickupDeadline },
@@ -35,9 +35,11 @@ const toWithdrawal = (w, warehouse) => ({
   feeCharged: Number(w.feeAmount ?? w.feeCharged ?? 0),
   feePaid: w.feePaid ?? Number(w.feeAmount ?? w.feeCharged ?? 0) === 0,
   feePaymentMethod: w.feePaid ? w.paymentMethod : null,
-  warehouseAddress: warehouse?.address ?? null,
-  warehouseOpeningHours: warehouse?.openingHours ?? null,
+  warehouseAddress: w.warehouseAddress ?? warehouse?.address ?? null,
+  warehouseOpeningHours:
+    w.warehouseOpeningHours ?? warehouse?.openingHours ?? null,
   photoUrl: w.photoUrl ?? null,
+  feePaymentDeadline: w.feePaymentDeadline ?? null,
   events: eventsOf(w),
 });
 
@@ -58,8 +60,11 @@ export async function payWithdrawalFee(id, method) {
   ); // { id, feeCharged, status, payUrl }
 }
 
-// API 92
+// API 92. BE đã trả địa chỉ kho; chỉ khi thiếu (dữ liệu cũ) mới tra GET /warehouses theo tên
 export async function getWithdrawal(id) {
   const w = unwrap(await api.get(`/item-withdrawal-requests/${id}`));
-  return toWithdrawal(w, await warehouseByName(w.warehouseName));
+  const warehouse = w.warehouseAddress
+    ? null
+    : await warehouseByName(w.warehouseName);
+  return toWithdrawal(w, warehouse);
 }
