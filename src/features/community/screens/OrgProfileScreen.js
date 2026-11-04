@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { MoreMenuButton } from "@/components/ui/MoreMenuButton";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
 import { REPORT_TARGET } from "@/constants/community";
@@ -61,20 +62,24 @@ export default function OrgProfileScreen() {
       onBack={goBack}
       right={
         o ? (
-          <Button
-            title="Báo cáo"
-            variant="text"
-            onPress={() =>
-              isAuthed
-                ? router.push({
-                    pathname: "/report",
-                    params: {
-                      targetType: REPORT_TARGET.ORGANIZATION_ACCOUNT,
-                      targetId: id,
-                    },
-                  })
-                : needLogin()
-            }
+          <MoreMenuButton
+            title={o.displayName}
+            actions={[
+              {
+                text: "Báo cáo tổ chức",
+                destructive: true,
+                onPress: () =>
+                  isAuthed
+                    ? router.push({
+                        pathname: "/report",
+                        params: {
+                          targetType: REPORT_TARGET.ORGANIZATION_ACCOUNT,
+                          targetId: id,
+                        },
+                      })
+                    : needLogin(),
+              },
+            ]}
           />
         ) : null
       }

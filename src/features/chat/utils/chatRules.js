@@ -31,6 +31,7 @@ export const previewOf = (conv) =>
     ? `${conv.lastMessage.isMine ? "Bạn: " : ""}${conv.lastMessage.content}`
     : "Chưa có tin nhắn";
 
-// Tổng số tin chưa đọc (badge tab Cá nhân)
+// Số HỘI THOẠI có tin chưa đọc (số trên icon / tab Tin nhắn) — như Messenger, Zalo: "mấy người đang chờ mình".
+// Số tin chưa đọc của từng hội thoại vẫn hiện riêng ở mỗi dòng danh sách (ConversationRow)
 export const unreadTotal = (list = []) =>
-  list.reduce((s, c) => s + (c.unreadCount ?? 0), 0);
+  list.filter((c) => (c.unreadCount ?? 0) > 0).length;

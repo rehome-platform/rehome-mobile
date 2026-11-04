@@ -219,8 +219,8 @@ export default function OrderDetailScreen() {
   } else if (canCancel(order)) {
     footer = (
       <Button
-        title="Huỷ đơn — hoàn 100%"
-        variant="secondary"
+        title="Huỷ đơn"
+        variant="neutral"
         loading={cancel.isPending}
         onPress={confirmCancel}
       />
@@ -333,10 +333,8 @@ export default function OrderDetailScreen() {
       ) : null}
 
       {order.status === S.PAID ? (
-        <InfoBox strong title="Vẫn huỷ được">
-          ReHome chưa đóng gói. Huỷ bây giờ bạn được hoàn 100%, kể cả phí vận
-          chuyển, tiền vào thẳng ví ReHome. Khi ReHome bắt đầu đóng gói thì không
-          huỷ được nữa, chỉ còn cách trả hàng sau khi nhận.
+        <InfoBox title="Còn huỷ được tới khi ReHome đóng gói">
+          Huỷ bây giờ được hoàn 100% (gồm phí vận chuyển) vào ví ReHome.
         </InfoBox>
       ) : null}
 
@@ -487,22 +485,31 @@ export default function OrderDetailScreen() {
           <Text style={styles.strong}>
             {address.recipientName} · {formatPhone(address.phone)}
           </Text>
-          <Text style={styles.muted}>{address.addressDetail}</Text>
+          <Text style={styles.muted}>
+            {[address.addressDetail, address.wardName, address.provinceName]
+              .filter(Boolean)
+              .join(", ")}
+          </Text>
         </Section>
       ) : null}
 
       <Section title="THANH TOÁN">
         <MoneyRow label="Tiền hàng" value={formatVnd(order.subtotal)} />
         <MoneyRow label="Phí vận chuyển" value={formatVnd(order.shippingFee)} />
-        <MoneyRow
-          strong
-          label={
-            order.paidAt
-              ? `Đã thanh toán qua ${PAYMENT_METHOD_LABEL[order.paymentMethod] ?? "MoMo"}`
-              : "Tổng"
-          }
-          value={formatVnd(order.totalAmount)}
-        />
+        <MoneyRow strong label="Tổng" value={formatVnd(order.totalAmount)} />
+        {/* Dựa vào trạng thái (đã qua chờ thanh toán) — paidAt có đơn BE trả rỗng (vd. trả bằng ví) */}
+        {order.status !== S.PENDING_PAYMENT &&
+        (order.paidAt || order.paymentMethod) ? (
+          <Text style={styles.muted}>
+            {[
+              "Đã thanh toán",
+              PAYMENT_METHOD_LABEL[order.paymentMethod],
+              order.paidAt ? fmt(order.paidAt) : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
+        ) : null}
       </Section>
 
       {order.status === S.CANCELLED && wasRefunded(order) ? (

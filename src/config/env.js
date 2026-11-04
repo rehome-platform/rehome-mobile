@@ -24,8 +24,8 @@ export const MOCK = {
   withdrawals: false, // API 90–95 thật: rút lại hàng + hàng xuống cấp (BE 65d8475). Phí: WALLET | MOMO | VNPAY
   tryon: false, // API 97–99 thật (BE 41f10c8). [CHỜ BE] API 96 gợi ý, lọc /products theo loại, GET /tryon/images/{id}
   community: false, // API 100–109 thật (BE edff4ae): tổ chức, chiến dịch, bảng tin, thích, bình luận, theo dõi, báo cáo
-  chat: false, // API 110–113 thật (BE 2c9533b), cả Member và Tổ chức. Nhắn tổ chức mới từ trang tổ chức chờ community thật
-  notifications: false, // API 114 thật (BE 2c9533b). [CHỜ BE] tiêu đề, đích mở màn, đánh dấu đã đọc, số chưa đọc
+  chat: false, // API 110–113 thật, cả Member và Tổ chức: tin cuối, isMine, GET /conversations/{id}
+  notifications: false, // API 114–116 thật: tiêu đề, đích mở màn, đánh dấu đã đọc, số chưa đọc
   orgCampaigns: false, // App tổ chức: chiến dịch, lượt chờ lấy, note quyên góp — thật (BE 41f10c8)
-  orgPosts: true, // App tổ chức: bài viết + bình luận + L9 — BE 41f10c8 đã có → nối ở nhánh api/org-posts
+  orgPosts: false, // App tổ chức: bài viết, bình luận, thả tim + trả lời (L9) — thật (BE 41f10c8)
 };

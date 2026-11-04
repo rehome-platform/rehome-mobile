@@ -6,8 +6,10 @@ import {
   campaignTitleOf,
   isCampaignOpen,
 } from "@/features/community/utils/communityRules";
+import { closedLabel } from "../utils/campaignRules";
 
-// OC-01: thẻ chiến dịch của tổ chức — ảnh bìa · tên · nhãn · hạn nhận · nút Mở.
+// OC-01: thẻ chiến dịch của tổ chức — ảnh bìa · tên · nhãn · hạn nhận · nút Xem
+// (wireframe ghi "Mở" — dễ hiểu nhầm là mở lại chiến dịch đã đóng).
 // Bỏ dòng "lượt thích · bình luận" của wireframe: chiến dịch không có số này (B1). Bấm cả thẻ cũng mở
 export function OrgCampaignCard({ campaign: c, onPress }) {
   const open = isCampaignOpen(c);
@@ -33,7 +35,7 @@ export function OrgCampaignCard({ campaign: c, onPress }) {
           <Text style={styles.muted}>
             {open
               ? `Nhận tới ${dayjs(c.endTime).format("DD/MM")} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
-              : `Đã đóng ${dayjs(c.endTime).format("DD/MM/YYYY")}`}
+              : closedLabel(c)}
           </Text>
         </View>
         <Text style={[styles.tag, !open && styles.tagClosed]}>
@@ -47,7 +49,7 @@ export function OrgCampaignCard({ campaign: c, onPress }) {
           hitSlop={8}
           style={({ pressed }) => [styles.openBtn, pressed && styles.pressed]}
         >
-          <Text style={styles.openText}>Mở</Text>
+          <Text style={styles.openText}>Xem</Text>
         </Pressable>
       </View>
     </Pressable>

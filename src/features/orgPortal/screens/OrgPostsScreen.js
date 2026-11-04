@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { colors, spacing } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
@@ -91,8 +92,14 @@ export default function OrgPostsScreen() {
       header={
         <AppHeader
           title="Bài viết đã đăng"
-          right={<Button title="+ Đăng bài" variant="text" onPress={openNew} />}
+          right={<BellButton href="/org/notifications" />}
         />
+      }
+      // Cùng kiểu "Tạo chiến dịch mới" ở tab Chiến dịch: hành động chính là nút lớn ở chân màn
+      footer={
+        query.data?.length ? (
+          <Button title="Đăng bài mới" onPress={openNew} />
+        ) : null
       }
       edges={["top"]}
       padded={false}

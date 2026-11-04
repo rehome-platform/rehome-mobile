@@ -61,9 +61,12 @@ export default function TryonRoomScreen() {
   const clear = useTryonJobStore((s) => s.clear);
   const setWatching = useTryonJobStore((s) => s.setWatching);
 
+  // Chờ dữ liệu THẬT (dữ liệu tạm lấy từ thẻ danh sách chưa có status / loại thử đồ → canTryOn sai).
+  // Trước đây chỉ chạy theo product.id → dữ liệu thật về (cùng id) không chạy lại, phòng giữ bộ đồ của lần trước
+  const loaded = !!product && !query.isPlaceholderData;
   useEffect(() => {
-    if (product && canTryOn(product)) open(product);
-  }, [product?.id]);
+    if (loaded && canTryOn(product)) open(product);
+  }, [loaded, product?.id]);
 
   // Đang mở màn → xong thì tự sang kết quả (không hỏi)
   useFocusEffect(
@@ -169,7 +172,8 @@ export default function TryonRoomScreen() {
     />
   );
 
-  if (!product) {
+  // Chưa có dữ liệu thật (kể cả đang hiện tạm từ thẻ) → vòng tải, tránh thoáng hiện "chưa hỗ trợ thử đồ"
+  if (!loaded || (canTryOn(product) && baseId !== product.id)) {
     return (
       <Screen header={header}>
         {query.isError ? (

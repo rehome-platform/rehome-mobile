@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { colors, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -76,7 +77,12 @@ export default function OrgCampaignsScreen() {
 
   return (
     <Screen
-      header={<AppHeader title="Chiến dịch của tổ chức" />}
+      header={
+        <AppHeader
+          title="Chiến dịch của tổ chức"
+          right={<BellButton href="/org/notifications" />}
+        />
+      }
       edges={["top"]}
       padded={false}
       footer={

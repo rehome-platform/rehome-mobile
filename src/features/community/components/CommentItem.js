@@ -2,12 +2,13 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelative } from "@/utils/format";
-import { CONTENT_STATUS } from "@/constants/community";
+import { COMMENT_AUTHOR_TYPE, CONTENT_STATUS } from "@/constants/community";
 
-// Một bình luận (CD-02, OB-05). Của mình → tên "Bạn". Câu trả lời (parentId) thụt vào 1 cấp.
-// Bị Moderator ẩn (REMOVED, content = null) → chữ mờ. Thích / Trả lời / Sửa · Xoá ẩn (0.5 A14)
-export function CommentItem({ comment: c }) {
+// Một bình luận (CD-02). Của mình → tên "Bạn". Câu trả lời (parentId) thụt vào 1 cấp.
+// Bị Moderator ẩn (REMOVED, content = null) → chữ mờ, không trả lời được. onReply có → hiện "Trả lời"
+export function CommentItem({ comment: c, onReply }) {
   const name = c.isMine ? "Bạn" : c.author?.fullName;
+  const isOrg = c.author?.type === COMMENT_AUTHOR_TYPE.ORGANIZATION;
   const removed = c.status === CONTENT_STATUS.REMOVED || c.content == null;
   return (
     <View style={[styles.row, c.parentId && styles.reply]}>
@@ -15,6 +16,7 @@ export function CommentItem({ comment: c }) {
         uri={c.author?.avatarUrl}
         name={name}
         size={c.parentId ? 28 : 36}
+        initialOf={isOrg ? "first" : "last"}
       />
       <View style={styles.body}>
         <View style={styles.head}>
@@ -28,6 +30,16 @@ export function CommentItem({ comment: c }) {
         ) : (
           <Text style={styles.text}>{c.content}</Text>
         )}
+        {onReply && !removed ? (
+          <Text
+            style={styles.replyLink}
+            onPress={() => onReply(c)}
+            accessibilityRole="button"
+            suppressHighlighting
+          >
+            Trả lời
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -61,4 +73,12 @@ const styles = StyleSheet.create({
   },
   time: { ...textStyles.caption, color: colors.textSecondary },
   text: { ...textStyles.body, color: colors.text },
+  replyLink: {
+    alignSelf: "flex-start",
+    marginTop: spacing.xs,
+    paddingVertical: 2,
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.textSecondary,
+  },
 });

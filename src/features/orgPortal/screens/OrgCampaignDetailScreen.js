@@ -13,6 +13,7 @@ import {
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
+import { closedLabel } from "@/features/orgPortal/utils/campaignRules";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -197,7 +198,7 @@ export default function OrgCampaignDetailScreen() {
                 : ""}
               {open
                 ? `nhận tới ${endLabel} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
-                : `đã đóng ${dayjs(c.endTime).format("DD/MM/YYYY")}`}
+                : closedLabel(c).replace(/^Đ/, "đ")}
             </Text>
           </View>
 

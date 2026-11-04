@@ -20,6 +20,7 @@ import {
   saveCampaignDraft,
 } from "@/features/orgPortal/utils/campaignDraft";
 import { useCreateCampaign } from "@/features/orgPortal/hooks/useCampaignMutations";
+import { usePruneWarehouses } from "@/features/orgPortal/hooks/usePruneWarehouses";
 import { CampaignForm } from "@/features/orgPortal/components/CampaignForm";
 
 const schema = makeCampaignSchema();
@@ -36,11 +37,13 @@ export default function CreateCampaignScreen() {
     handleSubmit,
     reset,
     getValues,
+    setValue,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: campaignToForm(null),
   });
+  const pruneWarehouses = usePruneWarehouses({ getValues, setValue });
 
   // Có nháp của tài khoản này → hỏi tiếp tục hay bỏ
   useEffect(() => {
@@ -58,8 +61,18 @@ export default function CreateCampaignScreen() {
           },
           {
             text: "Tiếp tục",
-            // giữ defaultValues trống → form tính là "đã sửa", bấm ← vẫn được hỏi
-            onPress: () => reset(draft.values, { keepDefaultValues: true }),
+            // giữ defaultValues trống → form tính là "đã sửa", bấm ← vẫn được hỏi.
+            // Nháp có thể giữ mã kho đã không còn → bỏ luôn, báo nếu có
+            onPress: () => {
+              reset(draft.values, { keepDefaultValues: true });
+              pruneWarehouses()
+                .then(
+                  (n) =>
+                    n > 0 &&
+                    showToast(`Đã bỏ ${n} kho không còn nhận đồ khỏi nháp`),
+                )
+                .catch(() => {});
+            },
           },
         ],
       );
@@ -67,6 +80,7 @@ export default function CreateCampaignScreen() {
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ hỏi nháp 1 lần khi mở màn
   }, [owner, reset]);
 
   const saveDraft = async () => {
@@ -97,6 +111,8 @@ export default function CreateCampaignScreen() {
         leave();
       },
       onError: (e) => {
+        if (e.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID)
+          pruneWarehouses().catch(() => {});
         if (e.code === ERROR_CODES.CAMPAIGN_LIMIT_REACHED)
           Alert.alert("Chưa tạo được chiến dịch", e.message, [
             { text: "Lưu nháp", onPress: saveDraft },

@@ -21,6 +21,7 @@ import {
   lockedWarehouseIds,
 } from "@/features/orgPortal/utils/campaignRules";
 import { useUpdateCampaign } from "@/features/orgPortal/hooks/useCampaignMutations";
+import { usePruneWarehouses } from "@/features/orgPortal/hooks/usePruneWarehouses";
 import { CampaignForm } from "@/features/orgPortal/components/CampaignForm";
 
 const leave = () =>
@@ -34,6 +35,8 @@ function EditForm({ campaign }) {
   const {
     control,
     handleSubmit,
+    getValues,
+    setValue,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(
@@ -41,6 +44,7 @@ function EditForm({ campaign }) {
     ),
     defaultValues: campaignToForm(campaign),
   });
+  const pruneWarehouses = usePruneWarehouses({ getValues, setValue });
 
   const onCancel = () => {
     if (!isDirty) return leave();
@@ -55,6 +59,10 @@ function EditForm({ campaign }) {
       onSuccess: () => {
         showToast("Đã lưu thay đổi");
         leave();
+      },
+      onError: (e) => {
+        if (e.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID)
+          pruneWarehouses().catch(() => {});
       },
     }),
   );

@@ -16,6 +16,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { MoreMenuButton } from "@/components/ui/MoreMenuButton";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
 import { formatRelative } from "@/utils/format";
@@ -46,7 +47,9 @@ export default function PostDetailScreen() {
   const toggleFollow = useToggleFollow();
   const add = useAddComment(id);
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState(null); // bình luận đang trả lời
   const listRef = useRef(null);
+  const inputRef = useRef(null);
   const p = query.data;
   const here = `/posts/${id}`;
 
@@ -63,17 +66,24 @@ export default function PostDetailScreen() {
       onBack={goBack}
       right={
         p ? (
-          <Button
-            title="Báo cáo"
-            variant="text"
-            onPress={() =>
-              isAuthed
-                ? router.push({
-                    pathname: "/report",
-                    params: { targetType: REPORT_TARGET.POST, targetId: id },
-                  })
-                : needLogin()
-            }
+          <MoreMenuButton
+            title="Bài viết"
+            actions={[
+              {
+                text: "Báo cáo bài viết",
+                destructive: true,
+                onPress: () =>
+                  isAuthed
+                    ? router.push({
+                        pathname: "/report",
+                        params: {
+                          targetType: REPORT_TARGET.POST,
+                          targetId: id,
+                        },
+                      })
+                    : needLogin(),
+              },
+            ]}
           />
         ) : null
       }
@@ -109,14 +119,31 @@ export default function PostDetailScreen() {
   const send = () => {
     const content = text.trim();
     if (!content) return;
-    add.mutate(content, {
-      onSuccess: () => {
-        setText("");
-        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 300);
+    add.mutate(
+      { content, parentId: replyTo?.id ?? null },
+      {
+        onSuccess: () => {
+          setText("");
+          // Trả lời nằm ngay dưới bình luận gốc → không cuộn xuống cuối
+          if (!replyTo)
+            setTimeout(
+              () => listRef.current?.scrollToEnd({ animated: true }),
+              300,
+            );
+          setReplyTo(null);
+        },
+        onError: (e) => showToast(e.message),
       },
-      onError: (e) => showToast(e.message),
-    });
+    );
   };
+
+  // Bấm "Trả lời" → hiện dải "Đang trả lời …" và mở bàn phím
+  const startReply = (c) => {
+    if (!isAuthed) return needLogin();
+    setReplyTo(c);
+    inputRef.current?.focus();
+  };
+  const replyName = replyTo?.isMine ? "chính bạn" : replyTo?.author?.fullName;
 
   const postBlock = (
     <View style={styles.post}>
@@ -175,23 +202,40 @@ export default function PostDetailScreen() {
   );
 
   const composer = isAuthed ? (
-    <View style={styles.composer}>
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Viết bình luận…"
-        placeholderTextColor={colors.textSecondary}
-        multiline
-        maxLength={COMMENT_LIMITS.MAX_CHARS}
-        style={styles.input}
-      />
-      <Button
-        title="Gửi"
-        disabled={!text.trim()}
-        loading={add.isPending}
-        onPress={send}
-        style={styles.sendBtn}
-      />
+    <View style={styles.composerWrap}>
+      {replyTo ? (
+        <View style={styles.replyBar}>
+          <Text style={[styles.muted, styles.flex]} numberOfLines={1}>
+            Đang trả lời <Text style={styles.replyName}>{replyName}</Text>
+          </Text>
+          <Text
+            style={styles.cancelReply}
+            onPress={() => setReplyTo(null)}
+            accessibilityRole="button"
+          >
+            Huỷ
+          </Text>
+        </View>
+      ) : null}
+      <View style={styles.composer}>
+        <TextInput
+          ref={inputRef}
+          value={text}
+          onChangeText={setText}
+          placeholder={replyTo ? "Viết câu trả lời…" : "Viết bình luận…"}
+          placeholderTextColor={colors.textSecondary}
+          multiline
+          maxLength={COMMENT_LIMITS.MAX_CHARS}
+          style={styles.input}
+        />
+        <Button
+          title="Gửi"
+          disabled={!text.trim()}
+          loading={add.isPending}
+          onPress={send}
+          style={styles.sendBtn}
+        />
+      </View>
     </View>
   ) : (
     <Pressable onPress={needLogin} style={[styles.input, styles.fakeInput]}>
@@ -205,7 +249,9 @@ export default function PostDetailScreen() {
         ref={listRef}
         data={comments.data ?? []}
         keyExtractor={(c) => c.id}
-        renderItem={({ item }) => <CommentItem comment={item} />}
+        renderItem={({ item }) => (
+          <CommentItem comment={item} onReply={startReply} />
+        )}
         ListHeaderComponent={postBlock}
         ListEmptyComponent={
           comments.isPending ? (
@@ -256,6 +302,14 @@ const styles = StyleSheet.create({
   stats: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
   smallBtn: { minHeight: 36, paddingHorizontal: spacing.md },
   noComment: { paddingVertical: spacing.lg, textAlign: "center" },
+  composerWrap: { gap: spacing.xs },
+  replyBar: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  replyName: { fontFamily: fonts.semibold, color: colors.text },
+  cancelReply: {
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
   composer: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
   input: {
     flex: 1,

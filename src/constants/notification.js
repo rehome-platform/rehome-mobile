@@ -5,6 +5,9 @@ export const NOTIFICATION_TYPE = {
   TERM_EXPIRY: "TERM_EXPIRY",
   VERIFICATION_RESULT: "VERIFICATION_RESULT",
   QUEUE_TASK: "QUEUE_TASK",
+  DONATION_RECORDED: "DONATION_RECORDED", // tổ chức: Moderator ghi nhận lượt quyên góp (kèm warehouseId)
+  COMMENT_REPLIED: "COMMENT_REPLIED", // Member: tổ chức trả lời bình luận của mình
+  POST_COMMENTED: "POST_COMMENTED", // tổ chức: bài viết có bình luận mới
 };
 
 // Icon theo loại (Ionicons)
@@ -14,9 +17,12 @@ export const NOTIFICATION_ICON = {
   TERM_EXPIRY: "time-outline",
   VERIFICATION_RESULT: "shield-checkmark-outline",
   QUEUE_TASK: "cube-outline",
+  DONATION_RECORDED: "gift-outline",
+  COMMENT_REPLIED: "chatbubble-ellipses-outline",
+  POST_COMMENTED: "chatbubble-ellipses-outline",
 };
 
-// Đích để mở màn khi bấm — [CHỜ BE PHASE6_GUIDE câu 17] bảng Notification chưa có targetType/targetId
+// Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE
 export const NOTIFICATION_TARGET = {
   ORDER: "ORDER",
   RETURN_REQUEST: "RETURN_REQUEST",

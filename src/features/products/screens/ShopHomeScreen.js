@@ -13,8 +13,11 @@ import { useCategoryOptions } from "@/features/catalog/hooks/useCatalogOptions";
 import { useProducts } from "../hooks/useProducts";
 import { ProductGrid } from "../components/ProductGrid";
 import { CartButton } from "@/features/cart/components/CartButton";
+import { ChatButton } from "@/features/chat/components/ChatButton";
+import { BellButton } from "@/features/notifications/components/BellButton";
 
-const logo = require("../../../../assets/logo/logo.png"); // assets nằm ngoài src nên không dùng @/
+// Header có 3 nút (giỏ · chuông · tin nhắn) → dùng logo chỉ có biểu tượng để ô tìm kiếm còn đủ rộng trên máy 360dp
+const logo = require("../../../../assets/logo/logoIcon.png"); // assets nằm ngoài src nên không dùng @/
 const ALL = "ALL";
 
 // BR-01 · Trang chủ Mua sắm (Guest xem được)
@@ -122,6 +125,8 @@ function ShopHeader() {
         </Text>
       </Pressable>
       <CartButton />
+      <BellButton />
+      <ChatButton />
     </View>
   );
 }
@@ -131,13 +136,13 @@ const styles = StyleSheet.create({
     minHeight: 56,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm, // thêm nút Tin nhắn → khít lại để ô tìm kiếm còn đủ rộng trên máy 360dp
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral,
   },
-  logo: { width: 130, height: 28 }, // ghi rõ cả 2 chiều: ảnh require() mặc định lấy kích thước gốc; tỉ lệ ≈ 4.62
+  logo: { width: 32, height: 32 }, // ghi rõ cả 2 chiều: ảnh require() mặc định lấy kích thước gốc
   search: {
     flex: 1,
     height: 40,

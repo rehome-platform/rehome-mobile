@@ -1,11 +1,9 @@
 import { api, unwrap } from "@/lib/api/client";
 import { NOTIFICATION_TYPE as N } from "@/constants/notification";
 
-// Thông báo thật (API 114, BE 2c9533b) cho Member và Tổ chức. Cùng hình dạng với notificationApi.mock.js.
-// BE mới có GET /notifications → { id, type, message, isRead, createdAt }. Chỗ thiếu (đã báo BE):
-// - không có tiêu đề → lấy theo loại; không có targetType/targetId → bấm chỉ đánh dấu đã đọc, không mở màn
-// - [CHỜ BE] API 115–116 (đánh dấu đã đọc) + số chưa đọc → đánh dấu tạm trên máy (mất khi tắt app),
-//   số chưa đọc đếm từ trang đầu
+// Thông báo thật (API 114–116) cho Member và Tổ chức. Cùng hình dạng với notificationApi.mock.js.
+// BE trả { id, type, title, message, isRead, targetType, targetId, warehouseId, createdAt }.
+// Thông báo cũ chưa có tiêu đề → lấy theo loại
 
 const TITLE = {
   [N.ORDER_UPDATE]: "Cập nhật đơn hàng",
@@ -13,44 +11,41 @@ const TITLE = {
   [N.TERM_EXPIRY]: "Sắp hết hạn",
   [N.VERIFICATION_RESULT]: "Kết quả xét duyệt",
   [N.QUEUE_TASK]: "Việc cần xử lý",
+  [N.DONATION_RECORDED]: "Có lượt quyên góp mới",
+  [N.COMMENT_REPLIED]: "Có người trả lời bình luận của bạn",
+  [N.POST_COMMENTED]: "Bài viết có bình luận mới",
 };
-
-const readOnDevice = new Set(); // id đã bấm / "Đánh dấu đã đọc" trong phiên này
-let lastSeen = []; // id của trang đầu gần nhất → "đánh dấu tất cả"
 
 const toNotification = (n) => ({
   id: n.id,
   type: n.type,
-  title: TITLE[n.type] ?? "Thông báo",
+  title: n.title || TITLE[n.type] || "Thông báo",
   body: n.message ?? "",
-  isRead: n.isRead || readOnDevice.has(n.id),
+  isRead: !!n.isRead,
   createdAt: n.createdAt,
-  targetType: null,
-  targetId: null,
+  targetType: n.targetType ?? null,
+  targetId: n.targetId ?? null,
+  warehouseId: n.warehouseId ?? null,
 });
 
 // GET /notifications — mới nhất trước
 export async function getNotifications({ page = 0, size = 20 } = {}) {
   const p = unwrap(await api.get("/notifications", { params: { page, size } }));
-  const content = (p.content ?? []).map(toNotification);
-  if (page === 0) lastSeen = content.map((n) => n.id);
-  return { ...p, content };
+  return { ...p, content: (p.content ?? []).map(toNotification) };
 }
 
-// [CHỜ BE] chưa có API số chưa đọc → đếm trong 50 thông báo mới nhất
+// GET /notifications/unread-count → { count }
 export async function getUnreadCount() {
-  const { content } = await getNotifications({ page: 0, size: 50 });
-  return { count: content.filter((n) => !n.isRead).length };
+  const res = unwrap(await api.get("/notifications/unread-count"));
+  return { count: res?.count ?? 0 };
 }
 
-// [CHỜ BE API 115]
+// PATCH /notifications/{id}/read
 export async function markRead(id) {
-  readOnDevice.add(id);
-  return null;
+  return unwrap(await api.patch(`/notifications/${id}/read`));
 }
 
-// [CHỜ BE API 116]
+// PATCH /notifications/read-all
 export async function markAllRead() {
-  lastSeen.forEach((id) => readOnDevice.add(id));
-  return null;
+  return unwrap(await api.patch("/notifications/read-all"));
 }
