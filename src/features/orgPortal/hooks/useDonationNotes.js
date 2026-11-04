@@ -16,5 +16,4 @@ export const useDonationNotes = (campaignId) =>
       total: data.pages[0]?.totalElements ?? 0,
     }),
     enabled: !!campaignId,
-    retry: (count, e) => e?.code !== "NOTES_NOT_READY" && count < 2,
   });
