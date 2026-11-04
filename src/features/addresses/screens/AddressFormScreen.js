@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { normalizeText } from "@/utils/search";
 import { colors, spacing } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -27,6 +28,13 @@ import {
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/addresses");
+
+// Ô số nhà có chữ chỉ đơn vị hành chính: phường, quận, huyện, tỉnh, thành phố, và viết tắt P.7 / Q.1 / TP.
+// So trên chữ đã bỏ dấu (\b của regex không nhận ranh giới từ có dấu tiếng Việt). Bỏ "xã" vì trùng tên đường
+// (Xa La, Xã Đàn); "Phương Mai" vẫn bị nhắc nhầm — chấp nhận vì chỉ là gợi ý "có vẻ", không chặn lưu
+const AREA_WORDS =
+  /(^|[\s,.-])(phuong|quan|huyen|tinh|thanh pho|tp)([\s,.]|$)|(^|[\s,])[pq]\.?\s?\d/;
+const hasAreaWords = (text) => AREA_WORDS.test(normalizeText(text));
 
 // BR-07 · Thêm (không có id) / Sửa (có id) địa chỉ. Chờ có danh sách rồi mới dựng form (để điền sẵn)
 export default function AddressFormScreen() {
@@ -111,6 +119,9 @@ function AddressForm({ title, existing, isFirst }) {
 
   // Tỉnh đang chọn → tìm code để tải phường của tỉnh đó
   const provinceName = watch("provinceName");
+  // Gõ cả phường / quận / tỉnh vào ô số nhà → địa chỉ trên đơn bị lặp ("Phường A, Phường B"). Chỉ nhắc, không chặn
+  // (tên đường có thể chứa các chữ này, vd. "Xã Đàn")
+  const detailHasArea = hasAreaWords(watch("addressDetail"));
   const provinces = useProvinces();
   const provinceId = provinces.data?.find(
     (p) => p.value === provinceName,
@@ -254,7 +265,12 @@ function AddressForm({ title, existing, isFirst }) {
             label="Địa chỉ cụ thể"
             required
             multiline
-            helper="Số nhà, tên đường (toà nhà, hẻm nếu có)."
+            placeholder="Vd: 78 Trần Thái Tông, hẻm 12"
+            helper={
+              detailHasArea
+                ? "Có vẻ bạn đã ghi phường / quận / tỉnh ở đây. Phần này đã chọn ở trên — bỏ đi để địa chỉ trên đơn không bị lặp."
+                : "Chỉ ghi số nhà, tên đường (toà nhà, hẻm nếu có). Không cần ghi phường, tỉnh — đã chọn ở trên."
+            }
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
