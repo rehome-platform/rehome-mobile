@@ -1,6 +1,11 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
+import { useConversations } from "@/features/chat/hooks/useChat";
+import { unreadTotal } from "@/features/chat/utils/chatRules";
+
+// Số đỏ trên tab: quá 99 thì "99+"; 0 thì ẩn
+const badgeOf = (n) => (n > 99 ? "99+" : n > 0 ? n : undefined);
 
 // Khung 4 tab của tổ chức đã xác minh (VERIFIED). Đổi tab chỉ cần sửa mảng này
 const TABS = [
@@ -11,6 +16,9 @@ const TABS = [
 ];
 
 export default function OrgTabs() {
+  // Tin nhắn chưa đọc → số trên tab Tin nhắn (hỏi lại 30 giây/lần, chưa có realtime)
+  const chats = useConversations({ poll: true });
+  const badges = { messages: badgeOf(unreadTotal(chats.data)) };
   return (
     <Tabs
       screenOptions={{
@@ -30,6 +38,7 @@ export default function OrgTabs() {
           name={tab.name}
           options={{
             title: tab.title,
+            tabBarBadge: badges[tab.name],
             // Đang chọn: icon đặc; chưa chọn: icon rỗng ("-outline")
             tabBarIcon: ({ color, size, focused }) => (
               <Ionicons

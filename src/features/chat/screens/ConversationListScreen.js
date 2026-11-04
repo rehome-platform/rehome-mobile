@@ -1,14 +1,19 @@
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
   Text,
+  View,
 } from "react-native";
+import { SearchBar } from "@/components/ui/SearchBar";
+import { matchesSearch } from "@/utils/search";
 import { Redirect, router } from "expo-router";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
@@ -24,11 +29,30 @@ export default function ConversationListScreen({ viewer = "member" }) {
   const isOrg = viewer === "org";
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useConversations({ poll: true });
+  const [keyword, setKeyword] = useState("");
 
   if (!isAuthed) return <Redirect href="/login" />;
 
+  const all = query.data ?? [];
+  // Tổ chức có thể có nhiều hội thoại → lọc trên máy theo tên Member + tin cuối (như Zalo / Messenger)
+  const list = isOrg
+    ? all.filter((c) =>
+        matchesSearch(
+          keyword,
+          c.counterpart?.displayName,
+          c.lastMessage?.content,
+        ),
+      )
+    : all;
+
   let empty;
-  if (query.isPending) {
+  if (keyword && all.length) {
+    empty = (
+      <Text style={styles.noResult}>
+        Không có hội thoại nào khớp “{keyword.trim()}”.
+      </Text>
+    );
+  } else if (query.isPending) {
     empty = <ActivityIndicator style={styles.loading} color={colors.primary} />;
   } else if (query.isError) {
     empty = (
@@ -57,13 +81,28 @@ export default function ConversationListScreen({ viewer = "member" }) {
   return (
     <Screen
       header={
-        <AppHeader title="Tin nhắn" onBack={isOrg ? undefined : goBack} />
+        <AppHeader
+          title="Tin nhắn"
+          onBack={isOrg ? undefined : goBack}
+          // Tổ chức: Tin nhắn là một tab → có chuông như các tab khác. Member mở từ icon nên chỉ có nút quay lại
+          right={isOrg ? <BellButton href="/org/notifications" /> : undefined}
+        />
       }
       edges={isOrg ? ["top"] : undefined}
       padded={false}
     >
+      {isOrg && all.length ? (
+        <View style={styles.searchWrap}>
+          <SearchBar
+            value={keyword}
+            onChangeText={setKeyword}
+            placeholder="Tìm theo tên người nhắn, nội dung…"
+          />
+        </View>
+      ) : null}
       <FlatList
-        data={query.data ?? []}
+        data={list}
+        keyboardShouldPersistTaps="handled"
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
           <ConversationRow
@@ -78,7 +117,7 @@ export default function ConversationListScreen({ viewer = "member" }) {
         )}
         ListEmptyComponent={empty}
         ListFooterComponent={
-          query.data?.length ? (
+          list.length && !keyword ? (
             <Text style={styles.note}>
               {isOrg
                 ? "Tổ chức không tự nhắn trước — hội thoại chỉ mở khi Member bấm Nhắn tin."
@@ -102,6 +141,19 @@ export default function ConversationListScreen({ viewer = "member" }) {
 const styles = StyleSheet.create({
   loading: { marginTop: spacing.xxl },
   list: { flexGrow: 1 },
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral,
+  },
+  noResult: {
+    padding: spacing.xl,
+    textAlign: "center",
+    ...textStyles.body,
+    color: colors.textSecondary,
+  },
   note: {
     margin: spacing.lg,
     padding: spacing.md,

@@ -9,7 +9,10 @@ export function notificationRoute(n, viewer = "member") {
   if (viewer === "org") {
     switch (n.targetType) {
       case T.CAMPAIGN:
-        return `/org/my-campaigns/${id}`;
+        // Lượt quyên góp mới (kèm kho) → thẳng màn chờ lấy của kho đó (OC-07)
+        return n.warehouseId
+          ? `/org/my-campaigns/${id}/donations?warehouseId=${n.warehouseId}`
+          : `/org/my-campaigns/${id}`;
       case T.POST:
         return `/org/my-posts/${id}/comments`;
       case T.ORGANIZATION:
