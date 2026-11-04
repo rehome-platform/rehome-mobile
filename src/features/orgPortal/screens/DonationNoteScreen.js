@@ -1,6 +1,7 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { orgContentKeys } from "@/features/orgPortal/api/queryKeys";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
@@ -39,9 +40,15 @@ export default function DonationNoteScreen() {
     name: ["isAnonymous", "note"],
   });
 
+  const queryClient = useQueryClient();
   const save = useMutation({
     mutationFn: (values) => orgContentApi.createDonationNote(id, values),
     onSuccess: () => {
+      // Làm mới danh sách note + số note ở chi tiết chiến dịch → quay về thấy ngay note vừa ghi
+      queryClient.invalidateQueries({
+        queryKey: orgContentKeys.donationNotes(id),
+      });
+      queryClient.invalidateQueries({ queryKey: orgContentKeys.campaign(id) });
       showToast("Đã lưu note");
       goBack();
     },
@@ -113,34 +120,30 @@ export default function DonationNoteScreen() {
 
       <View style={styles.group}>
         <Text style={styles.label}>Người quyên góp</Text>
-        <View style={styles.donorRow}>
-          <Controller
-            control={control}
-            name="donorName"
-            render={({ field }) => (
-              <TextField
-                style={styles.donorField}
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                editable={!isAnonymous}
-                placeholder={isAnonymous ? "Ẩn danh" : "Tên người quyên góp"}
-                autoCapitalize="words"
-                maxLength={DONATION_NOTE_LIMITS.DONOR_NAME_MAX}
-                error={errors.donorName?.message}
-              />
-            )}
-          />
-          <View style={styles.anonBox}>
-            <Checkbox checked={isAnonymous} onChange={toggleAnonymous}>
-              Ẩn danh
-            </Checkbox>
-          </View>
-        </View>
-        <Text style={styles.helper}>
-          Để trống tên và tích "Ẩn danh" nếu bạn không hỏi hoặc người quyên góp
-          không muốn nêu tên.
-        </Text>
+        <Controller
+          control={control}
+          name="donorName"
+          render={({ field }) => (
+            <TextField
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              editable={!isAnonymous}
+              placeholder={isAnonymous ? "Ẩn danh" : "Tên người quyên góp"}
+              autoCapitalize="words"
+              maxLength={DONATION_NOTE_LIMITS.DONOR_NAME_MAX}
+              error={errors.donorName?.message}
+            />
+          )}
+        />
+        {/* Ô tích nằm dòng riêng dưới ô tên: đặt cạnh ô tên thì khung hẹp làm chữ "Ẩn danh" bị bóp mất */}
+        <Checkbox
+          checked={isAnonymous}
+          onChange={toggleAnonymous}
+          style={styles.anon}
+        >
+          Ẩn danh — không hỏi tên hoặc người quyên góp không muốn nêu tên
+        </Checkbox>
       </View>
 
       <View style={styles.group}>
@@ -191,17 +194,7 @@ const styles = StyleSheet.create({
   bold: { fontFamily: fonts.semibold, color: colors.text },
   group: { gap: spacing.xs },
   label: { ...textStyles.label, fontSize: 14, color: colors.text },
-  donorRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
-  donorField: { flex: 1 },
-  anonBox: {
-    minHeight: 48,
-    justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.neutral,
-    borderRadius: radius.input,
-    backgroundColor: colors.surface,
-  },
+  anon: { marginTop: spacing.xs },
   helper: { ...textStyles.caption, color: colors.textSecondary },
   footer: { flexDirection: "row", gap: spacing.md },
   footerButton: { flex: 1 },

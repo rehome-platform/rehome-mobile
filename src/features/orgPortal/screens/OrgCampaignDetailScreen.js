@@ -207,22 +207,31 @@ export default function OrgCampaignDetailScreen() {
               <PlaceRow
                 title="Địa chỉ của tổ chức"
                 lines={[ownAddress, ownHours]}
+                // Cùng kiểu dòng kho: bấm cả dòng → danh sách note đã ghi (có nút Ghi note mới).
+                // Đã đóng vẫn xem lại được. Số note lấy từ BE nếu có (donationNoteCount), chưa có thì chỉ ghi "Note"
+                onPress={() =>
+                  router.push(`/org/my-campaigns/${id}/donation-notes`)
+                }
                 right={
-                  open ? (
-                    <Pressable
-                      onPress={() =>
-                        router.push(`/org/my-campaigns/${id}/donation-note`)
-                      }
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      style={({ pressed }) => [
-                        styles.noteBtn,
-                        pressed && styles.pressed,
+                  <View style={styles.countRow}>
+                    <Text
+                      style={[
+                        styles.count,
+                        c.donationNoteCount === 0 && styles.countZero,
                       ]}
                     >
-                      <Text style={styles.noteText}>Ghi note</Text>
-                    </Pressable>
-                  ) : null
+                      {c.donationNoteCount != null
+                        ? c.donationNoteCount
+                          ? `${c.donationNoteCount} note`
+                          : "Chưa có note"
+                        : "Note"}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </View>
                 }
               />
             ) : null}
@@ -328,18 +337,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   placeBody: { flex: 1, gap: 2 },
-  noteBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: radius.input,
-  },
-  noteText: {
-    ...textStyles.caption,
-    fontFamily: fonts.semibold,
-    color: colors.primary,
-  },
   countRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   count: {
     ...textStyles.caption,
