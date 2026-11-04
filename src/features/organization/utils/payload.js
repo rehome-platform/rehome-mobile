@@ -91,15 +91,21 @@ export function registrationFromProfile(p) {
       cccdNumber: rep.cccdNumber ?? "",
       cccdIssueDate: "",
       cccdIssuePlace: "",
+      // Giấy tờ Moderator chấm "Chưa đạt" (accepted = false): giữ thông tin nhưng BỎ tệp cũ → form bắt nộp ảnh mới
+      // cho đúng dòng đó (LegalDocCard hiện "Chưa đạt — cần nộp lại"). Giấy đạt / chưa chấm giữ nguyên tệp
       legalDocs: (p.documents ?? [])
-        .map((doc) => ({
-          file: reusableFile(doc.fileUrl),
-          docType: doc.docType ?? "",
-          docNumber: doc.docNumber ?? "",
-          issueDate: doc.issueDate ?? null,
-          issuer: doc.issuingAuthority ?? "",
-        }))
-        .filter((doc) => doc.file),
+        .map((doc) => {
+          const rejected = doc.accepted === false;
+          return {
+            file: rejected ? null : reusableFile(doc.fileUrl),
+            docType: doc.docType ?? "",
+            docNumber: doc.docNumber ?? "",
+            issueDate: doc.issueDate ?? null,
+            issuer: doc.issuingAuthority ?? "",
+            rejected,
+          };
+        })
+        .filter((doc) => doc.file || doc.rejected),
     },
     location: {
       useOfficeAddress,

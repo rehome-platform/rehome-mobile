@@ -1,7 +1,7 @@
 import { Image, StyleSheet, Text, View } from "react-native";
 import { Controller } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { TextField } from "@/components/ui/TextField";
 import { DateField } from "@/components/ui/DateField";
 import { ChipGroup } from "@/components/ui/ChipGroup";
@@ -13,6 +13,7 @@ import {
 // Một giấy tờ pháp lý: dòng tệp (ảnh nhỏ / icon PDF, tên, dung lượng, Xoá) + 4 ô thông tin.
 // Các ô nằm trong mảng fieldName của form (mặc định legalDocs) → tên dạng "legalDocs.0.docType".
 // OP-04 có 2 danh sách giấy tờ riêng (tên pháp lý mới, loại hình mới) → truyền fieldName khác
+// file = null: giấy tờ bị Moderator chấm "Chưa đạt" lúc nộp lại (OA-06) → khung đỏ + nút chụp / chọn tệp mới (onPickFile)
 export function LegalDocCard({
   index,
   file,
@@ -20,11 +21,69 @@ export function LegalDocCard({
   errors,
   suggestions,
   onRemove,
+  onPickFile,
   fieldName = "legalDocs",
 }) {
+  const name = (key) => `${fieldName}.${index}.${key}`;
+
+  if (!file) {
+    return (
+      <View style={[styles.card, styles.cardRejected]}>
+        <View style={styles.fileRow}>
+          <View style={[styles.thumb, styles.thumbRejected]}>
+            <Ionicons
+              name="alert-circle-outline"
+              size={24}
+              color={colors.error}
+            />
+          </View>
+          <View style={styles.fileInfo}>
+            <Text style={styles.rejectedTitle}>Chưa đạt — cần nộp lại</Text>
+            <Text style={styles.fileMeta}>
+              Moderator chưa chấp nhận tệp cũ. Thêm bản rõ, đúng giấy tờ.
+            </Text>
+          </View>
+          <Text
+            style={styles.remove}
+            onPress={onRemove}
+            accessibilityRole="button"
+          >
+            Xoá
+          </Text>
+        </View>
+        {onPickFile ? (
+          <View style={styles.pickRow}>
+            <Text
+              style={styles.pick}
+              onPress={() => onPickFile("camera")}
+              accessibilityRole="button"
+            >
+              Chụp lại
+            </Text>
+            <Text
+              style={styles.pick}
+              onPress={() => onPickFile("file")}
+              accessibilityRole="button"
+            >
+              Chọn tệp
+            </Text>
+          </View>
+        ) : null}
+        {errors?.file?.message ? (
+          <Text style={styles.error}>{errors.file.message}</Text>
+        ) : null}
+        <DocFields
+          name={name}
+          control={control}
+          errors={errors}
+          suggestions={suggestions}
+        />
+      </View>
+    );
+  }
+
   const isPdf = file.mimeType === "application/pdf";
   const submitted = isProtectedFile(file.uri); // giấy tờ đã nộp (F-139): không xem trước được
-  const name = (key) => `${fieldName}.${index}.${key}`;
 
   return (
     <View style={styles.card}>
@@ -61,6 +120,20 @@ export function LegalDocCard({
         </Text>
       </View>
 
+      <DocFields
+        name={name}
+        control={control}
+        errors={errors}
+        suggestions={suggestions}
+      />
+    </View>
+  );
+}
+
+// 4 ô thông tin của một giấy tờ (dùng chung cho thẻ có tệp và thẻ "cần nộp lại")
+function DocFields({ name, control, errors, suggestions }) {
+  return (
+    <>
       <Controller
         control={control}
         name={name("docType")}
@@ -125,7 +198,7 @@ export function LegalDocCard({
           />
         )}
       />
-    </View>
+    </>
   );
 }
 
@@ -160,4 +233,22 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   group: { gap: spacing.sm },
+  cardRejected: { borderColor: colors.error },
+  thumbRejected: { backgroundColor: tones.danger.bg },
+  rejectedTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.error,
+  },
+  pickRow: { flexDirection: "row", gap: spacing.lg },
+  pick: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  error: {
+    ...textStyles.caption,
+    fontFamily: fonts.medium,
+    color: colors.error,
+  },
 });
