@@ -5,6 +5,7 @@
 import dayjs from "dayjs";
 import { ApiError } from "@/lib/api/errors";
 import { CAMPAIGN_STATUS as CS, FEED_SCOPE } from "@/constants/community";
+import { matchesSearch } from "@/utils/search";
 
 const delay = (ms = 500) => new Promise((r) => setTimeout(r, ms));
 const ago = (n, unit) => dayjs().subtract(n, unit).toISOString();
@@ -436,6 +437,33 @@ export async function getOpenCampaigns({ page = 0, size = 20 } = {}) {
   );
 }
 
+// ---------- Tìm kiếm (CD-01) ---------- không phân biệt dấu, như bản thật
+export async function searchOrganizations({ search, page = 0, size = 20 }) {
+  await delay();
+  return paginate(
+    organizations
+      .filter((o) => matchesSearch(search, o.displayName))
+      .map((o) => ({ ...o, verified: true })),
+    page,
+    size,
+  );
+}
+
+export async function searchCampaigns({ search, page = 0, size = 20 }) {
+  await delay();
+  return paginate(
+    campaigns
+      .filter((c) => c.status === CS.OPEN)
+      .map(campaignView)
+      .filter((c) =>
+        matchesSearch(search, c.title, c.organization?.displayName),
+      )
+      .sort(byCampaignOrder),
+    page,
+    size,
+  );
+}
+
 // ---------- API 103 ----------
 export async function follow(orgId) {
   await delay(300);
@@ -522,8 +550,11 @@ export async function getComments(postId, { page = 0, size = 20 } = {}) {
 }
 
 // ---------- API 108 ----------
-export async function addComment(postId, content) {
+export async function addComment(postId, content, parentId = null) {
   await delay();
+  // Trả lời một câu trả lời → gắn vào bình luận gốc (chỉ 1 cấp, như BE)
+  const parent = parentId ? comments.find((c) => c.id === parentId) : null;
+  const rootId = parent ? (parent.parentId ?? parent.id) : null;
   if (!posts.some((p) => p.id === postId)) throw notFound("bài viết");
   const text = content?.trim();
   if (!text)
@@ -536,6 +567,7 @@ export async function addComment(postId, content) {
   const c = {
     id: `cmt-${seq}`,
     postId,
+    parentId: rootId,
     author: { id: "me", fullName: "Bạn", avatarUrl: null },
     content: text,
     isMine: true,

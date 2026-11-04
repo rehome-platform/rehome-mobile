@@ -2,14 +2,20 @@ import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import { router } from "expo-router";
-import { colors, spacing } from "@/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
+import { ChatButton } from "@/features/chat/components/ChatButton";
+import { HeaderIconButton } from "@/components/ui/HeaderIconButton";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -105,10 +111,33 @@ export default function CommunityScreen() {
       header={
         <AppHeader
           title="Cộng đồng"
-          right={<Button title="Gần bạn" variant="text" onPress={openNearby} />}
+          right={
+            <View style={styles.headerActions}>
+              <HeaderIconButton
+                icon="location-outline"
+                label="Tổ chức gần bạn"
+                onPress={openNearby}
+              />
+              <BellButton />
+              <ChatButton />
+            </View>
+          }
         />
       }
     >
+      {/* Ô tìm "giả" như tab Mua sắm: bấm là sang màn tìm (bàn phím mở sẵn ở đó) */}
+      <View style={styles.searchWrap}>
+        <Pressable
+          onPress={() => router.push("/community-search")}
+          accessibilityRole="search"
+          style={({ pressed }) => [styles.search, pressed && styles.pressed]}
+        >
+          <Ionicons name="search" size={18} color={colors.textSecondary} />
+          <Text style={styles.searchText} numberOfLines={1}>
+            Tìm tổ chức, chiến dịch…
+          </Text>
+        </Pressable>
+      </View>
       <ChipGroup
         horizontal
         options={chips}
@@ -164,7 +193,34 @@ export default function CommunityScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   loading: { marginTop: spacing.xxl },
+  searchWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  search: {
+    height: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.background,
+  },
+  searchText: {
+    flex: 1,
+    ...textStyles.body,
+    color: colors.textSecondary,
+  },
+  pressed: { opacity: 0.7 },
   chips: {
     paddingVertical: spacing.md,
     backgroundColor: colors.surface,

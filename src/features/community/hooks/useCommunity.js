@@ -43,6 +43,22 @@ export function useOpenCampaigns(enabled = true) {
   });
 }
 
+// Tìm tổ chức / chiến dịch (kind: "ORGS" | "CAMPAIGNS"). Chỉ gọi khi đã bấm tìm (search khác rỗng)
+export function useCommunitySearch(kind, search) {
+  return useInfiniteQuery({
+    queryKey: communityKeys.search(kind, search),
+    queryFn: ({ pageParam }) =>
+      kind === "ORGS"
+        ? communityApi.searchOrganizations({ search, page: pageParam })
+        : communityApi.searchCampaigns({ search, page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: nextPage,
+    select: flatten,
+    enabled: !!search,
+    retry: (count, e) => e?.code !== "SEARCH_NOT_READY" && count < 2,
+  });
+}
+
 export function usePost(id) {
   return useQuery({
     queryKey: communityKeys.post(id),
@@ -104,11 +120,12 @@ export function useToggleLike() {
   });
 }
 
-// Bình luận: xong tải lại bình luận + số bình luận ở bài và feed
+// Bình luận / trả lời — mutate({ content, parentId }). Xong tải lại bình luận + số bình luận ở bài và feed
 export function useAddComment(postId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (content) => communityApi.addComment(postId, content),
+    mutationFn: ({ content, parentId = null }) =>
+      communityApi.addComment(postId, content, parentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: communityKeys.comments(postId) });
       qc.invalidateQueries({ queryKey: communityKeys.post(postId) });

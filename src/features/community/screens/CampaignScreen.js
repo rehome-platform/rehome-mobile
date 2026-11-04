@@ -16,6 +16,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { MoreMenuButton } from "@/components/ui/MoreMenuButton";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
 import { REPORT_TARGET } from "@/constants/community";
@@ -63,20 +64,24 @@ export default function CampaignScreen() {
       onBack={goBack}
       right={
         c ? (
-          <Button
-            title="Báo cáo"
-            variant="text"
-            onPress={() =>
-              isAuthed
-                ? router.push({
-                    pathname: "/report",
-                    params: {
-                      targetType: REPORT_TARGET.CAMPAIGN,
-                      targetId: id,
-                    },
-                  })
-                : needLogin()
-            }
+          <MoreMenuButton
+            title="Chiến dịch"
+            actions={[
+              {
+                text: "Báo cáo chiến dịch",
+                destructive: true,
+                onPress: () =>
+                  isAuthed
+                    ? router.push({
+                        pathname: "/report",
+                        params: {
+                          targetType: REPORT_TARGET.CAMPAIGN,
+                          targetId: id,
+                        },
+                      })
+                    : needLogin(),
+              },
+            ]}
           />
         ) : null
       }

@@ -1,4 +1,6 @@
 import { api, unwrap } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
+import { matchesSearch } from "@/utils/search";
 import { CAMPAIGN_STATUS as CS, FEED_SCOPE } from "@/constants/community";
 
 // Cộng đồng phía Member — API thật (100–109, BE edff4ae). Cùng hình dạng dữ liệu với communityApi.mock.js.
@@ -145,6 +147,42 @@ export async function getOpenCampaigns({ page = 0, size = 20 } = {}) {
   return mapPage(p, toCampaign);
 }
 
+// ---------- Tìm kiếm (CD-01 · ô "Tìm tổ chức, chiến dịch") ----------
+// [CHỜ BE] GET /api/organizations?search= (danh sách tổ chức đã xác minh) chưa có → 404/405 thì báo chờ máy chủ
+export async function searchOrganizations({ search, page = 0, size = 20 }) {
+  try {
+    const p = unwrap(
+      await api.get("/api/organizations", { params: { search, page, size } }),
+    );
+    return mapPage(p, toOrgBrief);
+  } catch (e) {
+    if (e.status === 404 || e.status === 405)
+      throw new ApiError({
+        status: 501,
+        code: "SEARCH_NOT_READY",
+        message: "Tìm tổ chức theo tên sẽ có khi máy chủ cập nhật.",
+      });
+    throw e;
+  }
+}
+
+// [CHỜ BE] /campaigns chưa nhận ?search= (bỏ qua tham số, trả mọi chiến dịch) → lọc thêm trên máy
+// theo tên chiến dịch / tên tổ chức để kết quả luôn đúng; BE thêm search thì phần lọc này vô hại
+export async function searchCampaigns({ search, page = 0, size = 20 }) {
+  const p = unwrap(
+    await api.get("/campaigns", {
+      params: { status: "ACTIVE", search, page, size },
+    }),
+  );
+  const page_ = mapPage(p, toCampaign);
+  return {
+    ...page_,
+    content: page_.content.filter((c) =>
+      matchesSearch(search, c.title, c.organization?.displayName),
+    ),
+  };
+}
+
 // ---------- API 103 ----------
 export async function follow(orgId) {
   return unwrap(await api.post(`/api/organizations/${orgId}/follow`));
@@ -240,10 +278,10 @@ export async function getComments(postId, { page = 0 } = {}) {
   };
 }
 
-// ---------- API 108 ----------
-export async function addComment(postId, content) {
+// ---------- API 108 ---------- parentId = trả lời; trả lời một câu trả lời thì BE tự gắn vào bình luận gốc
+export async function addComment(postId, content, parentId = null) {
   return toComment(
-    unwrap(await api.post(`/posts/${postId}/comments`, { content })),
+    unwrap(await api.post(`/posts/${postId}/comments`, { content, parentId })),
   );
 }
 

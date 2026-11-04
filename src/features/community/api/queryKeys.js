@@ -10,4 +10,5 @@ export const communityKeys = {
   openCampaigns: ["community", "openCampaigns"],
   nearby: (lat, lng) => ["community", "nearby", lat, lng],
   following: ["community", "following"],
+  search: (kind, q) => ["community", "search", kind, q],
 };
