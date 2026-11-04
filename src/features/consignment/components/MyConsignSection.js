@@ -160,10 +160,7 @@ export function MyConsignSection() {
             title="Chưa có món ký gửi nào"
             description="Gửi thông tin món đồ, ReHome duyệt xong bạn mới mang đến. Không mất phí đăng, không bán được cũng không mất gì."
           >
-            <Button
-              title="Ký gửi món đầu tiên"
-              onPress={() => router.push("/consign-forms/new")}
-            />
+            {/* Nút "Ký gửi món mới" đã luôn nằm ở chân tab → không lặp lại ở đây */}
             <Button
               title="Ký gửi hoạt động thế nào?"
               variant="text"

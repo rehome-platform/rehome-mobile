@@ -4,6 +4,8 @@ import { router, useFocusEffect } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
+import { ChatButton } from "@/features/chat/components/ChatButton";
+import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
@@ -46,7 +48,18 @@ function MemberConsign() {
     <Screen
       edges={["top"]}
       padded={false}
-      header={<AppHeader title="Ký gửi" right={<CreateFormButton />} />}
+      header={
+        <AppHeader
+          title="Ký gửi"
+          right={
+            <View style={styles.headerActions}>
+              <BellButton />
+              <ChatButton />
+            </View>
+          }
+        />
+      }
+      footer={<CreateFormButton />}
     >
       <DegradedBanner />
       <DraftBanner />
@@ -110,7 +123,8 @@ function DraftBanner() {
   );
 }
 
-// "+ Ký gửi món mới" (luôn hiện). Đủ 5 yêu cầu chờ → giải thích lý do thay vì mở màn (BE có thể chặn 409)
+// Nút lớn "Ký gửi món mới" ở chân tab (luôn hiện) — cùng kiểu "Tạo chiến dịch mới" / "Đăng bài mới" của tổ chức;
+// header chỉ giữ nút icon. Đủ 5 yêu cầu chờ → giải thích lý do thay vì mở màn (BE có thể chặn 409)
 function CreateFormButton() {
   const pending = usePendingFormCount();
   const onPress = () => {
@@ -122,29 +136,14 @@ function CreateFormButton() {
     }
     router.push("/consign-forms/new");
   };
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={8}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.create, pressed && styles.pressed]}
-    >
-      <Text style={styles.createText}>+ Ký gửi món mới</Text>
-    </Pressable>
-  );
+  return <Button title="Ký gửi món mới" onPress={onPress} />;
 }
 
 const styles = StyleSheet.create({
-  create: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-  },
-  createText: {
-    ...textStyles.body,
-    fontFamily: fonts.semibold,
-    color: colors.onPrimary,
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   pressed: { opacity: 0.8 },
   alert: {

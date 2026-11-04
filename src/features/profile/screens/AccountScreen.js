@@ -17,6 +17,7 @@ import { useTryonJobStore } from "@/stores/tryonJobStore";
 import { useConversations } from "@/features/chat/hooks/useChat";
 import { unreadTotal } from "@/features/chat/utils/chatRules";
 import { BellButton } from "@/features/notifications/components/BellButton";
+import { ChatButton } from "@/features/chat/components/ChatButton";
 
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
@@ -67,7 +68,7 @@ function MemberAccount() {
   const shippingCount = useOrderCount(SHIPPING_TAB);
   const returnActionCount = useReturnCount(RETURN_ACTION_TAB);
   const hasNewTryon = useTryonJobStore((s) => s.hasNew);
-  const chats = useConversations({ poll: true }); // badge "n chưa đọc" — hỏi lại 30 giây/lần
+  const chats = useConversations({ poll: true }); // badge "n hội thoại chưa đọc" — hỏi lại 30 giây/lần
   const unread = unreadTotal(chats.data);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
@@ -87,6 +88,7 @@ function MemberAccount() {
           right={
             <View style={styles.headerActions}>
               <BellButton />
+              <ChatButton />
               <SettingsButton />
             </View>
           }
@@ -160,7 +162,7 @@ function MemberAccount() {
         <ListItem
           icon="chatbubbles-outline"
           title="Tin nhắn"
-          badge={unread ? `${unread} chưa đọc` : undefined}
+          badge={unread ? `${unread} hội thoại chưa đọc` : undefined}
           onPress={() => router.push("/messages")}
         />
         <ListItem
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   iconButton: {
     width: 40,
