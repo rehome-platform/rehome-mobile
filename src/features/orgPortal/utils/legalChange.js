@@ -1,5 +1,5 @@
-// Yêu cầu đổi pháp lý (OP-04 / OP-05). BE chưa có API đọc lại yêu cầu [CHỜ BE GET] → trạng thái lấy từ
-// bản lưu trên máy (legalChangeRecord), riêng "Đã duyệt" suy ra từ hồ sơ GET /me đã mang thông tin mới
+// Yêu cầu đổi pháp lý (OP-04 / OP-05). Trạng thái thật lấy từ BE (useLegalChange). resolveLegalChange chỉ dùng
+// khi đọc bản lưu trên máy (gọi BE lỗi / mock): "Đã duyệt" suy ra từ hồ sơ GET /me đã mang thông tin mới
 export const LEGAL_CHANGE_STATUS = {
   PENDING: "PENDING",
   APPROVED: "APPROVED",
@@ -73,7 +73,11 @@ export function formFromLegalChange(record, toFile) {
     issueDate: d.issueDate ?? null,
     issuer: d.issuingAuthority ?? "",
   }));
-  const split = c.legalName != null ? (record.legalNameDocCount ?? 0) : 0;
+  // Không có legalNameDocCount (yêu cầu gửi từ máy khác) mà chỉ đổi tên pháp lý → mọi tệp thuộc mục tên pháp lý
+  const split =
+    c.legalName == null
+      ? 0
+      : (record.legalNameDocCount ?? (c.orgType == null ? docs.length : 0));
   return {
     changeRep: !!rep,
     changeLegalName: c.legalName != null,

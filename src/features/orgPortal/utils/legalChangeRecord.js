@@ -1,8 +1,7 @@
 import { File, Paths } from "expo-file-system";
 
-// Yêu cầu đổi pháp lý vừa gửi (OP-04) lưu NGAY TRÊN MÁY — BE chưa có API đọc lại yêu cầu [CHỜ BE GET].
-// OP-05 / OP-01 đọc tệp này để hiện "Chờ duyệt". Ghi kèm email tài khoản như nháp chiến dịch.
-// Khi BE có GET thì bỏ tệp này, đọc trạng thái thật từ server
+// Yêu cầu đổi pháp lý vừa gửi (OP-04) lưu thêm TRÊN MÁY. Trạng thái thật đọc từ BE (useLegalChange); tệp này
+// giữ legalNameDocCount (BE không lưu) và làm dự phòng khi gọi BE lỗi. Ghi kèm email tài khoản như nháp chiến dịch
 const recordFile = () => new File(Paths.document, "legal-change-request.json");
 
 // → { id, status, proposedChanges, createdAt } hoặc null (chưa gửi / của tài khoản khác / tệp hỏng)
