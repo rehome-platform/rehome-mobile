@@ -192,7 +192,7 @@ export default function ProductDetailScreen() {
     ? () => router.push({ pathname: "/checkout", params: { buyNow: id } })
     : () => askLogin(`/products/${id}`);
 
-  // Nút "Nhắn" nhỏ bên trái (hộp thư địa điểm đang giữ món, soạn sẵn câu hỏi) — giống Shopee "Chat ngay"
+  // Nút "Chat ngay" nhỏ bên trái (hộp thư địa điểm đang giữ món, soạn sẵn câu hỏi) — giống Shopee "Chat ngay"
   const chatButton = product.warehouseId ? (
     <Pressable
       onPress={() =>
@@ -213,7 +213,9 @@ export default function ProductDetailScreen() {
       ) : (
         <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
       )}
-      <Text style={styles.chatText}>Nhắn</Text>
+      <Text style={styles.chatText} numberOfLines={1}>
+        Chat ngay
+      </Text>
     </Pressable>
   ) : null;
 
@@ -427,7 +429,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   chatBtn: {
-    width: 56,
+    width: 64,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,

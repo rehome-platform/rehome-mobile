@@ -9,13 +9,15 @@ export function getTryonSlots() {
   if (!cache) {
     cache = catalogApi
       .getCategories()
-      .then((list) =>
-        Object.fromEntries(
+      .then((list) => {
+        // Rỗng (BE đang dựng lại dữ liệu) → không giữ, lần sau tải lại
+        if (!list?.length) cache = null;
+        return Object.fromEntries(
           (list ?? [])
             .filter((c) => c.tryonSlot)
             .map((c) => [c.id, c.tryonSlot]),
-        ),
-      )
+        );
+      })
       .catch((e) => {
         cache = null;
         throw e;

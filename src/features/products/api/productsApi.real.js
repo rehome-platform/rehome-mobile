@@ -19,6 +19,8 @@ export async function getProduct(id) {
   return {
     ...p,
     photos: (p.photos ?? []).map((url) => ({ url })),
+    // Chi tiết BE chỉ có photos; các ô dùng chung với thẻ danh sách (thử đồ, giỏ…) đọc thumbnailUrl
+    thumbnailUrl: p.thumbnailUrl ?? p.photos?.[0] ?? null,
     inspectedAt: p.inspectionDate ?? null,
     tryonSlot: slots[p.categoryId] ?? null,
   };
