@@ -333,10 +333,21 @@ const postView = (p) => ({
   organization: orgBrief(p.organizationId),
 });
 
+// places: cùng dạng bản thật (communityApi.real.js) — mock chỉ có 1 nơi nhận là điểm nhận của tổ chức
 const campaignView = (c) => ({
   ...c,
   preferredItemTypes: [...c.preferredItemTypes],
   organization: orgBrief(c.organizationId),
+  places: [
+    {
+      key: "own",
+      title: c.locationName,
+      address: c.address,
+      hours: c.receivingHours,
+      latitude: c.latitude,
+      longitude: c.longitude,
+    },
+  ],
 });
 
 // Đang nhận lên trước, rồi gần hết hạn trước

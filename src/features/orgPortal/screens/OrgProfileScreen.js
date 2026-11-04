@@ -18,6 +18,7 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { ListGroup, ListItem } from "@/components/ui/ListItem";
 import { formatPhone } from "@/utils/format";
 import { useAuthStore } from "@/stores/authStore";
 import { useMyOrganization } from "@/features/organization/hooks/useMyOrganization";
@@ -233,13 +234,16 @@ export default function OrgProfileScreen() {
           />
         </View>
 
-        <Pressable
-          onPress={confirmSignOut}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
-        >
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </Pressable>
+        {/* Cùng kiểu dòng Đăng xuất của tài khoản Member (AccountScreen) */}
+        <ListGroup style={styles.logout}>
+          <ListItem
+            icon="log-out-outline"
+            title="Đăng xuất"
+            danger
+            showChevron={false}
+            onPress={confirmSignOut}
+          />
+        </ListGroup>
       </ScrollView>
     </Screen>
   );
@@ -302,16 +306,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
-  logout: {
-    alignItems: "center",
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  logoutText: {
-    ...textStyles.body,
-    fontFamily: fonts.semibold,
-    color: colors.error,
-  },
+  logout: { marginTop: spacing.lg },
   footer: { flexDirection: "row", gap: spacing.md },
   banner: {
     flexDirection: "row",
