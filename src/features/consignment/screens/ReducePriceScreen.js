@@ -113,7 +113,7 @@ function MiniHead({ product }) {
   );
 }
 
-// Lịch sử đổi giá (nếu API trả) [CHỜ BE — DB có PriceChangeLog]
+// Lịch sử đổi giá (priceChanges của /products/mine/{id}: chốt giá + mỗi lần giảm)
 function PriceHistory({ changes }) {
   if (!changes?.length) return null;
   return (

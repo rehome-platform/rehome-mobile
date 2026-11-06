@@ -3,7 +3,7 @@ import { MOCK } from "@/config/env";
 import * as real from "./ordersApi.real";
 import * as mock from "./ordersApi.mock";
 
-const manage = MOCK.orderList ? mock : real; // [CHỜ BE] API 62–67
+const manage = MOCK.orderList ? mock : real; // API 62–67 thật
 
 export const ordersApi = {
   createOrders: MOCK.orders ? mock.createOrders : real.createOrders, // API 59

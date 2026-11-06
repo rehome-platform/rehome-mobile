@@ -22,7 +22,7 @@ export const MOCK = {
   wallet: false, // API 73–78 + /wallet/config thật (BE 868d933)
   returns: false, // BE 51c2027: ReturnRequestController (Phase 5)
   withdrawals: false, // API 90–95 thật: rút lại hàng + hàng xuống cấp (BE 65d8475). Phí: WALLET | MOMO | VNPAY
-  tryon: false, // API 97–99 thật (BE 41f10c8). [CHỜ BE] API 96 gợi ý, lọc /products theo loại, GET /tryon/images/{id}
+  tryon: false, // API 96–99 thật: gợi ý, lọc /products?tryonSlot, GET /tryon/images/{id}
   community: false, // API 100–109 thật (BE edff4ae): tổ chức, chiến dịch, bảng tin, thích, bình luận, theo dõi, báo cáo
   chat: false, // API 110–113 thật, cả Member và Tổ chức: tin cuối, isMine, GET /conversations/{id}
   notifications: false, // API 114–116 thật: tiêu đề, đích mở màn, đánh dấu đã đọc, số chưa đọc

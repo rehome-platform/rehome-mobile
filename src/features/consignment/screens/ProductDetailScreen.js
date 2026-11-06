@@ -197,7 +197,8 @@ function OrderBody({ product }) {
           Sản phẩm nằm trong đơn <Text style={styles.bold}>{order?.code}</Text>.
           {paid ? (
             <>
-              {" "}Tiền đã cộng vào ví lúc{" "}
+              {" "}
+              Tiền đã cộng vào ví lúc{" "}
               <Text style={styles.bold}>
                 {dayjs(order.payoutAt).format("DD/MM HH:mm")}
               </Text>
@@ -205,7 +206,8 @@ function OrderBody({ product }) {
             </>
           ) : holding ? (
             <>
-              {" "}Tiền vào ví sau{" "}
+              {" "}
+              Tiền vào ví sau{" "}
               <Text style={styles.bold}>
                 {dayjs(order.payoutDueAt).format("DD/MM HH:mm")}
               </Text>{" "}
@@ -486,11 +488,14 @@ export default function ProductDetailScreen() {
         {view === PRODUCT_VIEW.PICKUP ? <PickupInfo product={product} /> : null}
         {view === PRODUCT_VIEW.DEGRADED_DECISION ? (
           <View style={styles.attention}>
-            <Text style={styles.boxTitle}>Hàng bị hỏng khi trả về địa điểm ký gửi</Text>
+            <Text style={styles.boxTitle}>
+              Hàng bị hỏng khi trả về địa điểm ký gửi
+            </Text>
             <Text style={styles.body}>
-              Người mua đã trả món này và hàng bị hỏng trên đường về địa điểm ký gửi.{" "}
-              <Text style={styles.bold}>Không phải lỗi của bạn</Text> — ReHome đền
-              bù. Bạn chọn nhận tiền đền hoặc nhận lại hàng kèm đền một phần
+              Người mua đã trả món này và hàng bị hỏng trên đường về địa điểm ký
+              gửi. <Text style={styles.bold}>Không phải lỗi của bạn</Text> —
+              ReHome đền bù. Bạn chọn nhận tiền đền hoặc nhận lại hàng kèm đền
+              một phần
               {product.degradedCase?.decisionDeadline
                 ? ` trước ${fmtDate(product.degradedCase.decisionDeadline)}`
                 : ""}
@@ -534,7 +539,7 @@ export default function ProductDetailScreen() {
         ) : view === PRODUCT_VIEW.ENDED ? (
           <NoteBox>{`Sản phẩm đã kết thúc ký gửi: ${PRODUCT_ENDED_LABEL[product.status] ?? product.status}.`}</NoteBox>
         ) : null}
-        {/* Biên nhận đang áp dụng (hợp đồng): xem lại, tải PDF bất cứ lúc nào. [CHỜ BE] receiptId */}
+        {/* Biên nhận đang áp dụng (hợp đồng, receiptId của /products/mine): xem lại, tải PDF bất cứ lúc nào */}
         {product.receiptId ? (
           <Button
             title="Xem biên nhận ký gửi"

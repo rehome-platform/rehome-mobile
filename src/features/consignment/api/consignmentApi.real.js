@@ -62,7 +62,7 @@ function toProduct(p) {
     // Phase 5 — BE withdrawalRequest { id, status, pickupDeadline } → tên mock đang dùng (đang chờ đến lấy)
     activeWithdrawalId: pendingWithdrawal ? pendingWithdrawal.id : null,
     withdrawalPickupDeadline: pendingWithdrawal?.pickupDeadline ?? null,
-    // BE degradedCase { id, status, decisionDeadline } [CHỜ BE thêm decision] → choice: chưa chọn = null
+    // BE degradedCase { id, status, decisionDeadline, decision } → choice: chưa chọn = null
     degradedCase: p.degradedCase
       ? {
           ...p.degradedCase,
