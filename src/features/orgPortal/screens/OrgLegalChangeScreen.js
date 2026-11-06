@@ -57,14 +57,9 @@ const EMPTY = {
   rep: {
     fullName: "",
     position: "",
-    phone: "",
-    email: "",
     cccdFront: null,
     cccdBack: null,
-    cccdName: "",
     cccdNumber: "",
-    cccdIssueDate: "",
-    cccdIssuePlace: "",
   },
   legalName: "",
   legalNameDocs: [],
@@ -114,15 +109,11 @@ async function submitChange(values) {
     ...(values.changeOrgType ? { orgType: values.orgType } : {}),
     ...(values.changeRep
       ? {
+          // ĐÚNG 5 trường BE cho đổi — gửi thêm (phone, email, cccdName, ngày / nơi cấp) thì web duyệt bị từ chối
           representative: {
             fullName: r.fullName,
             position: r.position,
-            phone: r.phone,
-            email: r.email,
             cccdNumber: r.cccdNumber,
-            cccdName: r.cccdName,
-            cccdIssueDate: r.cccdIssueDate,
-            cccdIssuePlace: r.cccdIssuePlace,
             cccdFrontUrl: front,
             cccdBackUrl: back,
           },
@@ -386,16 +377,6 @@ function LegalChangeForm({ profile, defaultValues = EMPTY }) {
           />
           {field("fullName", { label: "Họ và tên", autoCapitalize: "words" })}
           {field("position", { label: "Chức vụ" })}
-          {field("phone", {
-            label: "Số điện thoại",
-            keyboardType: "phone-pad",
-            maxLength: 12,
-          })}
-          {field("email", {
-            label: "Email",
-            keyboardType: "email-address",
-            autoCapitalize: "none",
-          })}
           <Text style={styles.label}>CCCD NGƯỜI ĐẠI DIỆN MỚI *</Text>
           <View style={styles.row}>
             <CccdSlot
@@ -422,29 +403,11 @@ function LegalChangeForm({ profile, defaultValues = EMPTY }) {
               {repErr.cccdFront?.message ?? repErr.cccdBack?.message}
             </Text>
           ) : null}
-          {field("cccdName", {
-            label: "Họ tên trên thẻ",
-            autoCapitalize: "characters",
-          })}
           {field("cccdNumber", {
             label: "Số CCCD",
             keyboardType: "number-pad",
             maxLength: 12,
           })}
-          <Controller
-            control={control}
-            name="rep.cccdIssueDate"
-            render={({ field: f }) => (
-              <DateField
-                label="Ngày cấp"
-                required
-                value={f.value}
-                onChange={f.onChange}
-                error={repErr.cccdIssueDate?.message}
-              />
-            )}
-          />
-          {field("cccdIssuePlace", { label: "Nơi cấp" })}
         </View>
       ) : null}
 

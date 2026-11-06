@@ -187,17 +187,14 @@ export const makeLegalChangeSchema = (current) =>
       changeRep: z.boolean(),
       changeLegalName: z.boolean(),
       changeOrgType: z.boolean(),
+      // Chỉ các trường BE cho đổi trong representative (duyệt sẽ từ chối nếu có trường khác):
+      // fullName, position, cccdNumber, cccdFrontUrl, cccdBackUrl
       rep: z.object({
         fullName: z.string().trim(),
         position: z.string().trim(),
-        phone: z.string().transform((v) => v.replace(/\s/g, "")),
-        email: z.string().trim(),
         cccdFront: fileSchema.nullable(),
         cccdBack: fileSchema.nullable(),
-        cccdName: z.string().trim(),
         cccdNumber: z.string().trim(),
-        cccdIssueDate: z.string(),
-        cccdIssuePlace: z.string().trim(),
       }),
       legalName: z.string().trim(),
       legalNameDocs: z.array(legalDocSchema),
@@ -218,16 +215,6 @@ export const makeLegalChangeSchema = (current) =>
         need(!r.fullName, ["rep", "fullName"], "Vui lòng nhập họ và tên");
         need(!r.position, ["rep", "position"], "Vui lòng nhập chức vụ");
         need(
-          !PHONE_REGEX.test(r.phone),
-          ["rep", "phone"],
-          "Số điện thoại phải có 10 chữ số, bắt đầu bằng 0",
-        );
-        need(
-          !z.email().safeParse(r.email).success,
-          ["rep", "email"],
-          "Email không hợp lệ",
-        );
-        need(
           !r.cccdFront,
           ["rep", "cccdFront"],
           "Vui lòng thêm ảnh mặt trước CCCD",
@@ -237,21 +224,10 @@ export const makeLegalChangeSchema = (current) =>
           ["rep", "cccdBack"],
           "Vui lòng thêm ảnh mặt sau CCCD",
         );
-        need(!r.cccdName, ["rep", "cccdName"], "Vui lòng nhập họ tên trên thẻ");
         need(
           !CCCD_REGEX.test(r.cccdNumber),
           ["rep", "cccdNumber"],
           "Số CCCD gồm 12 chữ số",
-        );
-        need(
-          !r.cccdIssueDate,
-          ["rep", "cccdIssueDate"],
-          "Vui lòng chọn ngày cấp",
-        );
-        need(
-          !r.cccdIssuePlace,
-          ["rep", "cccdIssuePlace"],
-          "Vui lòng nhập nơi cấp",
         );
       }
       if (d.changeLegalName) {
