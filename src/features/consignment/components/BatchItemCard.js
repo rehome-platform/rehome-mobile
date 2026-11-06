@@ -4,10 +4,19 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { formatVnd } from "@/utils/money";
 import { conditionLabel } from "@/constants/consignItem";
 import { orderedPhotos } from "@/features/consignment/utils/consignItem";
+import { Checkbox } from "@/components/ui/Checkbox";
 
 // Một món trong "lần gửi": ảnh đại diện, tên, danh mục · thương hiệu, size · tình trạng, giá.
-// onEdit / onRemove không truyền → ẩn nút (bước Xem lại). result = { ok, message } sau khi gửi lỗi
-export function BatchItemCard({ item, onEdit, onRemove, result }) {
+// onEdit / onRemove không truyền → ẩn nút (bước Xem lại). result = { ok, message } sau khi gửi lỗi.
+// onToggle có → ô tích bên trái (bước Xem lại: chọn món nào gửi lần này), bấm cả thẻ cũng đổi tích
+export function BatchItemCard({
+  item,
+  onEdit,
+  onRemove,
+  result,
+  selected,
+  onToggle,
+}) {
   const thumb = orderedPhotos(item)[0];
   const meta = [
     item.size && item.size !== "Khác" ? `Size ${item.size}` : null,
@@ -18,8 +27,27 @@ export function BatchItemCard({ item, onEdit, onRemove, result }) {
   const failed = result && !result.ok;
 
   return (
-    <View style={[styles.card, failed && styles.cardFailed]}>
+    <Pressable
+      onPress={onToggle}
+      disabled={!onToggle}
+      accessibilityRole={onToggle ? "checkbox" : undefined}
+      accessibilityState={onToggle ? { checked: !!selected } : undefined}
+      style={[
+        styles.card,
+        failed && styles.cardFailed,
+        onToggle && !selected && styles.cardOff,
+      ]}
+    >
       <View style={styles.row}>
+        {onToggle ? (
+          <View style={styles.check}>
+            <Checkbox
+              checked={!!selected}
+              onChange={onToggle}
+              accessibilityLabel={`Gửi món ${item.productName}`}
+            />
+          </View>
+        ) : null}
         {thumb ? (
           <Image source={{ uri: thumb }} style={styles.thumb} />
         ) : (
@@ -81,7 +109,7 @@ export function BatchItemCard({ item, onEdit, onRemove, result }) {
       {failed ? (
         <Text style={styles.error}>Chưa gửi được: {result.message}</Text>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -110,6 +138,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardFailed: { borderColor: colors.error },
+  cardOff: { opacity: 0.55 }, // bỏ tích → mờ: món này giữ nháp, không gửi lần này
+  check: { justifyContent: "center" },
   row: { flexDirection: "row", gap: spacing.md },
   thumb: { width: 72, height: 72, borderRadius: radius.input },
   thumbEmpty: { backgroundColor: colors.neutral },

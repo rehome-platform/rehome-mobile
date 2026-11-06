@@ -18,11 +18,8 @@ export const consignFormSchema = z.object({
     .number({ error: "Nhập giá mong muốn" })
     .int()
     .positive("Giá phải lớn hơn 0"),
-  description: z
-    .string()
-    .trim()
-    .min(10, "Ghi ngắn size và tình trạng (ít nhất 10 ký tự)")
-    .max(1000, "Tối đa 1000 ký tự"),
+  // Tuỳ chọn: để trống thì app tự ghép size + tình trạng khi gửi (BE bắt description không trống)
+  description: z.string().trim().max(1000, "Tối đa 1000 ký tự"),
   warehouseId: z.string().optional(), // chọn ở bước 2 — kiểm riêng khi bấm Gửi
 });
 

@@ -18,6 +18,7 @@ const POPULAR = [
   "Canifa",
   "IVY moda",
 ];
+const OTHER = "Khác"; // thương hiệu BE seed sẵn cho món không rõ / không có trong danh sách
 
 // Bước "Thương hiệu": chip hãng phổ biến + "Thương hiệu khác" (danh sách có ô tìm).
 // value = brandId; onChange({ brandId, brandName })
@@ -35,11 +36,23 @@ export function BrandPicker({ value, onChange }) {
     });
   }, [brands.data]);
 
+  // Chip: hãng phổ biến + "Khác" ở cuối (BE seed sẵn "Khác"; trước đây chỉ nằm lẫn trong danh sách xổ xuống
+  // theo ABC nên người dùng không thấy, dù gợi ý ghi "Chọn Khác")
   const popular = useMemo(
     () =>
-      POPULAR.map((name) =>
-        list.find((b) => b.label.toLowerCase() === name.toLowerCase()),
-      ).filter(Boolean),
+      [...POPULAR, OTHER]
+        .map((name) =>
+          list.find((b) => b.label.toLowerCase() === name.toLowerCase()),
+        )
+        .filter(Boolean),
+    [list],
+  );
+  // Danh sách xổ xuống: "Khác" đưa lên đầu để dễ thấy khi tìm không ra hãng
+  const options = useMemo(
+    () => [
+      ...list.filter((b) => b.label.toLowerCase() === OTHER.toLowerCase()),
+      ...list.filter((b) => b.label.toLowerCase() !== OTHER.toLowerCase()),
+    ],
     [list],
   );
 
@@ -58,13 +71,13 @@ export function BrandPicker({ value, onChange }) {
         label="Thương hiệu khác"
         placeholder="Tìm thương hiệu"
         searchable
-        options={list}
+        options={options}
         loading={brands.isPending}
         value={value}
         onChange={pick}
       />
       <Text style={styles.hint}>
-        Không rõ hoặc không có trong danh sách? Chọn "Khác".
+        Không rõ hoặc không có trong danh sách? Chọn chip "Khác".
       </Text>
     </View>
   );

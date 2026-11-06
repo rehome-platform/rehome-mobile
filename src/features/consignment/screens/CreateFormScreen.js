@@ -94,9 +94,22 @@ export default function CreateFormScreen() {
   const [step, setStep] = useState(0);
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState({}); // key món → { ok, message }
+  // Bước Xem lại: món BỎ tích (mặc định tích hết) → không gửi lần này, vẫn giữ nháp để lần sau gửi
+  const [skipped, setSkipped] = useState(() => new Set());
+  const selectedItems = items.filter((i) => !skipped.has(i.key));
+  const toggleItem = (key) =>
+    setSkipped((s) => {
+      const next = new Set(s);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  const allSelected = selectedItems.length === items.length;
+  const toggleAll = () =>
+    setSkipped(allSelected ? new Set(items.map((i) => i.key)) : new Set());
 
   // Số món còn được gửi lần này = giới hạn yêu cầu chờ duyệt − số đang chờ
   const allowed = CONSIGN_LIMITS.MAX_PENDING_FORMS - (pending.data ?? 0);
+  const overLimit = selectedItems.length > allowed;
 
   const go = (n) => {
     setStep(n);
@@ -166,13 +179,15 @@ export default function CreateFormScreen() {
       },
     ]);
 
+  // Chỉ gửi các món ĐANG TÍCH ở bước Xem lại:
   // 1) Món chưa có nháp (ký gửi lại chưa bấm Lưu) → lưu nháp trước, lần lượt (không dồn nhiều upload)
   // 2) Gửi cả lô 1 lần: POST /submit vào kho đã chọn → kết quả từng món
   const sendAll = async () => {
     setSending(true);
     const next = {};
     const ready = [];
-    for (const item of items) {
+    const toSend = selectedItems;
+    for (const item of toSend) {
       try {
         const synced = item.draftId ? item : await saveItemDraft(item);
         if (synced !== item) saveItem(synced);
@@ -204,15 +219,20 @@ export default function CreateFormScreen() {
     queryClient.invalidateQueries({ queryKey: ["consign", "forms"] }); // danh sách + số yêu cầu chờ
 
     const okKeys = Object.keys(next).filter((k) => next[k].ok);
-    if (okKeys.length === items.length) {
-      showToast(`Đã gửi ${okKeys.length} yêu cầu ký gửi`);
+    const keptDrafts = items.length - toSend.length; // món bỏ tích → vẫn là nháp trên server
+    if (okKeys.length === toSend.length) {
+      showToast(
+        keptDrafts
+          ? `Đã gửi ${okKeys.length} yêu cầu. ${keptDrafts} món còn lại vẫn lưu nháp để gửi sau`
+          : `Đã gửi ${okKeys.length} yêu cầu ký gửi`,
+      );
       reset();
       return router.replace("/consign");
     }
-    okKeys.forEach(removeItem); // món đã gửi xong → bỏ khỏi lần gửi, chỉ giữ món lỗi
+    okKeys.forEach(removeItem); // món đã gửi xong → bỏ khỏi lần gửi, chỉ giữ món lỗi + món bỏ tích
     if (okKeys.length)
       showToast(
-        `Đã gửi ${okKeys.length} món, còn ${items.length - okKeys.length} món chưa gửi được`,
+        `Đã gửi ${okKeys.length} món, còn ${toSend.length - okKeys.length} món chưa gửi được`,
       );
   };
 
@@ -252,9 +272,13 @@ export default function CreateFormScreen() {
     />,
     <Button
       key="2"
-      title={`Gửi ${items.length} yêu cầu ký gửi`}
+      title={
+        selectedItems.length
+          ? `Gửi ${selectedItems.length} yêu cầu ký gửi`
+          : "Tích ít nhất 1 món để gửi"
+      }
       loading={sending}
-      disabled={!items.length}
+      disabled={!selectedItems.length || overLimit}
       onPress={sendAll}
     />,
   ][step];
@@ -342,14 +366,38 @@ export default function CreateFormScreen() {
             ) : null}
           </View>
 
-          <Text style={styles.title}>{items.length} món sẽ mang tới</Text>
+          <View style={styles.pickHead}>
+            <Text style={[styles.title, styles.flex]}>
+              Gửi {selectedItems.length}/{items.length} món
+            </Text>
+            {items.length > 1 ? (
+              <Button
+                title={allSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                variant="text"
+                onPress={toggleAll}
+              />
+            ) : null}
+          </View>
+          <Text style={styles.hint}>
+            Bỏ tích món chưa muốn gửi. Món đó vẫn được lưu nháp để lần sau gửi
+            tiếp.
+          </Text>
           {items.map((item) => (
             <BatchItemCard
               key={item.key}
               item={item}
               result={results[item.key]}
+              selected={!skipped.has(item.key)}
+              onToggle={sending ? undefined : () => toggleItem(item.key)}
             />
           ))}
+          {overLimit ? (
+            <Text style={styles.error}>
+              Lần này gửi được tối đa {allowed} món (tối đa{" "}
+              {CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ duyệt cùng lúc). Bỏ
+              tích bớt {selectedItems.length - allowed} món.
+            </Text>
+          ) : null}
 
           <NoteBox>
             <Text style={styles.note}>
@@ -375,6 +423,12 @@ const styles = StyleSheet.create({
   title: { ...textStyles.heading, color: colors.text },
   muted: { ...textStyles.caption, color: colors.textSecondary },
   hint: { ...textStyles.caption, color: colors.textSecondary },
+  pickHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  error: {
+    ...textStyles.caption,
+    fontFamily: fonts.medium,
+    color: colors.error,
+  },
   place: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   placeName: {
     ...textStyles.body,
