@@ -11,6 +11,7 @@ export const chatApi = {
   openConversation: impl.openConversation,
   getMessages: impl.getMessages,
   sendMessage: impl.sendMessage,
+  uploadChatImage: impl.uploadChatImage, // ảnh đính kèm (3.13.2)
   markRead: impl.markRead,
   // [DEV] chỉ dùng trong khung Mock (__DEV__)
   mockFailNextSend: mock.mockFailNextSend,

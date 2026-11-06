@@ -10,4 +10,6 @@ export const UPLOAD_FOLDER = {
   ORGANIZATION_DOCUMENTS: "ORGANIZATION_DOCUMENTS",
   ORGANIZATION_LOGOS: "ORGANIZATION_LOGOS",
   CAMPAIGN_COVERS: "CAMPAIGN_COVERS",
+  // Ảnh đính kèm tin nhắn (3.13.2). BE chỉ nhận imageUrls là ảnh đã upload lên Cloudinary của hệ thống
+  CHAT_IMAGES: "CHAT_IMAGES",
 };

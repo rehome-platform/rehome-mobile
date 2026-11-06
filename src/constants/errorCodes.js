@@ -15,6 +15,7 @@ export const ERROR_CODES = {
   ORGANIZATION_EMAIL_TAKEN: "ORGANIZATION_EMAIL_TAKEN", // tổ chức: email liên hệ trùng (409)
   ORGANIZATION_TAX_CODE_TAKEN: "ORGANIZATION_TAX_CODE_TAKEN", // tổ chức: MST trùng (409)
   ORGANIZATION_NOT_REJECTED: "ORGANIZATION_NOT_REJECTED", // tổ chức: chỉ nộp lại khi bị từ chối (403)
+  MESSAGE_RATE_LIMITED: "MESSAGE_RATE_LIMITED", // chat: gửi quá nhanh (429, 3.13.2)
   CANNOT_CANCEL_AFTER_PACKING: "CANNOT_CANCEL_AFTER_PACKING", // huỷ đơn: kho đã đóng gói (API 65, 409) — BE đang để trong message [CHỜ BE]
   // Đổi địa chỉ giao trên đơn (PATCH /orders/{id}/shipping-address, hướng A — BE #212)
   CANNOT_CHANGE_ADDRESS_AFTER_PACKING: "CANNOT_CHANGE_ADDRESS_AFTER_PACKING", // 409: kho đã đóng gói
