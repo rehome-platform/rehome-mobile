@@ -34,6 +34,7 @@ import {
   formToValues,
 } from "@/features/consignment/schemas";
 import { uploadPhotos } from "@/features/consignment/utils/photos";
+import { descriptionOf } from "@/features/consignment/utils/consignItem";
 import { ConsignFormFields } from "@/features/consignment/components/ConsignFormFields";
 
 const goBack = () =>
@@ -118,6 +119,8 @@ function EditFormBody({ form }) {
       // BE ghi đè size / tình trạng theo body → màn này chưa có ô sửa nên gửi lại giá trị cũ
       return consignmentApi.updateForm(form.id, {
         ...rest,
+        // Mô tả tuỳ chọn: để trống → tự ghép size + tình trạng (BE bắt không trống)
+        description: descriptionOf(rest.description, form),
         photoUrls,
         warehouseId: form.warehouse?.id,
         size: form.size ?? null,

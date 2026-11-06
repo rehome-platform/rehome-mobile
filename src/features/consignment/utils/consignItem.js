@@ -1,7 +1,26 @@
-import { groupOfCategory, photoSlotsOf } from "@/constants/consignItem";
+import {
+  conditionLabel,
+  groupOfCategory,
+  photoSlotsOf,
+} from "@/constants/consignItem";
 
 // Size "Khác" = Member tự ghi trong mô tả → không gửi lên cột size
 const sizeValue = (size) => (size && size !== "Khác" ? size : null);
+
+// Ghi chú là TUỲ CHỌN với Member, nhưng BE bắt description không trống (DESCRIPTION_REQUIRED, cột NOT NULL)
+// → để trống thì gửi mô tả tự ghép từ size + tình trạng ("Size M · Như mới")
+const AUTO_FALLBACK = "Không có ghi chú thêm";
+export const autoDescription = ({ size, condition }) =>
+  [size ? `Size ${size}` : null, conditionLabel(condition) || null]
+    .filter(Boolean)
+    .join(" · ") || AUTO_FALLBACK;
+export const descriptionOf = (note, item) =>
+  note?.trim() || autoDescription(item);
+// Mở lại form / nháp: mô tả do app tự ghép → ô ghi chú để trống, không hiện như người dùng đã gõ
+const noteFrom = (description, item) => {
+  const d = description?.trim() ?? "";
+  return d === autoDescription(item) || d === AUTO_FALLBACK ? "" : d;
+};
 
 // Tên gợi ý từ danh mục + thương hiệu: "Áo khoác Uniqlo" (bỏ thương hiệu kiểu "Khác / không rõ")
 export const suggestName = ({ categoryName, brandName }) =>
@@ -29,7 +48,7 @@ export const toCreatePayload = (item, warehouseId, photoUrls) => ({
   categoryId: item.categoryId,
   brandId: item.brandId,
   productName: item.productName.trim(),
-  description: item.note?.trim() ?? "", // cột description NOT NULL ở BE → không gửi null
+  description: descriptionOf(item.note, item), // BE bắt không trống → để trống ghi chú thì tự ghép size + tình trạng
   desiredPrice: item.desiredPrice,
   size: sizeValue(item.size),
   condition: item.condition || null,
@@ -58,7 +77,7 @@ export const formToItem = (form) => {
     size: form.size ?? "",
     condition: form.condition ?? "",
     desiredPrice: form.desiredPrice,
-    note: form.description ?? "",
+    note: noteFrom(form.description, form),
   };
 };
 
@@ -103,6 +122,6 @@ export const draftToItem = (draft) => {
     size: draft.size ?? "",
     condition: draft.condition ?? "",
     desiredPrice: draft.desiredPrice,
-    note: draft.description ?? "",
+    note: noteFrom(draft.description, draft),
   };
 };

@@ -291,7 +291,9 @@ export default function ItemEditorScreen() {
             render={({ field }) => (
               <TextField
                 label={
-                  condition === CONDITION.FLAW ? "Mô tả lỗi" : "Ghi chú thêm"
+                  condition === CONDITION.FLAW
+                    ? "Mô tả lỗi"
+                    : "Ghi chú thêm (tuỳ chọn)"
                 }
                 required={condition === CONDITION.FLAW}
                 multiline

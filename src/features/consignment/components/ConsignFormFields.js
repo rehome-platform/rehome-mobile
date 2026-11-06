@@ -109,11 +109,10 @@ export function ConsignFormFields({ control, errors }) {
         name="description"
         render={({ field }) => (
           <TextField
-            label="Mô tả"
-            required
+            label="Mô tả (tuỳ chọn)"
             multiline
             maxLength={1000}
-            placeholder="Size, tình trạng, lỗi nếu có (VD: size M, mặc 2 lần, không lỗi)"
+            placeholder="Lỗi nếu có, đã mặc mấy lần… (VD: mặc 2 lần, không lỗi)"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
