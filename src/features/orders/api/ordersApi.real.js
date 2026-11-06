@@ -1,4 +1,6 @@
 import { api, unwrap } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
+import { ERROR_CODES } from "@/constants/errorCodes";
 
 // ===== Đổi dữ liệu BE (868d933) về hình dạng màn hình đang dùng (giống mock) → màn hình không phải sửa =====
 
@@ -69,6 +71,30 @@ export async function getTracking(id) {
 // ORDER_ALREADY_CANCELLED. Đã trả tiền → refundAmount hoàn vào ví
 export async function cancelOrder(id) {
   return unwrap(await api.post(`/orders/${id}/cancel`));
+}
+
+// Đổi địa chỉ giao trên đơn (hướng A, đề xuất BE 06/11): PATCH /orders/{id}/shipping-address { shippingAddressId }
+// → chi tiết đơn mới (địa chỉ, phí ship, tổng) + refundedAmount (đơn đã trả mà phí mới rẻ hơn → hoàn chênh lệch vào ví).
+// 409: CANNOT_CHANGE_ADDRESS_AFTER_PACKING · ADDRESS_ALREADY_CHANGED · SHIPPING_FEE_INCREASED.
+// [CHỜ BE] chưa có API: Spring trả 405 / "not supported" / "No static resource" (bọc thành 500) → báo chờ máy chủ
+export async function changeShippingAddress(id, shippingAddressId) {
+  try {
+    const res = unwrap(
+      await api.patch(`/orders/${id}/shipping-address`, { shippingAddressId }),
+    );
+    return { order: toDetail(res), refundedAmount: res?.refundedAmount ?? 0 };
+  } catch (e) {
+    const notReady =
+      e.status === 405 ||
+      /not supported|no static resource/i.test(e.detail ?? "");
+    if (!notReady) throw e;
+    throw new ApiError({
+      status: 501,
+      code: ERROR_CODES.ADDRESS_CHANGE_NOT_READY,
+      message:
+        "Đổi địa chỉ trên đơn sẽ có khi máy chủ cập nhật. Hiện bạn có thể huỷ đơn rồi đặt lại với địa chỉ đúng.",
+    });
+  }
 }
 
 // API 66 — 409 khi đơn chưa giao

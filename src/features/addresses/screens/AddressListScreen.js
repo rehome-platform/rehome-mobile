@@ -19,6 +19,11 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { useAuthStore } from "@/stores/authStore";
 import { ADDRESS_LIMIT } from "@/constants/order";
 import { showToast } from "@/utils/toast";
+import { formatAddress } from "@/utils/format";
+import { formatVnd } from "@/utils/money";
+import { ERROR_CODES } from "@/constants/errorCodes";
+import { ordersApi } from "@/features/orders/api/ordersApi";
+import { useOrderMutation } from "@/features/orders/hooks/useOrders";
 import {
   useAddresses,
   useDeleteAddress,
@@ -35,19 +40,71 @@ export default function AddressListScreen() {
   const addresses = useAddresses();
   const save = useSaveAddress();
   const remove = useDeleteAddress();
-  const { select } = useLocalSearchParams();
-  const selectMode = select === "1"; // mở từ checkout: bấm thẻ để chọn địa chỉ giao
+  const { select, orderId } = useLocalSearchParams();
+  const checkoutMode = select === "1"; // mở từ checkout: bấm thẻ để chọn địa chỉ giao
+  const orderMode = select === "order" && !!orderId; // mở từ chi tiết đơn: đổi địa chỉ giao của đơn (hướng A)
   const storeAddressId = useCheckoutStore((s) => s.addressId);
   const setAddressId = useCheckoutStore((s) => s.setAddressId);
+  const changeAddress = useOrderMutation(({ addressId }) =>
+    ordersApi.changeShippingAddress(orderId, addressId),
+  );
 
   if (!isAuthed) return <Redirect href="/login" />;
 
   const header = (
     <AppHeader
-      title={selectMode ? "Chọn địa chỉ giao hàng" : "Địa chỉ giao hàng"}
+      title={
+        orderMode
+          ? "Đổi địa chỉ giao cho đơn"
+          : checkoutMode
+            ? "Chọn địa chỉ giao hàng"
+            : "Địa chỉ giao hàng"
+      }
       onBack={goBack}
     />
   );
+
+  // Đổi địa chỉ của đơn: hỏi lại (phí ship có thể đổi, chỉ đổi 1 lần) → gọi API → về chi tiết đơn
+  const pickForOrder = (a) => {
+    if (!a.provinceName || !a.wardName)
+      return Alert.alert(
+        "Cần bổ sung địa chỉ",
+        "Địa chỉ này chưa có tỉnh/thành và phường/xã. Bổ sung rồi chọn lại nhé.",
+      );
+    Alert.alert(
+      "Đổi địa chỉ giao cho đơn?",
+      `Giao tới: ${formatAddress(a)}.\nPhí ship được tính lại theo địa chỉ mới. Mỗi đơn chỉ đổi được 1 lần.`,
+      [
+        { text: "Không", style: "cancel" },
+        {
+          text: "Đổi địa chỉ",
+          onPress: () =>
+            changeAddress.mutate(
+              { addressId: a.id },
+              {
+                onSuccess: ({ refundedAmount }) => {
+                  showToast(
+                    refundedAmount > 0
+                      ? `Đã đổi địa chỉ, hoàn ${formatVnd(refundedAmount)} phí ship chênh lệch vào ví`
+                      : "Đã đổi địa chỉ giao",
+                  );
+                  goBack();
+                },
+                onError: (e) =>
+                  Alert.alert(
+                    e.code === ERROR_CODES.SHIPPING_FEE_INCREASED
+                      ? "Phí ship sẽ tăng"
+                      : "Chưa đổi được địa chỉ",
+                    e.code === ERROR_CODES.SHIPPING_FEE_INCREASED
+                      ? `${e.message}\nĐơn đã thanh toán nên không thu thêm được. Bạn có thể huỷ đơn (hoàn 100%) rồi đặt lại với địa chỉ này.`
+                      : e.message,
+                  ),
+              },
+            ),
+        },
+      ],
+    );
+  };
 
   const list = addresses.data ?? [];
   const full = list.length >= ADDRESS_LIMIT;
@@ -170,15 +227,21 @@ export default function AddressListScreen() {
         renderItem={({ item }) => (
           <AddressCard
             address={item}
-            busy={busyId === item.id}
-            selected={selectMode && item.id === currentId}
+            busy={
+              busyId === item.id ||
+              (changeAddress.isPending &&
+                changeAddress.variables?.addressId === item.id)
+            }
+            selected={checkoutMode && item.id === currentId}
             onPress={
-              selectMode
-                ? () => {
-                    setAddressId(item.id);
-                    router.back();
-                  }
-                : undefined
+              orderMode
+                ? () => pickForOrder(item)
+                : checkoutMode
+                  ? () => {
+                      setAddressId(item.id);
+                      router.back();
+                    }
+                  : undefined
             }
             onEdit={() => router.push(`/addresses/${item.id}/edit`)}
             onSetDefault={() => setDefault(item)}

@@ -10,6 +10,10 @@ export const secondsUntil = (v) =>
 export const canPay = (o) =>
   o.status === S.PENDING_PAYMENT && secondsUntil(o.paymentDeadline) > 0;
 export const canCancel = (o) => o.status === S.PAID; // API 65: chỉ khi kho chưa đóng gói
+// Đổi địa chỉ giao (hướng A, như Shopee): trước khi kho đóng gói, mỗi đơn 1 lần (addressChangedAt = đã đổi)
+export const canChangeAddress = (o) =>
+  (o.status === S.PENDING_PAYMENT || o.status === S.PAID) &&
+  !o.addressChangedAt;
 export const canConfirm = (o) => o.status === S.DELIVERED; // [CHỜ BE] có cho SHIPPING không (câu 9)
 export const canRate = (o) =>
   o.status === S.COMPLETED && o.serviceRating == null; // API 67

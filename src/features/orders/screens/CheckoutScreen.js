@@ -9,7 +9,7 @@ import {
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -415,6 +415,11 @@ function AddressBlock({ address, loading }) {
             {address.recipientName} · {formatPhone(address.phone)}
           </Text>
           <Text style={styles.muted}>{formatAddress(address)}</Text>
+          {/* Mục 1 (lead chốt 06/11): nhắc kiểm tra phường / tỉnh — phí ship và nơi shipper giao tính theo đây */}
+          <Text style={styles.addressHint}>
+            Kiểm tra kỹ phường, tỉnh: phí ship và nơi giao tính theo đây. Đặt
+            rồi vẫn đổi được 1 lần, trước khi ReHome đóng gói.
+          </Text>
         </View>
       ) : (
         <Pressable
@@ -457,6 +462,11 @@ const styles = StyleSheet.create({
     color: colors.accent,
   },
   addressBox: { gap: 2 },
+  addressHint: {
+    marginTop: spacing.xs,
+    ...textStyles.caption,
+    color: tones.warning.fg,
+  },
   addAddress: {
     flexDirection: "row",
     alignItems: "center",

@@ -16,6 +16,11 @@ export const ERROR_CODES = {
   ORGANIZATION_TAX_CODE_TAKEN: "ORGANIZATION_TAX_CODE_TAKEN", // tổ chức: MST trùng (409)
   ORGANIZATION_NOT_REJECTED: "ORGANIZATION_NOT_REJECTED", // tổ chức: chỉ nộp lại khi bị từ chối (403)
   CANNOT_CANCEL_AFTER_PACKING: "CANNOT_CANCEL_AFTER_PACKING", // huỷ đơn: kho đã đóng gói (API 65, 409) — BE đang để trong message [CHỜ BE]
+  // Đổi địa chỉ giao trên đơn (PATCH /orders/{id}/shipping-address, hướng A — đã đề xuất BE 06/11)
+  CANNOT_CHANGE_ADDRESS_AFTER_PACKING: "CANNOT_CHANGE_ADDRESS_AFTER_PACKING", // 409: kho đã đóng gói
+  ADDRESS_ALREADY_CHANGED: "ADDRESS_ALREADY_CHANGED", // 409: mỗi đơn chỉ đổi 1 lần
+  SHIPPING_FEE_INCREASED: "SHIPPING_FEE_INCREASED", // 409: đơn đã trả tiền mà địa chỉ mới phí ship cao hơn
+  ADDRESS_CHANGE_NOT_READY: "ADDRESS_CHANGE_NOT_READY", // mã mobile tự đặt: BE chưa có API
   ORDER_NOT_DELIVERED: "ORDER_NOT_DELIVERED", // xác nhận nhận hàng khi đơn chưa giao (API 66, 409) [GIẢ ĐỊNH tên mã]
   BELOW_MIN_PAYOUT: "BELOW_MIN_PAYOUT", // rút tiền: dưới mức tối thiểu (API 76, 409) — BE đang để trong message [CHỜ BE]
   INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE", // rút tiền / trả bằng ví: không đủ số dư khả dụng (409)
