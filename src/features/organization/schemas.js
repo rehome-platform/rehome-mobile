@@ -141,6 +141,10 @@ export const orgLocationSchema = z
 export const orgProfileEditSchema = z
   .object({
     logoUri: z.string().nullable(),
+    // Tên hiển thị trên Cộng đồng (khác tên pháp lý — đổi tên pháp lý phải qua OP-04)
+    displayName: required("Vui lòng nhập tên hiển thị").pipe(
+      z.string().max(100, "Tên hiển thị tối đa 100 ký tự"),
+    ),
     // Báo cả số ký tự đang dư (wireframe OP-02)
     description: required("Vui lòng nhập mô tả").superRefine((v, ctx) => {
       if (v.length > ORG_LIMITS.DESCRIPTION_MAX)

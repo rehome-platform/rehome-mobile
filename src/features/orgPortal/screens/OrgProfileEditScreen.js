@@ -37,6 +37,7 @@ const isRemote = (uri) => /^https?:\/\//.test(uri ?? "");
 
 const toForm = (p) => ({
   logoUri: p.logoUrl ?? null,
+  displayName: p.displayName ?? "",
   description: p.description ?? "",
   contactPhone: p.contactPhone ?? "",
   ...(parseReceivingHours(p.donationPointReceivingHours) ?? {
@@ -59,6 +60,7 @@ async function saveProfile(values) {
         ).url;
   return organizationApi.updateMyProfile({
     logoUrl,
+    displayName: values.displayName.trim(),
     description: values.description.trim(),
     contactPhone: values.contactPhone,
     donationPointReceivingHours: formatReceivingHours(values),
@@ -153,12 +155,21 @@ function EditForm({ profile }) {
         />
       </View>
 
-      {/* [CHỜ BE] PATCH /me chưa nhận displayName → tạm chỉ xem */}
-      <TextField
-        label="Tên hiển thị"
-        value={profile.displayName}
-        editable={false}
-        helper="Tạm chưa đổi được trên app — sẽ mở khi máy chủ hỗ trợ."
+      <Controller
+        control={control}
+        name="displayName"
+        render={({ field }) => (
+          <TextField
+            label="Tên hiển thị"
+            required
+            maxLength={100}
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            helper="Tên hiện trên Cộng đồng. Tên pháp lý đổi ở mục Đổi pháp lý."
+            error={errors.displayName?.message}
+          />
+        )}
       />
 
       <Controller
@@ -254,7 +265,7 @@ function EditForm({ profile }) {
   );
 }
 
-// OP-02 · Sửa thông tin thường: logo, mô tả (≤ 300), SĐT, giờ nhận đồ — áp dụng ngay (PATCH /me).
+// OP-02 · Sửa thông tin thường: logo, tên hiển thị, mô tả (≤ 300), SĐT, giờ nhận đồ — áp dụng ngay (PATCH /me).
 // Form chỉ dựng khi đã có hồ sơ (defaultValues của useForm chỉ đọc lần đầu)
 export default function OrgProfileEditScreen() {
   const me = useMyOrganization();

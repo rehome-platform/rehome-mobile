@@ -31,8 +31,8 @@ export async function getMyOrganization() {
   return unwrap(await api.get("/api/organizations/me"));
 }
 
-// OP-02 — sửa thông tin thường, áp dụng ngay: { logoUrl, description, contactPhone, donationPointReceivingHours }.
-// [CHỜ BE] chưa sửa được displayName
+// OP-02 — sửa thông tin thường, áp dụng ngay: { displayName, logoUrl, description, contactPhone,
+// donationPointReceivingHours }. Ô trống BE giữ nguyên giá trị cũ
 export async function updateMyProfile(body) {
   return unwrap(await api.patch("/api/organizations/me", body));
 }

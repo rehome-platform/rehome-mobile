@@ -16,6 +16,7 @@ import { useReturnCount } from "@/features/returns/hooks/useReturns";
 import { useTryonJobStore } from "@/stores/tryonJobStore";
 import { useConversations } from "@/features/chat/hooks/useChat";
 import { unreadTotal } from "@/features/chat/utils/chatRules";
+import dayjs from "dayjs";
 import { BellButton } from "@/features/notifications/components/BellButton";
 import { ChatButton } from "@/features/chat/components/ChatButton";
 
@@ -96,7 +97,7 @@ function MemberAccount() {
       }
       contentStyle={styles.content}
     >
-      {/* Thẻ đầu trang → PR-02. BE chưa có createdAt nên chưa hiện "tham gia MM/YYYY" [CHỜ BE] */}
+      {/* Thẻ đầu trang → PR-02: tên · mã Member · "tham gia MM/YYYY" (createdAt của /members/me) */}
       <Pressable
         onPress={() => router.push("/profile")}
         accessibilityRole="button"
@@ -108,7 +109,16 @@ function MemberAccount() {
           <Text style={styles.name} numberOfLines={1}>
             {user?.fullName}
           </Text>
-          <Text style={styles.code}>{user?.memberCode}</Text>
+          <Text style={styles.code}>
+            {[
+              user?.memberCode,
+              user?.createdAt
+                ? `Tham gia ${dayjs(user.createdAt).format("MM/YYYY")}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
         </View>
         <Ionicons
           name="chevron-forward"
