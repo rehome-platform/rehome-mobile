@@ -5,8 +5,7 @@ import { TRYON_LIMITS } from "@/constants/tryon";
 // Thử đồ AI thật (API 96–99 + GET /tryon/images/{id}). Cùng hình dạng dữ liệu với tryonApi.mock.js.
 // - /products?tryonSlot= lọc món đang bán theo loại thử đồ
 // - món trong ảnh có warehouseId → AI-04 báo "tách n đơn" khi mua cả bộ
-// - [CHỜ BE] API 96 gợi ý chỉ trả { id, name, currentPrice } → món nào thiếu thumbnailUrl thì lấy thêm chi tiết
-//   (ảnh, hãng, size). BE trả đủ trường như ProductSummaryResponse là tự bỏ bước gọi thêm, không phải sửa
+// - API 96 gợi ý trả đủ trường thẻ như danh sách sàn → hiện thẳng, không gọi thêm chi tiết
 
 const SUGGESTION_COUNT = 6;
 
@@ -25,23 +24,8 @@ export async function getSlotProducts({ slot, page = 0, size = 20 }) {
   return { ...p, content: (p.content ?? []).map(toSlotItem(slot)) };
 }
 
-// Chi tiết món → dạng thẻ danh sách (ProductCard đọc thumbnailUrl, brandName, size, condition, giá)
-const detailToCard = (d) => ({
-  id: d.id,
-  name: d.name,
-  thumbnailUrl: d.photos?.[0] ?? null,
-  brandName: d.brandName,
-  categoryName: d.categoryName,
-  size: d.size,
-  condition: d.condition,
-  originalPrice: d.originalPrice,
-  currentPrice: d.currentPrice,
-  status: d.status,
-  warehouseId: d.warehouseId,
-});
-
-// AI-02 tab Gợi ý — API 96 GET /tryon/suggestions?slot&excludeProductId.
-// Món nào không lấy được chi tiết thì vẫn hiện tên + giá; món vừa hết bán thì bỏ
+// AI-02 tab Gợi ý — API 96 GET /tryon/suggestions?slot&excludeProductId. BE (fb9680e) trả đủ trường thẻ
+// như danh sách sàn (thumbnailUrl, brandName, size, condition, giá, warehouseId) → dùng thẳng, không gọi thêm
 export async function getSuggestions({ slot, excludeProductId }) {
   const list =
     unwrap(
@@ -49,25 +33,7 @@ export async function getSuggestions({ slot, excludeProductId }) {
         params: { slot, excludeProductId },
       }),
     ) ?? [];
-  const top = list.slice(0, SUGGESTION_COUNT);
-  // BE đã trả đủ trường thẻ (thumbnailUrl…) → dùng luôn; chưa có thì mới gọi /products/{id} cho món đó
-  const details = await Promise.allSettled(
-    top.map((s) =>
-      s.thumbnailUrl
-        ? Promise.resolve(null)
-        : api.get(`/products/${s.id}`).then(unwrap),
-    ),
-  );
-  return top
-    .map((s, i) =>
-      s.thumbnailUrl
-        ? { ...s, status: s.status ?? PRODUCT_STATUS.ON_SALE }
-        : details[i].status === "fulfilled"
-          ? detailToCard(details[i].value)
-          : { ...s, thumbnailUrl: null, status: PRODUCT_STATUS.ON_SALE },
-    )
-    .filter((p) => p.status === PRODUCT_STATUS.ON_SALE)
-    .map(toSlotItem(slot));
+  return list.slice(0, SUGGESTION_COUNT).map(toSlotItem(slot));
 }
 
 // BE: top / bottom / dress (null nếu không có) → items theo thứ tự hiển thị + id từng ô như mock

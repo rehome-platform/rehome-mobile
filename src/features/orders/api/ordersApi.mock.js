@@ -491,7 +491,7 @@ export async function changeShippingAddress(id, shippingAddressId) {
   o.shippingAddressId = shippingAddressId;
   o.shippingAddress = null; // màn chi tiết tra sổ địa chỉ theo shippingAddressId
   o.addressChangedAt = now();
-  return { order: toDetail(o), refundedAmount: 0 };
+  return { refundedAmount: 0 };
 }
 
 export async function cancelOrder(id) {

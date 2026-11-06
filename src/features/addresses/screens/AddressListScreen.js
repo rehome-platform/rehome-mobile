@@ -96,7 +96,8 @@ export default function AddressListScreen() {
                       ? "Phí ship sẽ tăng"
                       : "Chưa đổi được địa chỉ",
                     e.code === ERROR_CODES.SHIPPING_FEE_INCREASED
-                      ? `${e.message}\nĐơn đã thanh toán nên không thu thêm được. Bạn có thể huỷ đơn (hoàn 100%) rồi đặt lại với địa chỉ này.`
+                      ? // BE ghi số thô "35000.00đ" → định dạng lại "35.000 đ"
+                        `${e.message.replace(/(\d+)(?:\.\d+)?\s?đ/g, (_, n) => formatVnd(Number(n)))}\nĐơn đã thanh toán nên không thu thêm được. Bạn có thể huỷ đơn (hoàn 100%) rồi đặt lại với địa chỉ này.`
                       : e.message,
                   ),
               },
