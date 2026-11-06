@@ -474,6 +474,26 @@ export async function getTracking(id) {
   };
 }
 
+// Đổi địa chỉ giao (hướng A): chỉ khi chờ thanh toán / đã thanh toán, mỗi đơn 1 lần. Mock phí ship cố định → không chênh
+export async function changeShippingAddress(id, shippingAddressId) {
+  await delay();
+  const o = findOrder(id);
+  if (o.status !== S.PENDING_PAYMENT && o.status !== S.PAID)
+    throw conflict(
+      ERROR_CODES.CANNOT_CHANGE_ADDRESS_AFTER_PACKING,
+      "ReHome đã bắt đầu đóng gói, không đổi địa chỉ được nữa.",
+    );
+  if (o.addressChangedAt)
+    throw conflict(
+      ERROR_CODES.ADDRESS_ALREADY_CHANGED,
+      "Đơn này đã đổi địa chỉ một lần rồi.",
+    );
+  o.shippingAddressId = shippingAddressId;
+  o.shippingAddress = null; // màn chi tiết tra sổ địa chỉ theo shippingAddressId
+  o.addressChangedAt = now();
+  return { refundedAmount: 0 };
+}
+
 export async function cancelOrder(id) {
   await delay();
   const o = findOrder(id);

@@ -11,6 +11,7 @@ export const ordersApi = {
   getOrder: manage.getOrder,
   getTracking: manage.getTracking,
   cancelOrder: manage.cancelOrder,
+  changeShippingAddress: manage.changeShippingAddress, // hướng A — PATCH /orders/{id}/shipping-address (BE #212)
   confirmReceipt: manage.confirmReceipt,
   rateOrder: manage.rateOrder,
   getSoldOrders: manage.getSoldOrders, // đơn có món mình ký gửi

@@ -71,6 +71,18 @@ export async function cancelOrder(id) {
   return unwrap(await api.post(`/orders/${id}/cancel`));
 }
 
+// Đổi địa chỉ giao trên đơn trước khi đóng gói (hướng A, BE #212): PATCH /orders/{id}/shipping-address
+// { shippingAddressId } → { địa chỉ, phí ship, tổng mới, addressChangedAt, refundedAmount } (đơn đã trả mà phí mới
+// rẻ hơn → hoàn chênh lệch vào ví). Mỗi đơn 1 lần.
+// 409: CANNOT_CHANGE_ADDRESS_AFTER_PACKING · ADDRESS_ALREADY_CHANGED · SHIPPING_FEE_INCREASED.
+// Response không có danh sách món → màn hình tải lại chi tiết đơn (useOrderMutation làm mới ["orders"])
+export async function changeShippingAddress(id, shippingAddressId) {
+  const res = unwrap(
+    await api.patch(`/orders/${id}/shipping-address`, { shippingAddressId }),
+  );
+  return { refundedAmount: Number(res?.refundedAmount ?? 0) };
+}
+
 // API 66 — 409 khi đơn chưa giao
 export async function confirmReceipt(id) {
   return unwrap(await api.post(`/orders/${id}/confirm-receipt`));

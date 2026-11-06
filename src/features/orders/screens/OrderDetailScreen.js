@@ -35,6 +35,7 @@ import { useSecondsLeft } from "../hooks/useSecondsLeft";
 import { toDate } from "../utils/time";
 import {
   canCancel,
+  canChangeAddress,
   canConfirm,
   canPay,
   canRate,
@@ -79,10 +80,18 @@ function InfoBox({ title, children, strong }) {
   );
 }
 
-function Section({ title, children }) {
+// right: nút nhỏ bên phải tiêu đề (vd "Đổi" ở GIAO ĐẾN)
+function Section({ title, right, children }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      {right ? (
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          {right}
+        </View>
+      ) : (
+        <Text style={styles.sectionTitle}>{title}</Text>
+      )}
       {children}
     </View>
   );
@@ -481,7 +490,27 @@ export default function OrderDetailScreen() {
       </Section>
 
       {address ? (
-        <Section title="GIAO ĐẾN">
+        <Section
+          title="GIAO ĐẾN"
+          // Hướng A (như Shopee): đổi địa chỉ trên đơn trước khi kho đóng gói, mỗi đơn 1 lần
+          right={
+            canChangeAddress(order) ? (
+              <Text
+                style={styles.changeLink}
+                onPress={() =>
+                  router.push({
+                    pathname: "/addresses",
+                    params: { select: "order", orderId: order.id },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Đổi địa chỉ giao của đơn"
+              >
+                Đổi
+              </Text>
+            ) : null
+          }
+        >
           <Text style={styles.strong}>
             {address.recipientName} · {formatPhone(address.phone)}
           </Text>
@@ -490,6 +519,16 @@ export default function OrderDetailScreen() {
               .filter(Boolean)
               .join(", ")}
           </Text>
+          {canChangeAddress(order) ? (
+            <Text style={styles.addressNote}>
+              Sai địa chỉ? Bấm Đổi trước khi ReHome đóng gói (đổi được 1 lần).
+            </Text>
+          ) : order.addressChangedAt &&
+            (order.status === S.PENDING_PAYMENT || order.status === S.PAID) ? (
+            <Text style={styles.addressNote}>
+              Đơn đã đổi địa chỉ 1 lần. Vẫn sai thì huỷ đơn rồi đặt lại.
+            </Text>
+          ) : null}
         </Section>
       ) : null}
 
@@ -577,6 +616,17 @@ const styles = StyleSheet.create({
   },
   section: { gap: spacing.sm },
   sectionTitle: { ...textStyles.label, color: colors.textSecondary },
+  sectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  changeLink: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+  },
+  addressNote: { ...textStyles.caption, color: colors.textSecondary },
   moneyRow: {
     flexDirection: "row",
     justifyContent: "space-between",
