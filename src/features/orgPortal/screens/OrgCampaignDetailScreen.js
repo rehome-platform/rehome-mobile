@@ -192,7 +192,7 @@ export default function OrgCampaignDetailScreen() {
           <View style={styles.titleBlock}>
             <Text style={styles.title}>{campaignTitleOf(c)}</Text>
             <Text style={styles.muted}>
-              {/* [CHỜ BE] createdAt chưa có trong response → ẩn "Đăng dd/MM" */}
+              {/* "Đăng dd/MM" theo createdAt của chiến dịch */}
               {c.createdAt
                 ? `Đăng ${dayjs(c.createdAt).format("DD/MM")} · `
                 : ""}

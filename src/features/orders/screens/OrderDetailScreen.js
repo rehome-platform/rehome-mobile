@@ -173,7 +173,7 @@ export default function OrderDetailScreen() {
     );
   }
 
-  // Địa chỉ: bản chụp nếu BE trả; chưa có [CHỜ BE câu 4c] → tìm trong sổ địa chỉ theo id
+  // Địa chỉ: bản chụp lúc đặt (ordersApi.real ghép từ các trường shipping* của BE); mock không có → tra sổ địa chỉ
   const address =
     order.shippingAddress ??
     addresses.data?.find((a) => a.id === order.shippingAddressId);
@@ -557,7 +557,7 @@ export default function OrderDetailScreen() {
           trong mục Ví.
         </NoteBox>
       ) : null}
-      {/* Phase 6: hộp thư kho của đơn [CHỜ BE] API 63 trả warehouseId */}
+      {/* Hộp thư kho của đơn (warehouseId / warehouseName trong chi tiết đơn) */}
       <MessageWarehouseButton
         warehouseId={order.warehouseId}
         warehouseName={order.warehouseName}

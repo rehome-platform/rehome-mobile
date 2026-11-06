@@ -3,7 +3,7 @@ import { api, unwrap } from "@/lib/api/client";
 // ===== Đổi dữ liệu BE (868d933) về hình dạng màn hình đang dùng (giống mock) → màn hình không phải sửa =====
 
 // Thẻ đơn: BE trả phẳng firstItemName / firstItemThumbnail.
-// [CHỜ BE] summary chưa có expectedDeliveryDate, refundAmount, returnRequestId → thẻ đơn ẩn các dòng đó
+// Các trường còn lại (expectedDeliveryDate, refundAmount, returnRequestId, warehouseName…) BE trả sẵn, giữ nguyên
 const toSummary = ({ firstItemName, firstItemThumbnail, ...o }) => ({
   ...o,
   firstItem: firstItemName

@@ -3,7 +3,7 @@ import { MOCK } from "@/config/env";
 import * as real from "./withdrawalApi.real";
 import * as mock from "./withdrawalApi.mock";
 
-const impl = MOCK.withdrawals ? mock : real; // [CHỜ BE] API 90–92
+const impl = MOCK.withdrawals ? mock : real; // API 90–92 thật
 
 export const withdrawalApi = {
   createWithdrawal: impl.createWithdrawal,

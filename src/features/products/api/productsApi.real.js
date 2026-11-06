@@ -2,7 +2,7 @@ import { api, unwrap } from "@/lib/api/client";
 import { cleanFilters } from "../utils/filters";
 
 // API 49 — chỉ món ON_SALE, mới lên sàn trước. page bắt đầu từ 0
-// [CHỜ BE] Render 868d933 vẫn đòi đăng nhập (401 với Guest) — đã báo BE permitAll
+// Guest gọi được (BE permitAll — đã gọi thử không kèm token)
 export async function getProducts(params = {}) {
   return unwrap(await api.get("/products", { params: cleanFilters(params) }));
 }

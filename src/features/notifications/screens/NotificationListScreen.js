@@ -18,7 +18,6 @@ import {
   useMarkNotification,
   useNotifications,
 } from "../hooks/useNotifications";
-import { notificationRoute } from "../utils/notificationRoute";
 import { NotificationRow } from "../components/NotificationRow";
 
 // PR-05 · Thông báo (dùng chung cho tổ chức: viewer="org", backHref khác — nhánh 7)
@@ -28,7 +27,7 @@ export default function NotificationListScreen({
 }) {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useNotifications();
-  const { markRead, markAllRead, isMarkingAll } = useMarkNotification();
+  const { markAllRead, isMarkingAll } = useMarkNotification();
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -47,12 +46,11 @@ export default function NotificationListScreen({
     ...(earlier.length ? [{ title: "TRƯỚC ĐÓ", data: earlier }] : []),
   ];
 
-  // Bấm → đánh dấu đã đọc + mở màn liên quan (không có đích thì chỉ đánh dấu — 0.5 A19)
-  const open = (n) => {
-    if (!n.isRead) markRead(n.id);
-    const href = notificationRoute(n, viewer);
-    if (href) router.push(href);
-  };
+  // 3.13.4: bấm → màn chi tiết (nội dung đầy đủ + nút mở bản ghi liên quan); màn đó đánh dấu đã đọc
+  const open = (n) =>
+    router.push(
+      viewer === "org" ? `/org/notification/${n.id}` : `/notification/${n.id}`,
+    );
 
   let empty;
   if (query.isPending) {

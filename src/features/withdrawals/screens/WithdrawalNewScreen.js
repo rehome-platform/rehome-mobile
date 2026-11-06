@@ -74,10 +74,12 @@ function ProductRow({ product, fee }) {
   );
 }
 
-// Sản phẩm + điều khoản rút hàng trên biên nhận (cửa sổ miễn phí, phí rút) — /products/mine chưa có 2 số này
-// [CHỜ BE] → đọc biên nhận đang áp dụng (receiptId) để xem trước phí cho đúng
+// Sản phẩm + điều khoản rút hàng (cửa sổ miễn phí, phí rút). /products/mine đã trả sẵn 2 số này theo biên nhận
+// đang áp dụng → dùng luôn; chỉ dữ liệu cũ thiếu mới đọc biên nhận (receiptId)
 async function loadProduct(productId) {
   const p = await consignmentApi.getProduct(productId);
+  if (p.freeWithdrawalWindowDays != null && p.withdrawalFee != null)
+    return { ...p, withdrawalFee: Number(p.withdrawalFee) };
   if (!p.receiptId) return p;
   const r = await consignmentApi.getReceipt(p.receiptId).catch(() => null);
   return r

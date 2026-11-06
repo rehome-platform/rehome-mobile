@@ -276,7 +276,7 @@ export default function FormDetailScreen() {
         }
       >
         <View style={styles.topRow}>
-          {/* Mã form dễ đọc chỉ hiện khi BE trả (id là UUID) [CHỜ BE formNo] */}
+          {/* Mã yêu cầu dễ đọc (formNo); id là UUID nên không hiện id */}
           <Text style={styles.code}>
             {form.formNo ? `Mã yêu cầu ${form.formNo}` : "Yêu cầu ký gửi"}
           </Text>
