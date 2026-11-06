@@ -5,7 +5,8 @@ import { TRYON_LIMITS } from "@/constants/tryon";
 // Thử đồ AI thật (API 96–99 + GET /tryon/images/{id}). Cùng hình dạng dữ liệu với tryonApi.mock.js.
 // - /products?tryonSlot= lọc món đang bán theo loại thử đồ
 // - món trong ảnh có warehouseId → AI-04 báo "tách n đơn" khi mua cả bộ
-// - [CHỜ BE] API 96 gợi ý chỉ trả { id, name, currentPrice } → lấy thêm chi tiết từng món cho thẻ (ảnh, hãng, size)
+// - [CHỜ BE] API 96 gợi ý chỉ trả { id, name, currentPrice } → món nào thiếu thumbnailUrl thì lấy thêm chi tiết
+//   (ảnh, hãng, size). BE trả đủ trường như ProductSummaryResponse là tự bỏ bước gọi thêm, không phải sửa
 
 const SUGGESTION_COUNT = 6;
 
@@ -49,14 +50,21 @@ export async function getSuggestions({ slot, excludeProductId }) {
       }),
     ) ?? [];
   const top = list.slice(0, SUGGESTION_COUNT);
+  // BE đã trả đủ trường thẻ (thumbnailUrl…) → dùng luôn; chưa có thì mới gọi /products/{id} cho món đó
   const details = await Promise.allSettled(
-    top.map((s) => api.get(`/products/${s.id}`).then(unwrap)),
+    top.map((s) =>
+      s.thumbnailUrl
+        ? Promise.resolve(null)
+        : api.get(`/products/${s.id}`).then(unwrap),
+    ),
   );
   return top
     .map((s, i) =>
-      details[i].status === "fulfilled"
-        ? detailToCard(details[i].value)
-        : { ...s, thumbnailUrl: null, status: PRODUCT_STATUS.ON_SALE },
+      s.thumbnailUrl
+        ? { ...s, status: s.status ?? PRODUCT_STATUS.ON_SALE }
+        : details[i].status === "fulfilled"
+          ? detailToCard(details[i].value)
+          : { ...s, thumbnailUrl: null, status: PRODUCT_STATUS.ON_SALE },
     )
     .filter((p) => p.status === PRODUCT_STATUS.ON_SALE)
     .map(toSlotItem(slot));
