@@ -9,6 +9,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
 import { showToast } from "@/utils/toast";
 import { CHAT_LIMITS } from "@/constants/chat";
+import { ERROR_CODES } from "@/constants/errorCodes";
 import { chatApi } from "../api/chatApi";
 import { chatKeys } from "../api/queryKeys";
 
@@ -56,16 +57,27 @@ const patchMessages = (qc, id, fn) =>
       : data,
   );
 
-// Gửi LẠC QUAN: hiện bong bóng "đang gửi" ngay (id tạm), xong thay bằng tin thật; lỗi → bong bóng "Gửi lại"
+// Gửi LẠC QUAN: hiện bong bóng "đang gửi" ngay (id tạm, ảnh trong máy), upload ảnh rồi gửi; xong thay bằng tin
+// thật (chữ BE đã che SĐT / email / số tài khoản); lỗi → bong bóng "Gửi lại" (giữ ảnh trong máy để upload lại).
+// Gửi quá nhanh (429 MESSAGE_RATE_LIMITED) → báo câu của BE
+const isRemote = (uri) => /^https?:\/\//.test(uri ?? "");
 export function useSendMessage(id) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ content }) => chatApi.sendMessage(id, content),
-    onMutate: async ({ content, tempId }) => {
+    mutationFn: async ({ content, images = [] }) => {
+      const urls = await Promise.all(
+        images.map((uri) =>
+          isRemote(uri) ? uri : chatApi.uploadChatImage(uri),
+        ),
+      );
+      return chatApi.sendMessage(id, content, urls);
+    },
+    onMutate: async ({ content, images = [], tempId }) => {
       await qc.cancelQueries({ queryKey: chatKeys.messages(id) });
       const temp = {
         id: tempId,
         content,
+        imageUrls: images,
         createdAt: new Date().toISOString(),
         isMine: true,
         pending: true,
@@ -85,12 +97,14 @@ export function useSendMessage(id) {
       patchMessages(qc, id, (list) =>
         list.map((m) => (m.id === tempId ? msg : m)),
       ),
-    onError: (_e, { tempId }) =>
+    onError: (e, { tempId }) => {
+      if (e?.code === ERROR_CODES.MESSAGE_RATE_LIMITED) showToast(e.message);
       patchMessages(qc, id, (list) =>
         list.map((m) =>
           m.id === tempId ? { ...m, pending: false, failed: true } : m,
         ),
-      ),
+      );
+    },
     onSettled: () => qc.invalidateQueries({ queryKey: chatKeys.list }),
   });
 }

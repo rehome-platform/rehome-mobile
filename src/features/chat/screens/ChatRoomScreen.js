@@ -50,6 +50,7 @@ export default function ChatRoomScreen({ viewer = "member" }) {
   const dropFailed = useDropFailed(id);
   const markRead = useMarkRead(id);
   const [text, setText] = useState("");
+  const [images, setImages] = useState([]); // ảnh đính kèm đang chọn (uri trong máy)
   const draftDone = useRef(false);
 
   // Chỉ tự hỏi lại khi phòng đang mở (rời màn / app nền thì dừng)
@@ -84,15 +85,21 @@ export default function ChatRoomScreen({ viewer = "member" }) {
   const c = conv.data;
   const warehouse = isWarehouse(c);
 
+  // Có chữ hoặc có ảnh là gửi được (chỉ ảnh cũng được — 3.13.2)
   const submit = () => {
     const content = text.trim();
-    if (!content) return;
-    send.mutate({ content, tempId: `tmp-${Date.now()}` });
+    if (!content && !images.length) return;
+    send.mutate({ content, images, tempId: `tmp-${Date.now()}` });
     setText("");
+    setImages([]);
   };
   const retry = (m) => {
     dropFailed(m.id);
-    send.mutate({ content: m.content, tempId: `tmp-${Date.now()}` });
+    send.mutate({
+      content: m.content,
+      images: m.imageUrls ?? [],
+      tempId: `tmp-${Date.now()}`,
+    });
   };
 
   // Dải ngày: hiện ở tin đầu tiên của mỗi ngày (list mới → cũ, FlatList inverted)
@@ -119,7 +126,15 @@ export default function ChatRoomScreen({ viewer = "member" }) {
         />
       }
       padded={false}
-      footer={<ChatInput value={text} onChange={setText} onSend={submit} />}
+      footer={
+        <ChatInput
+          value={text}
+          onChange={setText}
+          onSend={submit}
+          images={images}
+          onImages={setImages}
+        />
+      }
     >
       {c ? (
         <View style={styles.strip}>

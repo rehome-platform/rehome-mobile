@@ -10,4 +10,7 @@ export const UPLOAD_FOLDER = {
   ORGANIZATION_DOCUMENTS: "ORGANIZATION_DOCUMENTS",
   ORGANIZATION_LOGOS: "ORGANIZATION_LOGOS",
   CAMPAIGN_COVERS: "CAMPAIGN_COVERS",
+  // Ảnh đính kèm tin nhắn (3.13.2). [CHỜ BE] enum chưa có CHAT_IMAGES → tạm dùng thư mục ảnh có sẵn
+  // (/uploads không giới hạn thư mục theo vai). BE thêm CHAT_IMAGES thì đổi giá trị thành "CHAT_IMAGES"
+  CHAT_IMAGES: "COMMUNITY_POSTS",
 };

@@ -280,8 +280,14 @@ export async function getMessages(id, { page = 0, size = 30 } = {}) {
   };
 }
 
+// Ảnh đính kèm: mock giữ nguyên ảnh trong máy để vẫn hiện
+export async function uploadChatImage(uri) {
+  await delay(300);
+  return uri;
+}
+
 // ---------- API 113 ----------
-export async function sendMessage(id, content) {
+export async function sendMessage(id, content, imageUrls = []) {
   await delay(500);
   const c = findConv(id);
   if (failNext) {
@@ -292,8 +298,9 @@ export async function sendMessage(id, content) {
       message: "Mất kết nối, chưa gửi được.",
     });
   }
-  const text = content?.trim();
-  if (!text || text.length > CHAT_LIMITS.MAX_CHARS) {
+  const text = content?.trim() ?? "";
+  // Như BE: chỉ ảnh cũng được; không chữ không ảnh / chữ quá dài → 400
+  if ((!text && !imageUrls.length) || text.length > CHAT_LIMITS.MAX_CHARS) {
     throw new ApiError({
       status: 400,
       code: "HTTP_400",
@@ -306,6 +313,7 @@ export async function sendMessage(id, content) {
     conversationId: id,
     senderId: ME,
     content: text,
+    imageUrls,
     createdAt: dayjs().toISOString(),
   };
   messages.push(m);
