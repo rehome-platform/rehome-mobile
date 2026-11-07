@@ -452,6 +452,19 @@ export default function OrderDetailScreen() {
               ? `${order.serviceRating}/5 · dịch vụ của ReHome`
               : "Chấm dịch vụ đóng gói và giao hàng của ReHome"}
           </Text>
+          {order.ratingComment ? (
+            <Text style={styles.text} numberOfLines={3}>
+              “{order.ratingComment}”
+            </Text>
+          ) : null}
+          {order.ratingImageUrls?.length ? (
+            <Text
+              style={styles.muted}
+              onPress={() => router.push(`/orders/${order.id}/rating`)}
+            >
+              Kèm {order.ratingImageUrls.length} ảnh · Xem
+            </Text>
+          ) : null}
         </Section>
       ) : null}
 

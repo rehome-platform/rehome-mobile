@@ -12,4 +12,6 @@ export const UPLOAD_FOLDER = {
   CAMPAIGN_COVERS: "CAMPAIGN_COVERS",
   // Ảnh đính kèm tin nhắn (3.13.2). BE chỉ nhận imageUrls là ảnh đã upload lên Cloudinary của hệ thống
   CHAT_IMAGES: "CHAT_IMAGES",
+  // [CHỜ BE] ảnh kèm đánh giá đơn (BR-14) — BE chưa có thư mục này, chỉ dùng khi RATING_LIMITS.IMAGES_READY = true
+  ORDER_RATINGS: "ORDER_RATINGS",
 };

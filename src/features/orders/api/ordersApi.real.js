@@ -88,9 +88,15 @@ export async function confirmReceipt(id) {
   return unwrap(await api.post(`/orders/${id}/confirm-receipt`));
 }
 
-// API 67 — 1..5, chỉ COMPLETED. BE nhận thêm comment (app chưa có ô nhập)
-export async function rateOrder(id, serviceRating) {
-  return unwrap(await api.post(`/orders/${id}/rating`, { serviceRating }));
+// API 67 — 1..5, chỉ COMPLETED. comment: nhận xét (không bắt buộc, BE lưu ratingComment).
+// imageUrls: ảnh đã upload — [CHỜ BE] chỉ gửi khi có ảnh (RATING_LIMITS.IMAGES_READY)
+export async function rateOrder(
+  id,
+  { serviceRating, comment, imageUrls = [] },
+) {
+  const body = { serviceRating, comment: comment?.trim() || null };
+  if (imageUrls.length) body.imageUrls = imageUrls;
+  return unwrap(await api.post(`/orders/${id}/rating`, body));
 }
 
 // Đơn đã bán: đơn có món do chính mình ký gửi (BE OrderController GET /orders/sold). Chỉ tính các món của mình;

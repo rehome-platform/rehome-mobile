@@ -232,6 +232,7 @@ let orders = [
     deliveredAt: ago(350, "hour"),
     completedAt: ago(340, "hour"),
     serviceRating: 4,
+    ratingComment: "Đóng gói kỹ, giao nhanh. Hộp hơi móp một góc.",
     ratedAt: ago(339, "hour"),
   }),
   seed({
@@ -526,7 +527,10 @@ export async function confirmReceipt(id) {
   return { id: o.id, status: o.status };
 }
 
-export async function rateOrder(id, serviceRating) {
+export async function rateOrder(
+  id,
+  { serviceRating, comment, imageUrls = [] },
+) {
   await delay();
   const o = findOrder(id);
   if (
@@ -544,8 +548,10 @@ export async function rateOrder(id, serviceRating) {
     throw conflict("HTTP_409", "Chỉ đánh giá được đơn đã hoàn thành.");
   }
   o.serviceRating = serviceRating;
+  o.ratingComment = comment?.trim() || null;
+  o.ratingImageUrls = imageUrls;
   o.ratedAt = now();
-  return { id: o.id, serviceRating };
+  return { id: o.id, serviceRating, comment: o.ratingComment };
 }
 
 // ---------- [DEV] dùng trong khung Mock ----------
