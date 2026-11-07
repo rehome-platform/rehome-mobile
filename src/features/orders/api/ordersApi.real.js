@@ -89,7 +89,7 @@ export async function confirmReceipt(id) {
 }
 
 // API 67 — 1..5, chỉ COMPLETED. comment: nhận xét (không bắt buộc, BE lưu ratingComment).
-// imageUrls: ảnh đã upload — [CHỜ BE] chỉ gửi khi có ảnh (RATING_LIMITS.IMAGES_READY)
+// imageUrls: ảnh đã upload vào ORDER_RATINGS (≤ 5, BE chỉ nhận link Cloudinary của hệ thống) — chỉ gửi khi có ảnh
 export async function rateOrder(
   id,
   { serviceRating, comment, imageUrls = [] },
