@@ -1,12 +1,15 @@
-import Constants from "expo-constants";
 import { ENV } from "@/config/env";
 
 // Expo Go KHÔNG có module native của Google → chỉ nạp khi chạy bản dev build / APK.
 // Nhờ vậy app vẫn mở được bằng Expo Go (nút Google chỉ báo "cần bản cài đặt").
-const isExpoGo = Constants.executionEnvironment === "storeClient";
-const Google = isExpoGo
-  ? null
-  : require("@react-native-google-signin/google-signin");
+// Dùng try/catch thay vì chỉ dựa vào Constants.executionEnvironment: giá trị "storeClient"
+// gộp cả Expo Go và dev build nên không chắc luôn phân biệt đúng; module không có thì rơi về null.
+let Google = null;
+try {
+  Google = require("@react-native-google-signin/google-signin");
+} catch {
+  Google = null;
+}
 
 export const GOOGLE_AVAILABLE = Google !== null;
 
