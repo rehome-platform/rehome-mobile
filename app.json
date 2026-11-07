@@ -52,7 +52,15 @@
       ],
       "@react-native-google-signin/google-signin",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#006B2C",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "extra": {
       "router": {

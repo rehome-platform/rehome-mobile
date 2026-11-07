@@ -19,6 +19,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { ROLES } from "@/constants/roles";
 import { BootSplash } from "@/components/ui/BootSplash";
 import { useRealtime } from "@/lib/realtime/useRealtime";
+import { usePush } from "@/lib/push/usePush";
 
 // Mở app không kèm đường dẫn → mặc định vào nhóm (member) (tab Mua sắm).
 // Không khai báo thì Expo Router lấy nhóm đứng đầu theo bảng chữ cái là "(auth)" → khách bị đưa vào màn Đăng nhập.
@@ -40,6 +41,8 @@ export default function RootLayout() {
   const segments = useSegments();
   const navReady = !!useRootNavigationState()?.key; // Stack đã dựng xong mới điều hướng được
   useRealtime(); // WebSocket: tin nhắn + thông báo tức thì khi đã đăng nhập
+  // Thông báo đẩy (app tắt / nền). Tổ chức chờ vào nhóm (org) rồi mới mở màn từ thông báo
+  usePush(navReady && (!isOrg || segments[0] === "(org)"));
 
   useEffect(() => {
     useAuthStore.getState().bootstrap(); // khôi phục phiên khi mở app

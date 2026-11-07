@@ -43,3 +43,9 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+
+# Firebase (thông báo đẩy) — KHÔNG đẩy lên git. EAS build lấy qua biến môi trường dạng file GOOGLE_SERVICES_JSON
+google-services.json
+GoogleService-Info.plist
+gs.b64
+*.b64
