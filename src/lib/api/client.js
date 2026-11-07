@@ -1,4 +1,5 @@
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 import { ENV } from "@/config/env";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { toApiError } from "./errors";
@@ -42,6 +43,27 @@ async function refreshTokens() {
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
   });
+}
+
+// Access token còn dưới 30 giây (hoặc không đọc được) → coi như hết hạn
+const isExpiring = (token) => {
+  try {
+    return jwtDecode(token).exp * 1000 < Date.now() + 30000;
+  } catch {
+    return true;
+  }
+};
+
+// Cho WebSocket: BE chỉ kiểm token lúc CONNECT, không tự refresh giữa phiên → lấy token còn hạn trước khi kết nối.
+// Dùng chung khoá `refreshing` với interceptor bên dưới (không refresh 2 lần cùng lúc). Lỗi → ném ra
+export async function getFreshAccessToken() {
+  const token = await tokenStorage.getAccessToken();
+  if (token && !isExpiring(token)) return token;
+  refreshing ??= refreshTokens().finally(() => {
+    refreshing = null;
+  });
+  await refreshing;
+  return tokenStorage.getAccessToken();
 }
 
 api.interceptors.response.use(

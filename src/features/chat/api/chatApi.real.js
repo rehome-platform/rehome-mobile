@@ -8,7 +8,7 @@ import { uploadFile } from "@/lib/api/upload";
 
 // Chat thật (API 110–113) cho cả Member và Tổ chức. Cùng hình dạng dữ liệu với chatApi.mock.js.
 // BE trả: counterpart { id, displayName, avatarUrl }, lastMessage { content, createdAt, senderId }, unreadCount;
-// tin nhắn có isMine; có GET /conversations/{id}. Mở phòng (GET messages) BE tự đánh dấu đã đọc → markRead không gọi gì
+// tin nhắn có isMine; có GET /conversations/{id}. Mở phòng (GET messages) BE tự đánh dấu đã đọc; tin đến qua WebSocket → markRead
 
 const isOrg = () => useAuthStore.getState().user?.role === ROLES.ORGANIZATION;
 const myAccountId = () => useAuthStore.getState().user?.accountId;
@@ -112,7 +112,11 @@ export async function uploadChatImage(uri) {
   return res.url;
 }
 
-// BE đánh dấu đã đọc ngay khi đọc tin (getMessages) → không cần gọi thêm
-export async function markRead() {
+// BE không có API đánh dấu đã đọc riêng — chỉ ghi khi đọc tin (GET messages). Tin mới đến qua WebSocket
+// (không đi qua GET) → gọi nhẹ 1 tin để BE ghi đã đọc, danh sách / badge hết số chưa đọc
+export async function markRead(id) {
+  await api.get(`/conversations/${id}/messages`, {
+    params: { page: 0, size: 1 },
+  });
   return null;
 }

@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useAuthStore } from "@/stores/authStore";
+import { useSocketStore } from "@/lib/realtime/socket";
 import { NOTIFICATION_LIMITS } from "@/constants/notification";
 import { notificationApi } from "../api/notificationApi";
 import { notificationKeys } from "../api/queryKeys";
@@ -24,15 +25,17 @@ export function useNotifications() {
   });
 }
 
-// Chuông: hỏi lại 60 giây/lần + mỗi lần màn chứa chuông được mở lại (bấm Khung Mock ở màn khác rồi quay về)
+// Chuông: có WebSocket thì BE báo tức thì (useRealtime làm mới) → không hỏi lại; mất kết nối thì hỏi lại 60 giây/lần.
+// Mỗi lần màn chứa chuông được mở lại cũng tải lại
 export function useUnreadNotifications() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const live = useSocketStore((s) => s.connected);
   const query = useQuery({
     queryKey: notificationKeys.unread,
     queryFn: notificationApi.getUnreadCount,
     select: (d) => d?.count ?? 0,
     enabled: isAuthed,
-    refetchInterval: NOTIFICATION_LIMITS.UNREAD_POLL_MS,
+    refetchInterval: live ? false : NOTIFICATION_LIMITS.UNREAD_POLL_MS,
   });
   useFocusEffect(
     useCallback(() => {

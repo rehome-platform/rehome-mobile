@@ -100,3 +100,12 @@ export const RATING_LABEL = {
   4: "Tốt",
   5: "Rất tốt",
 };
+
+// BR-14 · nhận xét + ảnh kèm khi đánh giá (không bắt buộc, như Shopee / Lazada)
+export const RATING_LIMITS = {
+  MAX_COMMENT: 500, // ký tự
+  MAX_IMAGES: 5,
+  // BE ebd75f2: API 67 nhận imageUrls (≤ 5, chỉ link Cloudinary của hệ thống), comment ≤ 500;
+  // ảnh upload vào ORDER_RATINGS; chi tiết đơn trả ratingImageUrls
+  IMAGES_READY: true,
+};
