@@ -28,6 +28,7 @@ import {
   useDropFailed,
   useMarkRead,
   useMessages,
+  useRoomSocket,
   useSendMessage,
 } from "../hooks/useChat";
 import { dayLabel, isWarehouse } from "../utils/chatRules";
@@ -49,6 +50,7 @@ export default function ChatRoomScreen({ viewer = "member" }) {
   const send = useSendMessage(id);
   const dropFailed = useDropFailed(id);
   const markRead = useMarkRead(id);
+  useRoomSocket(id, conv.data, focused); // tin mới tức thì qua WebSocket khi phòng đang mở
   const [text, setText] = useState("");
   const [images, setImages] = useState([]); // ảnh đính kèm đang chọn (uri trong máy)
   const draftDone = useRef(false);
