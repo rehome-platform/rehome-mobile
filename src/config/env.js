@@ -28,4 +28,5 @@ export const MOCK = {
   notifications: false, // API 114–116 thật: tiêu đề, đích mở màn, đánh dấu đã đọc, số chưa đọc
   orgCampaigns: false, // App tổ chức: chiến dịch, lượt chờ lấy, note quyên góp — thật (BE 41f10c8)
   orgPosts: false, // App tổ chức: bài viết, bình luận, thả tim + trả lời (L9) — thật (BE 41f10c8)
+  tryonLive: false, // Thử đồ AI real-time (Decart Lucy VTON) — GET /tryon/live/quota, POST /tryon/live/sessions
 };

@@ -331,6 +331,35 @@ export default function ProductDetailScreen() {
             />
           </Pressable>
         ) : null}
+        {/* Thử đồ AI real-time qua camera (Decart Lucy VTON) - 2 lượt/ngày, 10 giây/lượt (BE chặn) */}
+        {!query.isPlaceholderData && canTryOn(product) ? (
+          <Pressable
+            onPress={() =>
+              isAuthed
+                ? router.push(`/tryon-live/${id}`)
+                : askLogin(
+                    `/products/${id}`,
+                    "Đăng nhập để thử đồ",
+                    "Bạn cần đăng nhập để thử đồ AI real-time bằng camera.",
+                  )
+            }
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.tryon, pressed && styles.pressed]}
+          >
+            <Ionicons name="flash-outline" size={20} color={colors.primary} />
+            <View style={styles.flex}>
+              <Text style={styles.tryonTitle}>Thử đồ AI real-time</Text>
+              <Text style={styles.muted}>
+                Mở camera, mặc thử ngay trong 10 giây (2 lượt/ngày)
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
         {info ? (
           <View style={styles.stateBox}>
             <Text style={styles.stateTitle}>{info.title}</Text>
