@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
+import { setActiveConversation } from "@/lib/push/push";
 import { CHAT_NOTICE, CHAT_SUBTITLE } from "@/constants/chat";
 import { chatApi } from "../api/chatApi";
 import {
@@ -28,6 +29,7 @@ import {
   useDropFailed,
   useMarkRead,
   useMessages,
+  useRoomSocket,
   useSendMessage,
 } from "../hooks/useChat";
 import { dayLabel, isWarehouse } from "../utils/chatRules";
@@ -49,16 +51,22 @@ export default function ChatRoomScreen({ viewer = "member" }) {
   const send = useSendMessage(id);
   const dropFailed = useDropFailed(id);
   const markRead = useMarkRead(id);
+  useRoomSocket(id, conv.data, focused); // tin mới tức thì qua WebSocket khi phòng đang mở
   const [text, setText] = useState("");
   const [images, setImages] = useState([]); // ảnh đính kèm đang chọn (uri trong máy)
   const draftDone = useRef(false);
 
   // Chỉ tự hỏi lại khi phòng đang mở (rời màn / app nền thì dừng)
+  // Đang ở phòng này → push tin của chính phòng này không hiện banner (tin đã hiện ngay trong phòng)
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
-      return () => setFocused(false);
-    }, []),
+      setActiveConversation(id);
+      return () => {
+        setFocused(false);
+        setActiveConversation(null);
+      };
+    }, [id]),
   );
 
   const list = query.data ?? [];

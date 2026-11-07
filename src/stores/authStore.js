@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
 import { setOnSessionExpired } from "@/lib/api/client";
+import { unregisterPush } from "@/lib/push/push";
 import { queryClient } from "@/lib/query/queryClient";
 import { authApi } from "@/features/auth/api/authApi";
 import { useCheckoutStore } from "@/stores/checkoutStore";
@@ -38,6 +39,9 @@ export const useAuthStore = create((set) => ({
   },
 
   signOut: async (reason = null) => {
+    // Tự đăng xuất: gỡ token FCM (còn access token) → máy này thôi nhận push của tài khoản cũ.
+    // Bị đăng xuất do hết phiên / bị khoá (reason): gọi API nữa sẽ lại 401 → chỉ quên token trên máy
+    await unregisterPush({ remote: !reason });
     try {
       await authApi.logout(); // BE trả 500 nếu access token đã hết hạn — bỏ qua
     } catch {}

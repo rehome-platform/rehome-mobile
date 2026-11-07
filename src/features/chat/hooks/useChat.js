@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -5,7 +6,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { router } from "expo-router";
+import { MOCK } from "@/config/env";
 import { useAuthStore } from "@/stores/authStore";
+import { subscribe, useSocketStore } from "@/lib/realtime/socket";
+import { ROLES } from "@/constants/roles";
 import { askLogin } from "@/utils/askLogin";
 import { showToast } from "@/utils/toast";
 import { CHAT_LIMITS } from "@/constants/chat";
@@ -32,8 +36,10 @@ export function useConversation(id) {
   });
 }
 
-// CH-02 · mới nhất trước (FlatList inverted). active = phòng đang mở → hỏi lại 3 giây/lần
+// CH-02 · mới nhất trước (FlatList inverted). active = phòng đang mở.
+// Có WebSocket thì tin mới đến qua useRoomSocket → không hỏi lại; mất kết nối thì hỏi lại 3 giây/lần như cũ
 export function useMessages(id, active) {
+  const live = useSocketStore((s) => s.connected);
   return useInfiniteQuery({
     queryKey: chatKeys.messages(id),
     queryFn: ({ pageParam }) => chatApi.getMessages(id, { page: pageParam }),
@@ -42,8 +48,53 @@ export function useMessages(id, active) {
       last.page + 1 < last.totalPages ? last.page + 1 : undefined,
     select: (data) => data.pages.flatMap((p) => p.content),
     enabled: !!id,
-    refetchInterval: active ? CHAT_LIMITS.ROOM_POLL_MS : false,
+    refetchInterval: active && !live ? CHAT_LIMITS.ROOM_POLL_MS : false,
   });
+}
+
+// Tin của mình? Tin qua WebSocket luôn isMine = false (BE gửi 1 bản chung) → tự so senderId.
+// Member: so với accountId của mình. Tổ chức (hồ sơ không có accountId): tin không phải của đối tác (Member)
+const isMineSocket = (senderId, conversation) => {
+  const user = useAuthStore.getState().user;
+  return user?.role === ROLES.ORGANIZATION
+    ? senderId !== conversation?.counterpart?.id
+    : senderId === user?.accountId;
+};
+
+// Nhận tin mới của phòng đang mở qua /topic/conversations.{id}. Chỉ đăng ký khi ĐÃ tải được hội thoại
+// (BE chặn người ngoài hội thoại bằng frame ERROR — đóng cả kết nối, mất luôn kênh thông báo).
+// Tin của mình bỏ qua: đã có từ REST (gửi lạc quan), thêm nữa sẽ hiện 2 lần.
+// Tin của đối tác chèn đầu danh sách → latestTheirs đổi → ChatRoomScreen gọi markRead (BE ghi đã đọc)
+export function useRoomSocket(id, conversation, active) {
+  const qc = useQueryClient();
+  const ready = active && !!conversation && !MOCK.chat;
+  useEffect(() => {
+    if (!ready) return;
+    return subscribe(`/topic/conversations.${id}`, (m) => {
+      if (!m?.id || isMineSocket(m.senderId, conversation)) return;
+      const msg = {
+        id: m.id,
+        senderId: m.senderId,
+        content: m.content ?? "",
+        imageUrls: m.imageUrls ?? [],
+        createdAt: m.createdAt,
+        isMine: false,
+      };
+      qc.setQueryData(chatKeys.messages(id), (data) => {
+        if (
+          !data ||
+          data.pages.some((p) => p.content.some((x) => x.id === msg.id))
+        )
+          return data; // đã có (vừa tải lại cùng lúc)
+        return {
+          ...data,
+          pages: data.pages.map((pg, i) =>
+            i === 0 ? { ...pg, content: [msg, ...pg.content] } : pg,
+          ),
+        };
+      });
+    });
+  }, [ready, id, conversation?.counterpart?.id]);
 }
 
 // Sửa tin trong cache (mọi trang)

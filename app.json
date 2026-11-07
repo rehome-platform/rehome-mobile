@@ -6,6 +6,12 @@
     "scheme": "rehome",
     "version": "1.0.0",
     "orientation": "portrait",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3b69c8e6-0973-4f95-af12-f271e8fec947"
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -52,7 +58,15 @@
       ],
       "@react-native-google-signin/google-signin",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#006B2C",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "extra": {
       "router": {
