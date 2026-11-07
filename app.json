@@ -52,7 +52,23 @@
       ],
       "@react-native-google-signin/google-signin",
       "expo-web-browser",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ReHome cần dùng camera để bạn thử đồ AI real-time.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "ReHome cần quyền này để lưu video thử đồ AI vào thư viện ảnh của bạn.",
+          "savePhotosPermission": "ReHome cần quyền này để lưu video thử đồ AI vào thư viện ảnh của bạn.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "extra": {
       "router": {
