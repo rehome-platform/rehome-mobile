@@ -392,18 +392,13 @@ export async function createOrders({ shippingAddressId, productIds }) {
     );
   }
 
-  // Tách đơn theo kho
-  const byWarehouse = new Map();
-  products.forEach((p) =>
-    byWarehouse.set(p.warehouseId, [
-      ...(byWarehouse.get(p.warehouseId) ?? []),
-      p,
-    ]),
-  );
+  // Mỗi món một đơn, đúng thứ tự productIds (BE 963758f, kể cả cùng kho)
   const paymentDeadline = later(DEADLINE_MINUTES, "minute"); // ISO có "Z" như BE
 
-  const created = [...byWarehouse.entries()].map(([warehouseId, list]) => {
-    const subtotal = list.reduce((sum, p) => sum + p.currentPrice, 0);
+  const created = products.map((p) => {
+    const list = [p];
+    const { warehouseId } = p;
+    const subtotal = p.currentPrice;
     seq += 1;
     const order = {
       ...blank(),

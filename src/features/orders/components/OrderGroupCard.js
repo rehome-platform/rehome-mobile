@@ -38,7 +38,7 @@ const feeText = (fee) => {
   return "Tính khi đặt hàng";
 };
 
-// "Đơn 1 / 2 — Kho Quận 1": các món cùng kho = một đơn, một phí vận chuyển
+// "Đơn 1 / 2 — Kho Quận 1": một đơn, một phí vận chuyển. Đơn mới luôn 1 món (BE tách đơn theo món)
 export function OrderGroupCard({ group, index, total, fee }) {
   return (
     <View style={styles.card}>
@@ -47,7 +47,9 @@ export function OrderGroupCard({ group, index, total, fee }) {
           {total > 1 ? `Đơn ${index + 1} / ${total} — ` : ""}
           {group.warehouseName}
         </Text>
-        <Text style={styles.count}>{group.lines.length} món</Text>
+        {group.lines.length > 1 ? (
+          <Text style={styles.count}>{group.lines.length} món</Text>
+        ) : null}
       </View>
       <View style={styles.body}>
         {group.lines.map((line) => (

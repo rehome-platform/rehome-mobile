@@ -24,7 +24,6 @@ import { useCheckoutStore } from "@/stores/checkoutStore";
 import { formatVnd } from "@/utils/money";
 import { formatAddress, formatPhone } from "@/utils/format";
 import { showToast } from "@/utils/toast";
-import { cartApi } from "@/features/cart/api/cartApi";
 import { cartKeys } from "@/features/cart/api/queryKeys";
 import { useCart } from "@/features/cart/hooks/useCart";
 import { useAddresses } from "@/features/addresses/hooks/useAddresses";
@@ -64,20 +63,13 @@ const productLine = (p) => ({
   available: p.status === PRODUCT_STATUS.ON_SALE,
 });
 
-// Gom theo kho = một đơn (BE tách đơn theo kho)
-const groupLines = (lines) => {
-  const map = new Map();
-  lines.forEach((l) => {
-    const g = map.get(l.warehouseId) ?? {
-      warehouseId: l.warehouseId,
-      warehouseName: l.warehouseName,
-      lines: [],
-    };
-    g.lines.push(l);
-    map.set(l.warehouseId, g);
-  });
-  return [...map.values()];
-};
+// Mỗi món = một đơn, một phí vận chuyển (BE 963758f: tách đơn theo món như Shopee, kể cả cùng kho)
+const toOrders = (lines) =>
+  lines.map((l) => ({
+    key: l.productId,
+    warehouseName: l.warehouseName,
+    lines: [l],
+  }));
 
 // BR-08 · Đặt hàng. Vào từ giỏ (?ids=…) hoặc Mua ngay (?buyNow=id)
 export default function CheckoutScreen() {
@@ -113,7 +105,7 @@ export default function CheckoutScreen() {
   const lines = source.filter((l) => ids.includes(l.productId));
   const lost = lines.filter((l) => !l.available); // vừa bị người khác đặt / không còn bán
   const okLines = lines.filter((l) => l.available);
-  const groups = groupLines(okLines);
+  const groups = toOrders(okLines);
 
   const addrList = addresses.data ?? [];
   const address =
@@ -121,7 +113,7 @@ export default function CheckoutScreen() {
     addrList.find((a) => a.isDefault) ??
     addrList[0];
 
-  // Phí ship GHN thật từng đơn (= từng kho): hỏi theo 1 món đại diện của kho, đổi địa chỉ là tính lại
+  // Phí ship GHN thật từng đơn (= từng món), đổi địa chỉ là tính lại. Tổng phí = cộng phí mọi đơn
   const feeQueries = useQueries({
     queries: groups.map((g) => shippingFeeQuery(g.lines[0].productId, address)),
   });
@@ -162,38 +154,23 @@ export default function CheckoutScreen() {
     if (place.isPending) return; // chống bấm 2 lần: mỗi lần là tạo đơn + giữ hàng
     if (!address) return setFormError("Thêm địa chỉ giao hàng trước khi đặt.");
     setFormError(null);
+    // Luôn gửi productIds (kể cả đặt cả giỏ): BE tạo đơn ĐÚNG THỨ TỰ productIds và tự xoá các món đó khỏi giỏ
+    // → đơn thứ i là món list[i]. BE không trả tên món / tên kho trong đơn → app ghép từ các dòng vừa đặt
     const productIds = list.map((l) => l.productId);
-    // Đặt đúng TOÀN BỘ giỏ (mọi món còn mua được) → không gửi productIds, BE tự xoá khỏi giỏ.
-    // Còn lại gửi productIds: BE KHÔNG xoá khỏi giỏ → app tự xoá (PHASE3_GUIDE 5.2b #2)
-    const wholeCart =
-      !buyNowId &&
-      inCart.length === list.length &&
-      inCart.every((l) => l.available);
 
     place.mutate(
+      { shippingAddressId: address.id, productIds },
       {
-        shippingAddressId: address.id,
-        productIds: wholeCart ? undefined : productIds,
-      },
-      {
-        onSuccess: async (orders) => {
-          if (!wholeCart) {
-            const cartItemIds = inCart
-              .filter((l) => productIds.includes(l.productId))
-              .map((l) => l.cartItemId);
-            await Promise.allSettled(
-              cartItemIds.map((cid) => cartApi.removeCartItem(cid)),
-            );
-          }
-          // BE không trả tên kho → lấy từ các dòng vừa đặt
-          const warehouseNameOf = (whId) =>
-            list.find((l) => l.warehouseId === whId)?.warehouseName ??
-            "Địa điểm ký gửi";
+        onSuccess: (orders) => {
           setPendingOrders(
-            orders.map((o) => ({
-              ...o,
-              warehouseName: warehouseNameOf(o.warehouseId),
-            })),
+            orders.map((o, i) => {
+              const line = list[i];
+              return {
+                ...o,
+                itemName: line?.name ?? null,
+                warehouseName: line?.warehouseName ?? "Địa điểm ký gửi",
+              };
+            }),
           );
           queryClient.invalidateQueries({ queryKey: cartKeys.cart });
           queryClient.invalidateQueries({ queryKey: ["products"] }); // món đã RESERVED, rời sàn
@@ -339,14 +316,14 @@ export default function CheckoutScreen() {
             color={colors.text}
           />
           <Text style={styles.bannerText}>
-            {`Hàng ở ${groups.length} địa điểm ký gửi nên tách thành ${groups.length} đơn riêng, giao ${groups.length} lần, mỗi đơn một phí vận chuyển.`}
+            {`Mỗi món là một đơn riêng: ${groups.length} món thành ${groups.length} đơn, giao riêng và tính phí vận chuyển riêng từng đơn.`}
           </Text>
         </View>
       ) : null}
 
       {groups.map((g, i) => (
         <OrderGroupCard
-          key={g.warehouseId}
+          key={g.key}
           group={g}
           index={i}
           total={groups.length}

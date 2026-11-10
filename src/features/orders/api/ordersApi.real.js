@@ -33,10 +33,11 @@ const toTracking = (t) => ({
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
 });
 
-// API 59. Chỉ MEMBER. Trả MẢNG đơn (tách theo kho): {id, orderNo, warehouseId, subtotal,
-// shippingFee, totalAmount, status, paymentDeadline}. KHÔNG có tên kho (checkout tự điền)
-// - Không gửi productIds → đặt CẢ GIỎ; 1 món không còn bán → 409 cả lần; xong BE xoá món khỏi giỏ
-// - Có productIds → chỉ đặt các món đó, BE KHÔNG xoá khỏi giỏ (app tự xoá)
+// API 59. Chỉ MEMBER. Trả MẢNG đơn — MỖI MÓN MỘT ĐƠN (BE 963758f, kể cả cùng kho), đúng thứ tự productIds:
+// {id, orderNo, warehouseId, subtotal (= giá món), shippingFee (riêng từng đơn), totalAmount, status, paymentDeadline}.
+// KHÔNG có tên món / tên kho (checkout tự điền)
+// - Có productIds → đặt các món đó, BE tự xoá chúng khỏi giỏ. Checkout luôn gửi productIds
+// - Không gửi productIds → đặt CẢ GIỎ (thứ tự theo giỏ của BE); 1 món không còn bán → 409 cả lần
 export async function createOrders({ shippingAddressId, productIds }) {
   const body = productIds?.length
     ? { shippingAddressId, productIds }
