@@ -1,8 +1,14 @@
 // enum CampaignStatus của BE (a0c6abe: Campaign.status mặc định OPEN). API 102 ví dụ "ACTIVE" → [KIỂM TRA]
-export const CAMPAIGN_STATUS = { OPEN: "OPEN", CLOSED: "CLOSED" };
+// HIDDEN (BE ee01f91): Moderator ẩn do vi phạm — chỉ tổ chức sở hữu thấy (kèm hiddenReason), Member/Guest nhận 404
+export const CAMPAIGN_STATUS = {
+  OPEN: "OPEN",
+  CLOSED: "CLOSED",
+  HIDDEN: "HIDDEN",
+};
 export const CAMPAIGN_STATUS_LABEL = {
   OPEN: "Đang nhận đồ",
   CLOSED: "Đã đóng",
+  HIDDEN: "Bị ẩn",
 };
 
 // enum ContentStatus của BE (bài viết, bình luận): REMOVED = bị gỡ (tổ chức xoá bài / Moderator ẩn bình luận)
@@ -16,6 +22,7 @@ export const COMMENT_AUTHOR_TYPE = {
 // [GIẢ ĐỊNH tới khi BE chốt] — OB-02, mục 11 tài liệu
 export const POST_LIMITS = { MAX_CHARS: 2000, MAX_PHOTOS: 5 };
 export const COMMENT_LIMITS = { MAX_CHARS: 500 };
+// MAX_OPEN_CAMPAIGNS: CHỈ cho orgContentApi.mock — bản thật do Admin cấu hình (BE max_concurrent_campaigns), BE tự chặn 409
 export const ORG_LIMITS = { MAX_OPEN_CAMPAIGNS: 3, DESCRIPTION_MAX: 300 };
 
 // Chip tab Cộng đồng (CD-01)

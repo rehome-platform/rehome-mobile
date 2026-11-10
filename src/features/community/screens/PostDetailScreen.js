@@ -101,7 +101,12 @@ export default function PostDetailScreen() {
     return (
       <Screen header={header}>
         {query.error.status === 404 ? (
-          <EmptyState icon="newspaper-outline" title="Bài viết không còn nữa" />
+          // 404: tổ chức đã xoá, hoặc Moderator gỡ do vi phạm (BE ee01f91)
+          <EmptyState
+            icon="newspaper-outline"
+            title="Bài viết không còn hiển thị"
+            description="Bài viết có thể đã bị xoá hoặc gỡ."
+          />
         ) : (
           <ErrorBox message={query.error.message}>
             <Button

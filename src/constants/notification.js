@@ -10,6 +10,9 @@ export const NOTIFICATION_TYPE = {
   POST_COMMENTED: "POST_COMMENTED", // tổ chức: bài viết có bình luận mới
   FOLLOWED_ORG_CAMPAIGN: "FOLLOWED_ORG_CAMPAIGN", // Member: tổ chức đang theo dõi mở chiến dịch mới (UC-44)
   FOLLOWED_ORG_POST: "FOLLOWED_ORG_POST", // Member: tổ chức đang theo dõi đăng bài mới (UC-44)
+  // Báo cáo vi phạm (BE ee01f91)
+  VIOLATION_WARNING: "VIOLATION_WARNING", // tổ chức: bị cảnh cáo; targetType POST / CAMPAIGN / ORGANIZATION → mở đúng nội dung
+  VIOLATION_REPORT_HANDLED: "VIOLATION_REPORT_HANDLED", // Member: báo cáo đã được xử lý (không có đích, chỉ đọc)
 };
 
 // Icon theo loại (Ionicons)
@@ -24,6 +27,8 @@ export const NOTIFICATION_ICON = {
   POST_COMMENTED: "chatbubble-ellipses-outline",
   FOLLOWED_ORG_CAMPAIGN: "megaphone-outline",
   FOLLOWED_ORG_POST: "newspaper-outline",
+  VIOLATION_WARNING: "warning-outline",
+  VIOLATION_REPORT_HANDLED: "flag-outline",
 };
 
 // Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE

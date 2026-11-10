@@ -13,7 +13,10 @@ import {
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
-import { closedLabel } from "@/features/orgPortal/utils/campaignRules";
+import {
+  closedLabel,
+  isCampaignHidden,
+} from "@/features/orgPortal/utils/campaignRules";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -81,6 +84,8 @@ export default function OrgCampaignDetailScreen() {
 
   const c = query.data;
   const open = isCampaignOpen(c);
+  // Moderator ẩn do vi phạm: chỉ xem + lý do; BE chặn sửa / đóng / ghi note (409)
+  const hidden = isCampaignHidden(c);
 
   const header = (
     <AppHeader
@@ -183,8 +188,14 @@ export default function OrgCampaignDetailScreen() {
               style={StyleSheet.absoluteFill}
             />
           ) : null}
-          <Text style={[styles.tag, !open && styles.tagClosed]}>
-            {open ? "ĐANG NHẬN ĐỒ" : "ĐÃ ĐÓNG"}
+          <Text
+            style={[
+              styles.tag,
+              !open && styles.tagClosed,
+              hidden && styles.tagHidden,
+            ]}
+          >
+            {hidden ? "BỊ ẨN" : open ? "ĐANG NHẬN ĐỒ" : "ĐÃ ĐÓNG"}
           </Text>
         </View>
 
@@ -196,11 +207,40 @@ export default function OrgCampaignDetailScreen() {
               {c.createdAt
                 ? `Đăng ${dayjs(c.createdAt).format("DD/MM")} · `
                 : ""}
-              {open
-                ? `nhận tới ${endLabel} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
-                : closedLabel(c).replace(/^Đ/, "đ")}
+              {hidden
+                ? `hạn ${dayjs(c.endTime).format("DD/MM/YYYY")}`
+                : open
+                  ? `nhận tới ${endLabel} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
+                  : closedLabel(c).replace(/^Đ/, "đ")}
             </Text>
           </View>
+
+          {hidden ? (
+            <View style={styles.hiddenBox}>
+              <View style={styles.hiddenHead}>
+                <Ionicons
+                  name="eye-off-outline"
+                  size={20}
+                  color={colors.error}
+                />
+                <Text style={styles.hiddenTitle}>
+                  Chiến dịch đang bị ẩn do vi phạm
+                </Text>
+              </View>
+              <Text style={styles.text}>
+                Lý do:{" "}
+                <Text style={styles.strong}>
+                  {c.hiddenReason || "ReHome chưa ghi lý do cụ thể."}
+                </Text>
+              </Text>
+              <Text style={styles.muted}>
+                Member không còn thấy chiến dịch này và không ghi nhận thêm
+                quyên góp mới. Đồ đã ghi nhận trước đó vẫn được bàn giao bình
+                thường. Chiến dịch vẫn tính vào số chiến dịch tối đa cho tới khi
+                hết hạn. Cần trao đổi thêm, hãy nhắn cho ReHome.
+              </Text>
+            </View>
+          ) : null}
 
           <Section title="NƠI NHẬN ĐỒ">
             {c.receiveAtOwnAddress ? (
@@ -309,6 +349,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   tagClosed: { backgroundColor: colors.textSecondary },
+  tagHidden: { backgroundColor: colors.error },
+  hiddenBox: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  hiddenHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  hiddenTitle: {
+    flex: 1,
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.error,
+  },
   body: { gap: spacing.lg, padding: spacing.lg },
   titleBlock: { gap: spacing.xs },
   title: { ...textStyles.title, color: colors.text },

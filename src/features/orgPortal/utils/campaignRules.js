@@ -1,18 +1,24 @@
 import dayjs from "dayjs";
-import { CAMPAIGN_STATUS, ORG_LIMITS } from "@/constants/community";
+import { CAMPAIGN_STATUS } from "@/constants/community";
 
 // MỌI quy tắc chiến dịch phía tổ chức (OC-01 → OC-04) đặt ở đây. Màn hình chỉ gọi hàm.
 // Quy tắc hiển thị dùng chung với Cộng đồng (tên, còn n ngày…) giữ ở community/utils/communityRules.js
 
-// OC-01: đang nhận lên trước, rồi gần hết hạn trước; đã đóng thì mới đóng trước
+// OC-01: đang nhận → bị ẩn → đã đóng; đang nhận thì gần hết hạn trước, còn lại mới hơn trước
+const STATUS_RANK = {
+  [CAMPAIGN_STATUS.OPEN]: 0,
+  [CAMPAIGN_STATUS.HIDDEN]: 1,
+  [CAMPAIGN_STATUS.CLOSED]: 2,
+};
 export const byCampaignOrder = (a, b) =>
   a.status !== b.status
-    ? a.status === CAMPAIGN_STATUS.OPEN
-      ? -1
-      : 1
+    ? (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9)
     : a.status === CAMPAIGN_STATUS.OPEN
       ? dayjs(a.endTime).diff(b.endTime)
       : dayjs(b.endTime).diff(a.endTime);
+
+// Moderator ẩn do vi phạm (BE ee01f91): không sửa / đóng / ghi note được, chỉ xem + lý do
+export const isCampaignHidden = (c) => c?.status === CAMPAIGN_STATUS.HIDDEN;
 
 // Dòng ngày của chiến dịch đã đóng. BE đóng sớm không đổi endTime, cũng không lưu ngày đóng →
 // hạn còn ở tương lai nghĩa là tổ chức đã bấm đóng sớm
@@ -24,9 +30,8 @@ export const closedLabel = (c) =>
 export const openCampaignCount = (campaigns = []) =>
   campaigns.filter((c) => c.status === CAMPAIGN_STATUS.OPEN).length;
 
-// OC-01: khoá nút "Tạo chiến dịch mới" khi đã đủ chiến dịch đang nhận đồ
-export const canCreateCampaign = (campaigns) =>
-  openCampaignCount(campaigns) < ORG_LIMITS.MAX_OPEN_CAMPAIGNS;
+// OC-01: số chiến dịch đang nhận tối đa do Admin cấu hình (BE max_concurrent_campaigns) và BE chưa có API
+// cho tổ chức đọc → app KHÔNG tự khoá nút "Tạo chiến dịch mới"; vượt mức thì BE trả 409 CAMPAIGN_LIMIT_REACHED
 
 // OC-04: chiến dịch đã bắt đầu nhận đồ → khoá ngày bắt đầu (B4)
 export const isStartLocked = (campaign) =>
