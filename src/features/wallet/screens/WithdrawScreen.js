@@ -31,7 +31,15 @@ import { validatePayoutAmount } from "../utils/payoutRules";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/wallet");
-const QUICK = [100000, 500000];
+// Nút chọn nhanh: mốc tròn trong khoảng [mức tối thiểu, số dư khả dụng] — mức tối thiểu Admin đổi được nên
+// không cố định 2 số; luôn có thêm "Tất cả". Tối đa 3 mốc
+const ROUND_AMOUNTS = [
+  50000, 100000, 200000, 500000, 1000000, 2000000, 5000000,
+];
+const quickAmounts = (minPayout, available) =>
+  [...new Set([minPayout, ...ROUND_AMOUNTS.filter((v) => v > minPayout)])]
+    .filter((v) => v > 0 && v < available)
+    .slice(0, 3);
 
 function Row({ label, value, strong }) {
   return (
@@ -66,14 +74,19 @@ export default function WithdrawScreen() {
       </Screen>
     );
   }
-  if (wallet.isError) {
+  // Điều kiện rút (mức tối thiểu, số lượt/ngày) lấy từ BE — không có thì không cho rút
+  if (wallet.isError || config.isError) {
+    const failed = wallet.isError ? wallet : config;
     return (
       <Screen header={header}>
-        <ErrorBox message={wallet.error.message}>
+        <ErrorBox message={failed.error.message}>
           <Button
             title="Thử lại"
             variant="secondary"
-            onPress={() => wallet.refetch()}
+            onPress={() => {
+              if (wallet.isError) wallet.refetch();
+              if (config.isError) config.refetch();
+            }}
           />
         </ErrorBox>
       </Screen>
@@ -145,16 +158,11 @@ export default function WithdrawScreen() {
       />
 
       <View style={styles.chips}>
-        {QUICK.map((v) => (
+        {quickAmounts(c.minPayout, available).map((v) => (
           <Pressable
             key={v}
             onPress={() => change(v)}
-            disabled={v > available}
-            style={({ pressed }) => [
-              styles.chip,
-              v > available && styles.chipOff,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
           >
             <Text style={styles.chipText}>{formatNumber(v)}</Text>
           </Pressable>

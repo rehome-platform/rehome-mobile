@@ -169,6 +169,8 @@ export default function PostCommentsScreen() {
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const p = post.data;
+  // Moderator gỡ do vi phạm (BE ee01f91): chỉ tổ chức thấy bài + lý do; bình luận đóng (BE trả 404)
+  const removed = p?.status === CONTENT_STATUS.REMOVED;
   const threads = useMemo(() => groupComments(query.data), [query.data]);
 
   const startReply = (c, name) => {
@@ -194,7 +196,13 @@ export default function PostCommentsScreen() {
   };
 
   let empty;
-  if (query.isPending) {
+  if (removed) {
+    empty = (
+      <Text style={styles.empty}>
+        Bài đã bị gỡ nên bình luận không còn hiển thị.
+      </Text>
+    );
+  } else if (query.isPending) {
     empty = <ActivityIndicator style={styles.loading} color={colors.primary} />;
   } else if (query.isError) {
     empty = (
@@ -272,7 +280,7 @@ export default function PostCommentsScreen() {
           onBack={goBack}
         />
       }
-      footer={p ? composer : null}
+      footer={p && !removed ? composer : null}
       padded={false}
     >
       <FlatList
@@ -280,6 +288,30 @@ export default function PostCommentsScreen() {
         ListHeaderComponent={
           p ? (
             <>
+              {removed ? (
+                <View style={styles.removedBox}>
+                  <View style={styles.removedHead}>
+                    <Ionicons
+                      name="eye-off-outline"
+                      size={20}
+                      color={colors.error}
+                    />
+                    <Text style={styles.removedTitle}>
+                      Bài viết đã bị gỡ do vi phạm
+                    </Text>
+                  </View>
+                  <Text style={styles.removedReason}>
+                    Lý do:{" "}
+                    <Text style={styles.bold}>
+                      {p.removalReason || "ReHome chưa ghi lý do cụ thể."}
+                    </Text>
+                  </Text>
+                  <Text style={styles.muted}>
+                    Member không còn thấy bài này. Cần trao đổi thêm, hãy nhắn
+                    cho ReHome.
+                  </Text>
+                </View>
+              ) : null}
               <PostHeader
                 post={p}
                 org={org}
@@ -328,6 +360,24 @@ const styles = StyleSheet.create({
   bold: { fontFamily: fonts.semibold, color: colors.text },
   loading: { marginTop: spacing.xxl },
   list: { flexGrow: 1, paddingBottom: spacing.lg },
+  removedBox: {
+    gap: spacing.sm,
+    margin: spacing.lg,
+    marginBottom: 0,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  removedHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  removedTitle: {
+    flex: 1,
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.error,
+  },
+  removedReason: { ...textStyles.body, color: colors.text },
   muted: { ...textStyles.caption, color: colors.textSecondary },
   // Bài viết: nền trắng tràn ngang như một bài trên bảng tin
   post: {

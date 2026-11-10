@@ -381,7 +381,7 @@ function ReducePriceBody({ product, header }) {
           <Text style={styles.body}>
             Giá sàn của món hàng là{" "}
             <Text style={styles.bold}>{formatVnd(product.floorPrice)}</Text>,
-            bằng 50% giá đã thống nhất lúc ký gửi. Mức này ghi trong biên nhận
+            tính theo giá đã thống nhất lúc ký gửi. Mức này ghi trong biên nhận
             và không đổi được trong suốt kỳ ký gửi.
           </Text>
           <Button

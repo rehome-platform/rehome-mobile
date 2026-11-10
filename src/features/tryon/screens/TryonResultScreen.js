@@ -117,7 +117,6 @@ export default function TryonResultScreen() {
   const inCartIds = new Set(cartItems(cart.data).map((ci) => ci.product.id));
   const toAdd = available.filter((i) => !inCartIds.has(i.id));
   const total = available.reduce((s, i) => s + i.currentPrice, 0);
-  const warehouses = new Set(available.map((i) => i.warehouseId));
   const allAvailable = available.length === items.length;
 
   // Tạo lại cùng bộ đồ → về phòng thử đồ xem tiến độ (ảnh cũ vẫn trong bộ sưu tập)
@@ -164,10 +163,11 @@ export default function TryonResultScreen() {
             onPress={() => router.push("/cart")}
           />
         )}
-        {warehouses.size > 1 ? (
+        {/* BE 963758f: mỗi món một đơn → bộ đồ n món thành n đơn, mỗi đơn một phí vận chuyển */}
+        {available.length > 1 ? (
           <Text style={styles.caption}>
-            Các món ở {warehouses.size} địa điểm ký gửi khác nhau, khi đặt sẽ tách thành{" "}
-            {warehouses.size} đơn.
+            Mỗi món là một đơn riêng: khi đặt, bộ đồ thành {available.length}{" "}
+            đơn, tính phí vận chuyển riêng từng đơn.
           </Text>
         ) : null}
       </View>

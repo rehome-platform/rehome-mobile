@@ -2,7 +2,7 @@ import { api, unwrap } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import { uploadFile } from "@/lib/api/upload";
 import { UPLOAD_FOLDER } from "@/constants/upload";
-import { CAMPAIGN_STATUS as CS, ORG_LIMITS } from "@/constants/community";
+import { CAMPAIGN_STATUS as CS } from "@/constants/community";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { byCampaignOrder } from "../utils/campaignRules";
 
@@ -10,7 +10,13 @@ import { byCampaignOrder } from "../utils/campaignRules";
 // orgContentApi.mock.js. Chỗ lệch BE:
 // - status BE trả ACTIVE / CLOSED → đổi về OPEN / CLOSED của app
 
-const STATUS_FROM_BE = { ACTIVE: CS.OPEN, OPEN: CS.OPEN, CLOSED: CS.CLOSED };
+// HIDDEN: Moderator ẩn do vi phạm (BE ee01f91) — chi tiết của chính tổ chức có hiddenReason
+const STATUS_FROM_BE = {
+  ACTIVE: CS.OPEN,
+  OPEN: CS.OPEN,
+  CLOSED: CS.CLOSED,
+  HIDDEN: CS.HIDDEN,
+};
 
 // BE lưu loại đồ ưu tiên thành 1 chuỗi "A, B" → nhận cả mảng lẫn chuỗi
 const toItemTypes = (v) =>
@@ -38,7 +44,9 @@ const toCampaign = (c) => {
 // 409 của BE có message kèm mã ("CAMPAIGN_LIMIT_REACHED: đã đạt…") → thay bằng câu dễ đọc, giữ nguyên mã
 const FRIENDLY = {
   [ERROR_CODES.CAMPAIGN_LIMIT_REACHED]: () =>
-    `Tổ chức đang có ${ORG_LIMITS.MAX_OPEN_CAMPAIGNS} chiến dịch đang nhận đồ. Đóng bớt một chiến dịch rồi tạo mới.`,
+    // Mức tối đa do Admin cấu hình, BE không trả con số → không ghi số cụ thể.
+    // BE đếm cả chiến dịch bị ẩn do vi phạm mà chưa hết hạn
+    "Tổ chức đã có đủ số chiến dịch tối đa (tính cả chiến dịch đang bị ẩn do vi phạm nhưng chưa hết hạn). Đóng bớt một chiến dịch hoặc chờ hết hạn rồi tạo mới.",
   [ERROR_CODES.CAMPAIGN_WAREHOUSE_HAS_PENDING]: (e) =>
     e.message
       .replace(/^[A-Z_]+:\s*/, "")

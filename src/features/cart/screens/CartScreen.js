@@ -98,10 +98,8 @@ export default function CartScreen() {
   const selected = available.filter((i) => isSelected(i.id));
   const unavailableCount = items.length - available.length;
   const total = selected.reduce((sum, i) => sum + i.product.currentPrice, 0);
-  // Số đơn = số kho có ít nhất 1 món đang tích (BE tách đơn theo kho)
-  const orderCount = groups.filter((g) =>
-    g.items.some((i) => !i.unavailableReason && isSelected(i.id)),
-  ).length;
+  // Số đơn = số món đang tích (BE 963758f: mỗi món một đơn, một phí vận chuyển). Danh sách vẫn nhóm theo kho cho dễ nhìn
+  const orderCount = selected.length;
 
   const toggle = (ids, checked) =>
     setExcluded((prev) => {
@@ -135,7 +133,7 @@ export default function CartScreen() {
       ) : null}
       {orderCount >= 2 ? (
         <Banner icon="information-circle-outline">
-          {`Hàng của bạn ở ${orderCount} địa điểm ký gửi khác nhau, sẽ tách thành ${orderCount} đơn và tính phí vận chuyển riêng.`}
+          {`Mỗi món là một đơn riêng: ${orderCount} món sẽ thành ${orderCount} đơn, giao riêng và tính phí vận chuyển riêng từng đơn.`}
         </Banner>
       ) : null}
     </View>

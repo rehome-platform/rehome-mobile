@@ -46,4 +46,6 @@ export const TX_FILTERS = [
 ];
 
 // [GIẢ ĐỊNH] theo mục 11 tài liệu tổng quan — chỉ để chặn sớm trên app; BE quyết định cuối
+// CHỈ cho walletApi.mock. Bản thật lấy từ GET /wallet/config (minPayout, maxPayoutsPerDay) vì Admin đổi được —
+// màn hình KHÔNG dùng hằng này
 export const WALLET_LIMITS = { MIN_PAYOUT: 10000, MAX_PAYOUTS_PER_DAY: 3 };

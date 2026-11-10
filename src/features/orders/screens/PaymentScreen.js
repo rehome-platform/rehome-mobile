@@ -38,6 +38,14 @@ import { PaymentCountdown } from "../components/PaymentCountdown";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
 
+// Tên hiện cho một đơn: tên món (đơn mới luôn 1 món — BE 963758f). Mở từ checkout: itemName do checkout ghép;
+// mở từ Đơn hàng: items của chi tiết đơn (đơn cũ có thể nhiều món). Không có thì dùng tên kho
+const orderLabel = (o) => {
+  const items = o.items ?? [];
+  if (items.length > 1) return `${items[0].name} + ${items.length - 1} món`;
+  return o.itemName ?? items[0]?.name ?? o.warehouseName;
+};
+
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 60 * 1000; // chỉ hỏi liên tục 60 giây sau mỗi lần mở MoMo / quay lại app
 
@@ -341,9 +349,9 @@ function PaymentView({ initialOrders, fromStore = false }) {
         {orders.map((o, i) => (
           <View key={o.id} style={styles.row}>
             <View style={styles.rowInfo}>
-              <Text style={styles.rowTitle}>
+              <Text style={styles.rowTitle} numberOfLines={2}>
                 {orders.length > 1 ? `Đơn ${i + 1} — ` : ""}
-                {o.warehouseName}
+                {orderLabel(o)}
               </Text>
               <Text style={styles.rowSub}>
                 {o.orderNo} · Tiền hàng {formatVnd(o.subtotal)} + phí ship{" "}
@@ -433,7 +441,7 @@ function Result({ icon, iconColor, title, description, orders }) {
         <View style={styles.resultList}>
           {orders.map((o) => (
             <Text key={o.id} style={styles.text}>
-              Đơn {o.orderNo} — {o.warehouseName}
+              Đơn {o.orderNo} — {orderLabel(o)}
             </Text>
           ))}
         </View>

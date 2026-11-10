@@ -12,6 +12,7 @@ import { RadioCard } from "@/components/ui/RadioCard";
 import { TextField } from "@/components/ui/TextField";
 import { useAuthStore } from "@/stores/authStore";
 import { REPORT_REASONS, REPORT_TARGET as T } from "@/constants/community";
+import { ERROR_CODES } from "@/constants/errorCodes";
 import {
   useCampaign,
   useOrganization,
@@ -75,7 +76,7 @@ export default function ReportScreen() {
           <Text style={styles.doneTitle}>Đã gửi báo cáo</Text>
           <Text style={styles.mutedCenter}>
             Moderator sẽ xem xét trong thời gian sớm nhất. Bạn sẽ nhận thông báo
-            nếu nội dung bị gỡ.
+            khi báo cáo được xử lý.
           </Text>
         </View>
       </Screen>
@@ -150,7 +151,16 @@ export default function ReportScreen() {
         error={errors.detail}
       />
 
-      {report.isError ? <ErrorBox message={report.error.message} /> : null}
+      {report.isError ? (
+        <ErrorBox
+          message={
+            // Đã báo cáo đối tượng này, báo cáo cũ còn chờ xử lý (BE ee01f91, 409)
+            report.error.code === ERROR_CODES.DUPLICATE_PENDING_REPORT
+              ? "Bạn đã báo cáo nội dung này rồi. Moderator đang xem xét, bạn sẽ nhận thông báo khi có kết quả."
+              : report.error.message
+          }
+        />
+      ) : null}
 
       <NoteBox>
         Người bị báo cáo không biết ai đã báo cáo. Báo cáo sai sự thật nhiều lần

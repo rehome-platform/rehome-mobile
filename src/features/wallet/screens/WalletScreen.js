@@ -17,11 +17,15 @@ import { ChipGroup } from "@/components/ui/ChipGroup";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { MOCK } from "@/config/env";
-import { TX_FILTERS, WALLET_LIMITS } from "@/constants/wallet";
+import { TX_FILTERS } from "@/constants/wallet";
 import { useAuthStore } from "@/stores/authStore";
 import { formatVnd } from "@/utils/money";
 import { walletApi } from "../api/walletApi";
-import { useTransactions, useWallet } from "../hooks/useWallet";
+import {
+  useTransactions,
+  useWallet,
+  useWalletConfig,
+} from "../hooks/useWallet";
 import { TransactionRow } from "../components/TransactionRow";
 
 const goBack = () =>
@@ -32,9 +36,14 @@ const WHEN_IN = [
   "Nền tảng đền bù khi hàng của bạn bị hỏng trong lúc ReHome giữ hàng hoặc vận chuyển.",
 ];
 
-// Số dư lớn + Khả dụng / Đang khoá + Rút tiền / Doanh thu
+// Số dư lớn + Khả dụng / Đang khoá + Rút tiền / Doanh thu.
+// Mức rút tối thiểu Admin đổi được → /wallet/config (BE min_payout_amount); chưa tải được thì không khoá nút
 function Balance({ w }) {
-  const canWithdraw = w.availableBalance >= WALLET_LIMITS.MIN_PAYOUT;
+  const config = useWalletConfig();
+  const minPayout = config.data?.minPayout ?? null;
+  const canWithdraw =
+    w.availableBalance > 0 &&
+    (minPayout == null || w.availableBalance >= minPayout);
   return (
     <View style={styles.balance}>
       <Text style={styles.label}>Số dư</Text>
@@ -86,10 +95,8 @@ function Balance({ w }) {
         />
       ) : null}
 
-      {!canWithdraw && w.balance > 0 ? (
-        <Text style={styles.hint}>
-          Rút tối thiểu {formatVnd(WALLET_LIMITS.MIN_PAYOUT)}.
-        </Text>
+      {!canWithdraw && w.balance > 0 && minPayout != null ? (
+        <Text style={styles.hint}>Rút tối thiểu {formatVnd(minPayout)}.</Text>
       ) : null}
     </View>
   );

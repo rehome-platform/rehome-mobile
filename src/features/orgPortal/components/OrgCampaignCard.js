@@ -6,13 +6,14 @@ import {
   campaignTitleOf,
   isCampaignOpen,
 } from "@/features/community/utils/communityRules";
-import { closedLabel } from "../utils/campaignRules";
+import { closedLabel, isCampaignHidden } from "../utils/campaignRules";
 
 // OC-01: thẻ chiến dịch của tổ chức — ảnh bìa · tên · nhãn · hạn nhận · nút Xem
 // (wireframe ghi "Mở" — dễ hiểu nhầm là mở lại chiến dịch đã đóng).
 // Bỏ dòng "lượt thích · bình luận" của wireframe: chiến dịch không có số này (B1). Bấm cả thẻ cũng mở
 export function OrgCampaignCard({ campaign: c, onPress }) {
   const open = isCampaignOpen(c);
+  const hidden = isCampaignHidden(c);
   return (
     <Pressable
       onPress={onPress}
@@ -32,14 +33,22 @@ export function OrgCampaignCard({ campaign: c, onPress }) {
           <Text style={styles.title} numberOfLines={2}>
             {campaignTitleOf(c)}
           </Text>
-          <Text style={styles.muted}>
-            {open
-              ? `Nhận tới ${dayjs(c.endTime).format("DD/MM")} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
-              : closedLabel(c)}
+          <Text style={[styles.muted, hidden && styles.hiddenText]}>
+            {hidden
+              ? "Bị ẩn do vi phạm · mở để xem lý do"
+              : open
+                ? `Nhận tới ${dayjs(c.endTime).format("DD/MM")} · còn ${Math.max(0, campaignDaysLeft(c))} ngày`
+                : closedLabel(c)}
           </Text>
         </View>
-        <Text style={[styles.tag, !open && styles.tagClosed]}>
-          {open ? "ĐANG NHẬN" : "ĐÃ ĐÓNG"}
+        <Text
+          style={[
+            styles.tag,
+            !open && styles.tagClosed,
+            hidden && styles.tagHidden,
+          ]}
+        >
+          {hidden ? "BỊ ẨN" : open ? "ĐANG NHẬN" : "ĐÃ ĐÓNG"}
         </Text>
       </View>
       <View style={styles.bottom}>
@@ -93,6 +102,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.textSecondary,
   },
+  tagHidden: { color: colors.error, borderColor: colors.error },
+  hiddenText: { color: colors.error },
   bottom: {
     flexDirection: "row",
     justifyContent: "flex-end",

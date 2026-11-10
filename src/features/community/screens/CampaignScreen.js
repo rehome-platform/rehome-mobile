@@ -99,9 +99,11 @@ export default function CampaignScreen() {
     return (
       <Screen header={header}>
         {query.error.status === 404 ? (
+          // 404: không tồn tại, hoặc bị ẩn do vi phạm (BE ee01f91 trả 404 cho Member/Guest)
           <EmptyState
             icon="megaphone-outline"
-            title="Không tìm thấy chiến dịch"
+            title="Chiến dịch không còn hiển thị"
+            description="Chiến dịch có thể đã bị gỡ hoặc tạm ẩn. Bạn xem các chiến dịch khác ở Cộng đồng nhé."
           />
         ) : (
           <ErrorBox message={query.error.message}>

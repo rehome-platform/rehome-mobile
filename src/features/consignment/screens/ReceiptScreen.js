@@ -136,8 +136,7 @@ function ReceiptClauses({ receipt }) {
           Hết {days} ngày, bạn có <Text style={styles.bold}>30 ngày</Text> để
           chọn nhận lại hàng hoặc ký gửi lại. Quá hạn mà không phản hồi, hàng
           được xem là vô thừa nhận:{" "}
-          <Text style={styles.bold}>bạn mất quyền sở hữu</Text>, ReHome chuyển
-          hàng cho tổ chức từ thiện đối tác và không bồi hoàn.
+          <Text style={styles.bold}>bạn mất quyền sở hữu</Text>.
         </Text>
       </View>
       {otherClauses(receipt)
@@ -328,8 +327,7 @@ function PendingReceipt({ receipt, header }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
-            Đọc kỹ trước khi xác nhận. Bấm xác nhận là hàng được
-            đăng bán ngay.
+            Đọc kỹ trước khi xác nhận. Bấm xác nhận là hàng được đăng bán ngay.
           </Text>
         </View>
         <ReceiptHeading receipt={receipt} />

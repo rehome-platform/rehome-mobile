@@ -6,7 +6,7 @@ import { PAYMENT_METHOD } from "@/constants/order";
 export const useCheckoutStore = create((set) => ({
   addressId: null, // địa chỉ đang chọn ở checkout (null = dùng địa chỉ mặc định)
   paymentMethod: PAYMENT_METHOD.MOMO, // [GIẢ ĐỊNH] mặc định MoMo; nhớ lựa chọn trong lúc dùng app
-  // Đơn vừa tạo, chờ thanh toán: [{id, orderNo, warehouseId, warehouseName, subtotal, shippingFee, totalAmount, status, paymentDeadline}]
+  // Đơn vừa tạo, chờ thanh toán (mỗi đơn 1 món): [{id, orderNo, warehouseId, warehouseName, itemName, subtotal, shippingFee, totalAmount, status, paymentDeadline}]
   pendingOrders: [],
 
   setAddressId: (addressId) => set({ addressId }),
