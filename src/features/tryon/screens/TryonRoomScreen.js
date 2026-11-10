@@ -47,6 +47,24 @@ const MODEL_CHIPS = [MODEL_TYPE.FEMALE, MODEL_TYPE.MALE].map((v) => ({
 }));
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
+// Lỗi tạo ảnh → câu theo nguyên nhân thật (trước đây mọi lỗi đều báo "máy chủ AI bận", khó dò)
+function tryonErrorMessage(e) {
+  const keep = " Bộ đồ vẫn giữ nguyên, bạn thử lại nhé.";
+  switch (e?.code) {
+    case ERROR_CODES.INCOMPLETE_OUTFIT:
+      return "Bộ đồ chưa đủ: cần áo và quần, hoặc một chiếc đầm.";
+    case "TIMEOUT":
+      return "Chờ quá lâu mà máy chủ AI chưa trả ảnh." + keep;
+    case "NETWORK":
+      return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";
+    case "TRYON_GENERATION_FAILED":
+      return "Máy chủ AI chưa tạo được ảnh (đang bận hoặc lỗi)." + keep;
+  }
+  // 4xx có câu của BE (món hết bán, sai vị trí áo/quần…) → hiện thẳng
+  if (e?.status >= 400 && e?.status < 500 && e?.message) return e.message;
+  return "Chưa tạo được ảnh." + keep;
+}
+
 // AI-01 · Phòng thử đồ + AI-03 · Đang tạo ảnh (/tryon?productId=)
 export default function TryonRoomScreen() {
   const { productId } = useLocalSearchParams();
@@ -146,13 +164,14 @@ export default function TryonRoomScreen() {
           </View>
         }
       >
-        <ErrorBox
-          message={
-            incomplete
-              ? "Bộ đồ chưa đủ: cần áo và quần, hoặc một chiếc đầm."
-              : "Chưa tạo được ảnh. Máy chủ AI đang bận hoặc quá giờ. Bộ đồ vẫn giữ nguyên, bạn thử lại nhé."
-          }
-        />
+        <ErrorBox message={tryonErrorMessage(job.error)}>
+          {!incomplete && job.error?.code ? (
+            <Text style={styles.errorCode}>
+              Mã lỗi: {job.error.code}
+              {job.error.status ? ` · ${job.error.status}` : ""}
+            </Text>
+          ) : null}
+        </ErrorBox>
       </Screen>
     );
   }
@@ -287,6 +306,7 @@ const styles = StyleSheet.create({
   footer: { gap: spacing.xs },
   footerRow: { flexDirection: "row", gap: spacing.md },
   flex1: { flex: 1 },
+  errorCode: { ...textStyles.caption, color: colors.textSecondary },
   flex2: { flex: 2 },
   muted: { ...textStyles.body, color: colors.textSecondary },
   caption: {

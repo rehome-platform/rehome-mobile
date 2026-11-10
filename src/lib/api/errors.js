@@ -24,6 +24,13 @@ const SERVER_MESSAGE = "Máy chủ đang gặp sự cố, bạn thử lại sau 
 export function toApiError(error) {
   if (error instanceof ApiError) return error;
   if (!error?.response) {
+    // Hết thời gian chờ (axios timeout) — tách khỏi mất mạng để màn biết là "chờ quá lâu"
+    if (error?.code === "ECONNABORTED" || error?.code === "ETIMEDOUT")
+      return new ApiError({
+        status: 0,
+        code: "TIMEOUT",
+        message: "Máy chủ phản hồi quá lâu. Bạn thử lại nhé.",
+      });
     return new ApiError({
       status: 0,
       code: "NETWORK",
