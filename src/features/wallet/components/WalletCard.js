@@ -3,13 +3,15 @@ import { router } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Button } from "@/components/ui/Button";
 import { formatVnd } from "@/utils/money";
-import { WALLET_LIMITS } from "@/constants/wallet";
-import { useWallet } from "../hooks/useWallet";
+import { useWallet, useWalletConfig } from "../hooks/useWallet";
 
 // PR-01: hiện SỐ DƯ KHẢ DỤNG (PHASE4_GUIDE 0.4 #13). Lỗi tải → "—", bấm để thử lại (không chặn cả màn)
+// Mức rút tối thiểu Admin đổi được → lấy từ /wallet/config; chưa tải được thì không khoá (màn Rút tiền kiểm lại)
 export function WalletCard() {
   const wallet = useWallet();
+  const config = useWalletConfig();
   const w = wallet.data;
+  const minPayout = config.data?.minPayout ?? 0;
   const onPress = () =>
     wallet.isError ? wallet.refetch() : router.push("/wallet");
   return (
@@ -33,7 +35,9 @@ export function WalletCard() {
       <Button
         title="Rút tiền"
         variant="secondary"
-        disabled={!w || w.availableBalance < WALLET_LIMITS.MIN_PAYOUT}
+        disabled={
+          !w || w.availableBalance <= 0 || w.availableBalance < minPayout
+        }
         onPress={() => router.push("/wallet/withdraw")}
         style={styles.btn}
       />
