@@ -4,9 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelative } from "@/utils/format";
+import { CONTENT_STATUS } from "@/constants/community";
 import { PostPhotos } from "@/features/community/components/PostPhotos";
 
 const COLLAPSED_LINES = 4;
+
+// Moderator gỡ do vi phạm (BE #250: danh sách /me/posts trả status + removalReason). Member không còn thấy bài;
+// tổ chức vẫn thấy kèm lý do, không sửa được (BE 409 POST_ALREADY_REMOVED)
+export const isPostRemoved = (p) => p?.status === CONTENT_STATUS.REMOVED;
 
 // active: nút Thích khi đã thích → tim đỏ, chữ đậm
 function Action({ icon, label, onPress, active = false }) {
@@ -40,8 +45,9 @@ export function OrgPostCard({
   onMenu,
 }) {
   const [truncated, setTruncated] = useState(false);
+  const removed = isPostRemoved(p);
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, removed && styles.cardRemoved]}>
       <View style={styles.head}>
         <Avatar
           uri={org?.logoUrl}
@@ -68,6 +74,21 @@ export function OrgPostCard({
           />
         </Pressable>
       </View>
+
+      {removed ? (
+        <View style={styles.removedBox}>
+          <View style={styles.removedHead}>
+            <Ionicons name="eye-off-outline" size={16} color={colors.error} />
+            <Text style={styles.removedTitle}>Đã bị gỡ do vi phạm</Text>
+          </View>
+          <Text style={styles.removedReason} numberOfLines={3}>
+            Lý do: {p.removalReason || "ReHome chưa ghi lý do cụ thể."}
+          </Text>
+          <Text style={styles.muted}>
+            Member không còn thấy bài này. Bài không sửa được.
+          </Text>
+        </View>
+      ) : null}
 
       <Pressable onPress={onComments} style={styles.body}>
         <Text
@@ -117,7 +138,9 @@ export function OrgPostCard({
           label="Bình luận"
           onPress={onComments}
         />
-        <Action icon="create-outline" label="Sửa" onPress={onEdit} />
+        {removed ? null : (
+          <Action icon="create-outline" label="Sửa" onPress={onEdit} />
+        )}
       </View>
     </View>
   );
@@ -132,6 +155,23 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     backgroundColor: colors.surface,
   },
+  cardRemoved: { borderColor: colors.error },
+  removedBox: {
+    gap: 2,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: radius.input,
+  },
+  removedHead: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  removedTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.error,
+  },
+  removedReason: { ...textStyles.caption, color: colors.text },
   head: {
     flexDirection: "row",
     alignItems: "center",

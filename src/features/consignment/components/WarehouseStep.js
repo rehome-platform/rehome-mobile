@@ -13,9 +13,9 @@ export function WarehouseStep({ value, onChange }) {
       onChange={onChange}
       note={
         <Text style={styles.note}>
-          Sau khi ReHome duyệt yêu cầu, bạn có{" "}
-          <Text style={styles.bold}>7 ngày</Text> để mang đồ đến đúng địa điểm
-          này. Quá hạn thì yêu cầu tự huỷ.
+          Sau khi ReHome duyệt yêu cầu, bạn mang đồ đến đúng địa điểm này{" "}
+          <Text style={styles.bold}>trước hạn ghi trên yêu cầu</Text>. Quá hạn
+          thì yêu cầu tự huỷ.
         </Text>
       }
     />

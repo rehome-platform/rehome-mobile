@@ -37,4 +37,5 @@ export const ERROR_CODES = {
   // Báo cáo vi phạm (BE ee01f91)
   DUPLICATE_PENDING_REPORT: "DUPLICATE_PENDING_REPORT", // đã báo cáo đối tượng này, báo cáo cũ còn chờ xử lý (409)
   CAMPAIGN_HIDDEN: "CAMPAIGN_HIDDEN", // chiến dịch bị Moderator ẩn: không đóng / ghi note được (409)
+  POST_ALREADY_REMOVED: "POST_ALREADY_REMOVED", // sửa bài đã bị Moderator gỡ (409) — BE #250; message BE đã là câu tiếng Việt
 };

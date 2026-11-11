@@ -7,6 +7,7 @@ import { ordersApi } from "../api/ordersApi";
 import { returnDeadlineOf } from "../utils/orderRules";
 import { useOrderMutation } from "../hooks/useOrders";
 import { router } from "expo-router";
+import dayjs from "dayjs";
 
 // Theo BE (OrderServiceImpl.confirmReceipt, ReturnRequestServiceImpl): xác nhận = COMPLETED,
 // tiền người ký gửi giữ tới hết hạn trả hàng, nên đơn COMPLETED vẫn trả được trong hạn
@@ -14,7 +15,7 @@ const pointsOf = (deadline) => [
   "Đơn chuyển sang Hoàn thành ngay lập tức.",
   deadline
     ? `Bạn vẫn trả hàng được tới ${deadline.format("DD/MM HH:mm")}.`
-    : "Bạn vẫn trả hàng được trong 3 ngày kể từ khi giao.",
+    : "Bạn vẫn trả hàng được trong thời hạn trả hàng.",
   "Hết hạn trả hàng, tiền mới được chuyển cho người ký gửi.",
 ];
 
@@ -79,8 +80,12 @@ export function ConfirmReceiptDialog({ order, onClose }) {
           </View>
 
           <Text style={styles.note}>
-            Hàng có vấn đề thì chọn "Để sau" rồi bấm Trả hàng. Không bấm gì
-            thì hệ thống tự hoàn thành đơn sau 3 ngày kể từ khi giao.
+            {/* Số ngày tự hoàn thành do Admin cấu hình → dùng mốc BE trả (autoCompleteDeadline), không ghi số */}
+            Hàng có vấn đề thì chọn "Để sau" rồi bấm Trả hàng. Không bấm gì thì
+            hệ thống tự hoàn thành đơn
+            {order.autoCompleteDeadline
+              ? ` vào ${dayjs(order.autoCompleteDeadline).format("DD/MM HH:mm")}.`
+              : " sau một thời gian kể từ khi giao."}
           </Text>
 
           <View style={styles.actions}>

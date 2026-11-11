@@ -26,8 +26,8 @@ export const wasRefunded = (o) =>
   o.status === S.CANCELLED && (o.refundAmount ?? 0) > 0;
 
 // Phase 5 dùng: hạn trả hàng tính theo MỐC giao, không theo trạng thái.
-// Chi tiết đơn có returnDeadline do BE tính (app.return.request-window-days); danh sách đơn chưa có
-// → tự cộng `days` từ deliveredAt
+// BE trả returnDeadline ở cả chi tiết lẫn danh sách đơn, tính theo cấu hình Admin (return_request_window_days)
+// → luôn dùng nó. `days` chỉ là dự phòng cho dữ liệu cũ thiếu returnDeadline
 export const returnDeadlineOf = (o, days = 3) =>
   o.returnDeadline
     ? toDate(o.returnDeadline)

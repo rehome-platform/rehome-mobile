@@ -24,7 +24,10 @@ import {
   useMyPosts,
   useTogglePostLike,
 } from "@/features/orgPortal/hooks/usePosts";
-import { OrgPostCard } from "@/features/orgPortal/components/OrgPostCard";
+import {
+  OrgPostCard,
+  isPostRemoved,
+} from "@/features/orgPortal/components/OrgPostCard";
 
 const openNew = () => router.push("/org/my-posts/new");
 const openEdit = (p) => router.push(`/org/my-posts/${p.id}/edit`);
@@ -64,12 +67,22 @@ export default function OrgPostsScreen() {
       ],
     );
 
+  // Bài đã bị Moderator gỡ: không còn "Sửa" (BE chặn 409 POST_ALREADY_REMOVED)
   const openMenu = (p) =>
-    Alert.alert("Bài viết", undefined, [
-      { text: "Sửa", onPress: () => openEdit(p) },
-      { text: "Xem bình luận", onPress: () => openComments(p) },
-      { text: "Xoá", style: "destructive", onPress: () => confirmDelete(p) },
-    ]);
+    Alert.alert(
+      isPostRemoved(p) ? "Bài viết đã bị gỡ" : "Bài viết",
+      undefined,
+      [
+        ...(isPostRemoved(p)
+          ? []
+          : [{ text: "Sửa", onPress: () => openEdit(p) }]),
+        {
+          text: isPostRemoved(p) ? "Xem chi tiết" : "Xem bình luận",
+          onPress: () => openComments(p),
+        },
+        { text: "Xoá", style: "destructive", onPress: () => confirmDelete(p) },
+      ],
+    );
 
   let empty;
   if (keyword.trim() && all.length) {

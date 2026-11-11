@@ -7,6 +7,7 @@ import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { showToast } from "@/utils/toast";
 import { postSchema } from "@/features/orgPortal/schemas";
 import {
@@ -15,6 +16,7 @@ import {
   useUpdatePost,
 } from "@/features/orgPortal/hooks/usePosts";
 import { PostForm } from "@/features/orgPortal/components/PostForm";
+import { isPostRemoved } from "@/features/orgPortal/components/OrgPostCard";
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/org/posts");
@@ -118,6 +120,20 @@ function EditLoaded({ post }) {
 export function EditPostScreen() {
   const { id } = useLocalSearchParams();
   const query = useMyPost(id);
+  // Bài đã bị Moderator gỡ (mở từ link / thông báo cũ): không cho sửa — BE cũng chặn 409 POST_ALREADY_REMOVED
+  if (query.isSuccess && isPostRemoved(query.data)) {
+    return (
+      <Screen header={<AppHeader title="Sửa bài viết" onBack={leave} />}>
+        <EmptyState
+          icon="eye-off-outline"
+          title="Bài viết đã bị gỡ do vi phạm"
+          description={`Bài này không sửa được nữa. Lý do: ${query.data.removalReason || "ReHome chưa ghi lý do cụ thể."}`}
+        >
+          <Button title="Quay lại" variant="secondary" onPress={leave} />
+        </EmptyState>
+      </Screen>
+    );
+  }
   if (query.isSuccess) return <EditLoaded post={query.data} />;
   return (
     <Screen header={<AppHeader title="Sửa bài viết" onBack={leave} />}>

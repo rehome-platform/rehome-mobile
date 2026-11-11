@@ -134,8 +134,8 @@ function SellingBody({ product }) {
           <Text style={styles.body}>
             Hết {fmtShort(product.endOfTermDeadline)}, sản phẩm gỡ khỏi sàn và
             chuyển sang <Text style={styles.bold}>Chờ xử lý cuối kỳ</Text>. Bạn
-            có 30 ngày để chọn nhận lại hàng (miễn phí) hoặc ký gửi lại với giá
-            mới. Quá hạn, món hàng thành vô thừa nhận.
+            chọn nhận lại hàng (miễn phí) hoặc ký gửi lại với giá mới trước hạn
+            ReHome thông báo lúc đó. Quá hạn, món hàng thành vô thừa nhận.
           </Text>
         </View>
       ) : null}
@@ -238,8 +238,8 @@ function OrderBody({ product }) {
       </NoteBox>
       {paid ? null : (
         <Text style={styles.caption}>
-          Tiền được cộng vào ví khi hết 3 ngày trả hàng của người mua (tính từ
-          lúc giao). Người mua trả hàng hợp lệ thì đơn không tính tiền.
+          Tiền được cộng vào ví khi hết hạn trả hàng của người mua (tính từ lúc
+          giao). Người mua trả hàng hợp lệ thì đơn không tính tiền.
         </Text>
       )}
     </>
@@ -462,7 +462,7 @@ export default function ProductDetailScreen() {
               Còn {t.termDaysLeft} ngày là hết kỳ cuối.
             </Text>{" "}
             Sau {fmtShort(product.endOfTermDeadline)}, sản phẩm được gỡ khỏi sàn
-            và bạn phải chọn cách xử lý trong 30 ngày.
+            và bạn chọn cách xử lý trước hạn ReHome thông báo.
           </Text>
         </View>
       ) : null}
