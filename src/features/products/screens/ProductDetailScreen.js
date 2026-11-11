@@ -52,7 +52,7 @@ const STATE_INFO = {
     label: "ĐANG GIỮ HÀNG",
     title: "Sản phẩm không còn khả dụng",
     text: "Món này đã được mua, hoặc đang có người khác thanh toán. Mỗi món ký gửi là đồ cũ độc bản nên không có cái thứ hai giống hệt.",
-    note: "Nếu người mua kia không hoàn tất thanh toán trong 15 phút, món này có thể quay lại sàn.",
+    note: "Nếu người mua kia không thanh toán kịp hạn, món này có thể quay lại sàn.",
   },
   [SALE_STATE.SOLD]: {
     label: "ĐÃ BÁN",

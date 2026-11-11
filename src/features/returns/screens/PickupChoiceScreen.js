@@ -183,7 +183,7 @@ export default function PickupChoiceScreen() {
           <View style={styles.gapSm}>
             <Text style={styles.heading}>Bạn muốn nhận lại bằng cách nào?</Text>
             <Text style={styles.muted}>
-              Món này vẫn là của bạn. ReHome không giữ hộ quá 7 ngày.
+              Món này vẫn là của bạn. ReHome giữ hộ tới {fmt(r.pickupDeadline)}.
             </Text>
           </View>
 
@@ -233,10 +233,12 @@ export default function PickupChoiceScreen() {
           </OptionCard>
 
           <View style={styles.warn}>
-            <Text style={styles.strong}>Nếu hết 7 ngày mà bạn không chọn</Text>
+            <Text style={styles.strong}>
+              Nếu tới {fmt(r.pickupDeadline)} mà bạn không chọn
+            </Text>
             <Text style={styles.text}>
-              Món thành <Text style={styles.strong}>hàng vô chủ</Text> và ReHome xử
-              lý theo quy định. Bạn mất quyền với món này.
+              Món thành <Text style={styles.strong}>hàng vô chủ</Text> và ReHome
+              xử lý theo quy định. Bạn mất quyền với món này.
             </Text>
           </View>
         </>

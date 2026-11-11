@@ -59,7 +59,7 @@ export default function ReturnListScreen() {
       <EmptyState
         icon="return-down-back-outline"
         title="Chưa có yêu cầu trả hàng nào"
-        description="Bạn có 3 ngày kể từ lúc nhận hàng để yêu cầu trả, ngay trong chi tiết đơn."
+        description="Bạn yêu cầu trả hàng ngay trong chi tiết đơn, trước hạn trả hàng ghi trên đơn."
       >
         <Button
           title="Xem đơn hàng của tôi"

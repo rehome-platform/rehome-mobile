@@ -146,7 +146,8 @@ export default function ReturnDetailScreen() {
           text: "Đã giao",
           onPress: () =>
             handover.mutate(r.id, {
-              onSuccess: () => showToast("Đã ghi nhận, hàng đang về địa điểm ký gửi"),
+              onSuccess: () =>
+                showToast("Đã ghi nhận, hàng đang về địa điểm ký gửi"),
               onError: (e) =>
                 showToast(
                   e.code === ERROR_CODES.RETURN_HANDOVER_EXPIRED
@@ -313,7 +314,7 @@ export default function ReturnDetailScreen() {
           {choosing ? (
             <InfoBox title="Món này đang ở địa điểm ký gửi, cần bạn chọn cách nhận">
               <Text style={styles.text}>
-                ReHome không giữ hàng của bạn quá 7 ngày. Còn{" "}
+                ReHome chỉ giữ hàng của bạn trong thời hạn có giới hạn. Còn{" "}
                 <Text style={styles.strong}>
                   {formatTimeLeft(r.pickupDeadline)}
                 </Text>{" "}

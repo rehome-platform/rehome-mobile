@@ -397,8 +397,8 @@ export default function OrderDetailScreen() {
             ) : null}
           </Section>
           <InfoBox title="Không huỷ đơn được nữa">
-            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bạn có 3 ngày
-            kể từ khi giao để bấm Trả hàng.
+            Hàng đã được gửi đi. Nếu nhận hàng không đúng mô tả, bạn bấm Trả
+            hàng trong thời hạn trả hàng (hiện trên đơn sau khi giao).
           </InfoBox>
         </>
       ) : null}

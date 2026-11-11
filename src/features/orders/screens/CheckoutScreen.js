@@ -240,7 +240,8 @@ export default function CheckoutScreen() {
           ))}
           <Text style={styles.boxNote}>
             Hàng ký gửi là món duy nhất, không có món thứ hai giống hệt. Món này
-            chỉ quay lại sàn nếu người mua kia không thanh toán trong 15 phút.
+            chỉ quay lại sàn nếu người mua kia không thanh toán kịp trong thời
+            gian giữ hàng.
           </Text>
         </View>
 
@@ -297,7 +298,7 @@ export default function CheckoutScreen() {
             </View>
           ) : null}
           <Button
-            title="Đặt hàng · giữ hàng 15 phút"
+            title="Đặt hàng · giữ hàng chờ thanh toán"
             loading={place.isPending}
             disabled={!address}
             onPress={() => submit(okLines)}
@@ -344,8 +345,8 @@ export default function CheckoutScreen() {
 
       <NoteBox>
         {feesKnown
-          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn 15 phút."
-          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn 15 phút."}
+          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."
+          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."}
       </NoteBox>
 
       {__DEV__ && MOCK.orders ? (

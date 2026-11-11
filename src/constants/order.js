@@ -54,7 +54,7 @@ export const ORDER_STEPS = [
 // [CHỜ BE] Order chưa có cancelReason (PHASE4_GUIDE câu 4b) — tên mã là [GIẢ ĐỊNH]
 export const CANCEL_REASON_LABEL = {
   BUYER_CANCELLED: "Bạn đã huỷ đơn khi ReHome chưa đóng gói.",
-  PAYMENT_EXPIRED: "Đơn hết hạn thanh toán (15 phút) nên tự huỷ.",
+  PAYMENT_EXPIRED: "Đơn hết hạn thanh toán nên tự huỷ.", // thời gian giữ hàng do Admin cấu hình — không ghi số
   CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về địa điểm ký gửi.",
 };
 

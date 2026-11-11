@@ -133,9 +133,10 @@ function ReceiptClauses({ receipt }) {
       <View style={styles.important}>
         <Text style={styles.clauseTitle}>ĐIỀU 8 — HÀNG VÔ THỪA NHẬN</Text>
         <Text style={styles.body}>
-          Hết {days} ngày, bạn có <Text style={styles.bold}>30 ngày</Text> để
-          chọn nhận lại hàng hoặc ký gửi lại. Quá hạn mà không phản hồi, hàng
-          được xem là vô thừa nhận:{" "}
+          {/* Hạn chọn cuối kỳ do Admin cấu hình (end_of_term_decision_days), biên nhận chưa lưu số này → không ghi số */}
+          Hết {days} ngày, bạn chọn nhận lại hàng hoặc ký gửi lại{" "}
+          <Text style={styles.bold}>trước hạn ReHome thông báo</Text> trên ứng
+          dụng. Quá hạn mà không phản hồi, hàng được xem là vô thừa nhận:{" "}
           <Text style={styles.bold}>bạn mất quyền sở hữu</Text>.
         </Text>
       </View>

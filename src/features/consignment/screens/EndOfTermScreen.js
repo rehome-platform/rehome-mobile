@@ -175,7 +175,7 @@ function EndOfTermBody({ product, header, initialChoice }) {
     Alert.alert(
       takeBack ? "Nhận lại hàng?" : "Ký gửi lại?",
       takeBack
-        ? `Bạn có 7 ngày để đến ${product.warehouseName} nhận hàng. Lựa chọn này không đổi lại được.`
+        ? `Bạn đến ${product.warehouseName} nhận hàng trước hạn hiện sau khi xác nhận. Lựa chọn này không đổi lại được.`
         : "ReHome sẽ xem lại tình trạng và đề xuất giá mới, bạn xác nhận biên nhận mới thì hàng lên sàn lại. Lựa chọn này không đổi lại được.",
       [
         { text: "Huỷ", style: "cancel" },
@@ -236,7 +236,7 @@ function EndOfTermBody({ product, header, initialChoice }) {
         <Text style={styles.sectionTitle}>CHỌN MỘT TRONG HAI</Text>
         <Option
           title="Nhận lại hàng — miễn phí"
-          description={`Sản phẩm được giữ lại cho bạn. Đến ${product.warehouseName} trong 7 ngày kể từ khi xác nhận, đọc mã Member tại quầy để nhận.`}
+          description={`Sản phẩm được giữ lại cho bạn. Đến ${product.warehouseName} trước hạn hiện sau khi xác nhận, đọc mã Member tại quầy để nhận.`}
           note="Không tính phí rút hàng ở bước này, kể cả khi đã ngoài cửa sổ rút miễn phí đầu kỳ."
           selected={selected === TAKE_BACK}
           onPress={() => pick(TAKE_BACK)}

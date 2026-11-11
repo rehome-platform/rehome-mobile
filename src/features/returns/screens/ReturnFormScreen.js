@@ -75,8 +75,8 @@ function ExpiredView({ order, deadline }) {
         <Text style={styles.boxTitle}>Đã quá hạn yêu cầu trả hàng</Text>
         <Text style={styles.text}>
           Đơn <Text style={styles.strong}>{order.orderNo}</Text> giao thành công
-          ngày {toDate(order.deliveredAt).format("DD/MM/YYYY")}. Cửa sổ trả hàng
-          là 3 ngày kể từ lúc giao, đã hết từ{" "}
+          ngày {toDate(order.deliveredAt).format("DD/MM/YYYY")}. Hạn yêu cầu trả
+          hàng đã hết từ{" "}
           <Text style={styles.strong}>{deadline.format("DD/MM")}</Text>.
         </Text>
       </View>
@@ -342,8 +342,9 @@ export default function ReturnFormScreen() {
       {formError ? <ErrorBox message={formError} /> : null}
 
       <NoteBox>
-        Sau khi ReHome duyệt, bạn có 3 ngày để giao hàng cho shipper. Hoàn tiền vào
-        ví ReHome khi ReHome kiểm tra hàng về hợp lệ.
+        Sau khi ReHome duyệt, bạn giao hàng cho shipper trước hạn bàn giao ghi
+        trong yêu cầu. Hoàn tiền vào ví ReHome khi ReHome kiểm tra hàng về hợp
+        lệ.
       </NoteBox>
     </Screen>
   );
