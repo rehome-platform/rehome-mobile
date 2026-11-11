@@ -29,4 +29,7 @@ export const MOCK = {
   orgCampaigns: false, // App tổ chức: chiến dịch, lượt chờ lấy, note quyên góp — thật (BE 41f10c8)
   orgPosts: false, // App tổ chức: bài viết, bình luận, thả tim + trả lời (L9) — thật (BE 41f10c8)
   tryonLive: false, // Thử đồ AI real-time (Decart Lucy VTON) — GET /tryon/live/quota, POST /tryon/live/sessions
+  // Quyên góp món ký gửi — BE CHƯA có POST /products/{id}/donate (đặc tả đã gửi 11/11) → mock lệnh quyên góp.
+  // Danh sách chiến dịch vẫn gọi thật. Bản release (APK) ẩn hẳn nút Quyên góp khi còn mock (DONATE_ENABLED)
+  donateConsigned: true,
 };

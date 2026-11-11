@@ -26,6 +26,7 @@ import {
   WITHDRAWAL_STATUS as W,
 } from "@/constants/withdrawal";
 import { withdrawalApi } from "../api/withdrawalApi";
+import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
 import { useWithdrawal, useWithdrawalMutation } from "../hooks/useWithdrawals";
 
 const goBack = () =>
@@ -196,6 +197,19 @@ export default function WithdrawalDetailScreen() {
         variant="secondary"
         onPress={() => router.replace(`/my-products/${w.productId}`)}
       />
+    );
+  }
+  // Đã duyệt, chờ đến lấy: không đến được thì quyên góp thay (đặc tả 11/11) — chưa trả phí thì khỏi trả
+  if (w.status === W.PENDING_PICKUP && DONATE_ENABLED) {
+    footer = (
+      <View style={styles.footerCol}>
+        {footer}
+        <Button
+          title="Không đến lấy được? Quyên góp"
+          variant="text"
+          onPress={() => router.push(`/my-products/${w.productId}/donate`)}
+        />
+      </View>
     );
   }
 
@@ -384,6 +398,7 @@ const styles = StyleSheet.create({
   feeDueText: { ...textStyles.caption, color: tones.warning.fg },
   loading: { marginTop: spacing.xxl },
   content: { gap: spacing.lg },
+  footerCol: { gap: spacing.xs },
   flex: { flex: 1 },
   productRow: {
     flexDirection: "row",

@@ -4,7 +4,7 @@ import {
   PRODUCT_STATUS,
   PRODUCT_VIEW,
 } from "@/constants/consignment";
-import { DEGRADED_CHOICE } from "@/constants/withdrawal";
+import { DEGRADED_CHOICE, WITHDRAWAL_STATUS } from "@/constants/withdrawal";
 
 // Tiền Member nhận = giá × (1 − hoa hồng), làm tròn xuống đồng. rate dạng 0.1
 export const calcPayout = (price, rate) => Math.floor(price * (1 - rate));
@@ -54,6 +54,32 @@ export function getProductView(p) {
   // WAREHOUSE mà BE chưa gắn quyết định / ca xuống cấp → không phải đang bán (nhãn "Đã gỡ khỏi sàn")
   if (p.status === PRODUCT_STATUS.WAREHOUSE) return PRODUCT_VIEW.ENDED;
   return PRODUCT_VIEW.SELLING;
+}
+
+// Quyên góp món ký gửi (đặc tả gửi BE 11/11): được quyên góp ở trường hợp nào → mã trường hợp, không được → null.
+// ON_SALE: đang bán, chưa có đơn · END_OF_TERM: hết kỳ cuối, chưa chọn · WITHDRAWAL: rút hàng ĐÃ DUYỆT, chờ đến lấy
+// (chờ duyệt thì chưa) · TAKE_BACK: đã chọn nhận lại cuối kỳ · DEGRADED: hàng xuống cấp, đã chọn nhận lại kèm đền
+export const DONATE_CASE = {
+  ON_SALE: "ON_SALE",
+  END_OF_TERM: "END_OF_TERM",
+  WITHDRAWAL: "WITHDRAWAL",
+  TAKE_BACK: "TAKE_BACK",
+  DEGRADED: "DEGRADED",
+};
+export function donateCaseOf(p) {
+  const view = getProductView(p);
+  if (view === PRODUCT_VIEW.SELLING) return DONATE_CASE.ON_SALE;
+  if (view === PRODUCT_VIEW.AWAITING_DECISION) return DONATE_CASE.END_OF_TERM;
+  if (
+    view === PRODUCT_VIEW.WITHDRAWING &&
+    p.withdrawalStatus === WITHDRAWAL_STATUS.PENDING_PICKUP
+  )
+    return DONATE_CASE.WITHDRAWAL;
+  if (view === PRODUCT_VIEW.PICKUP)
+    return p.degradedCase?.choice === DEGRADED_CHOICE.PARTIAL_WITH_ITEM_BACK
+      ? DONATE_CASE.DEGRADED
+      : DONATE_CASE.TAKE_BACK;
+  return null;
 }
 
 // Thứ tự trên danh sách: việc cần Member làm lên đầu
