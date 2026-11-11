@@ -47,8 +47,12 @@ export function getProductView(p) {
   const decision = p.endOfTermDecision;
   if (decision?.decision === END_OF_TERM_DECISION.TAKE_BACK)
     return PRODUCT_VIEW.PICKUP;
+  // Ký gửi lại: còn ở địa điểm (WAREHOUSE) = chờ chốt giá / chờ xác nhận biên nhận mới. Đã ON_SALE = xong, đã lên
+  // sàn lại → đang bán. BE vẫn trả kèm quyết định RE_CONSIGN cũ sau khi lên sàn lại nên phải xét status
   if (decision?.decision === END_OF_TERM_DECISION.RE_CONSIGN)
-    return PRODUCT_VIEW.REPRICING;
+    return p.status === PRODUCT_STATUS.ON_SALE
+      ? PRODUCT_VIEW.SELLING
+      : PRODUCT_VIEW.REPRICING;
   if (decision && decision.decision == null)
     return PRODUCT_VIEW.AWAITING_DECISION;
   // WAREHOUSE mà BE chưa gắn quyết định / ca xuống cấp → không phải đang bán (nhãn "Đã gỡ khỏi sàn")
