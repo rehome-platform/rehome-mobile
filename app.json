@@ -4,7 +4,7 @@
     "slug": "rehome-mobile",
     "owner": "tranthimyhanhs-team",
     "scheme": "rehome",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -53,12 +53,20 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "ReHome dùng vị trí để gợi ý kho ký gửi gần bạn."
+          "locationWhenInUsePermission": "ReHome dùng vị trí để gợi ý địa điểm ký gửi gần bạn."
         }
       ],
       "@react-native-google-signin/google-signin",
       "expo-web-browser",
       "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#006B2C",
+          "defaultChannel": "default"
+        }
+      ],
       "expo-video",
       [
         "expo-camera",
