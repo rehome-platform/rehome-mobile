@@ -22,7 +22,9 @@ import { useAuthStore } from "@/stores/authStore";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import { formatRate, getProductView } from "@/utils/consignment";
+import dayjs from "dayjs";
 import { PRODUCT_VIEW } from "@/constants/consignment";
+import { WITHDRAWAL_STATUS } from "@/constants/withdrawal";
 import { PAYMENT_METHOD, PAYMENT_METHOD_LABEL } from "@/constants/order";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
@@ -41,9 +43,25 @@ import {
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 2 * 60 * 1000; // hỏi liên tục 2 phút sau mỗi lần mở trang thanh toán / quay lại app
 
-const STEPS = (warehouse) => [
+// BE 11/11: yêu cầu phải được địa điểm ký gửi DUYỆT trước; hạn đến lấy + hạn trả phí chỉ tính từ lúc duyệt
+const STEPS = (warehouse, fee) => [
   ["Sản phẩm gỡ khỏi sàn ngay", "Không ai mua được nữa"],
-  [`Đến ${warehouse} trong 7 ngày`, "Mang theo điện thoại để mở mã Member"],
+  [
+    `${warehouse} duyệt yêu cầu`,
+    "Bạn nhận thông báo khi được duyệt hoặc bị từ chối",
+  ],
+  ...(fee > 0
+    ? [
+        [
+          `Trả phí ${formatVnd(fee)} sau khi được duyệt`,
+          "Bằng ví ReHome, MoMo hoặc VNPay — trả trước hạn ghi trong yêu cầu",
+        ],
+      ]
+    : []),
+  [
+    `Đến ${warehouse} trước hạn lấy hàng`,
+    "Hạn hiện trong yêu cầu sau khi được duyệt",
+  ],
   ["Đọc mã Member tại quầy", "Moderator đối chiếu rồi bàn giao hàng"],
   ["Biên nhận ký gửi kết thúc", null],
 ];
@@ -105,12 +123,14 @@ export default function WithdrawalNewScreen() {
   const product = query.data;
   const view = product ? getProductView(product) : null;
 
-  // BE gỡ món khỏi sàn NGAY khi tạo yêu cầu, phí trả sau → yêu cầu đã có mà chưa trả phí thì trả tiếp ở đây
+  // Đã có yêu cầu đang chạy: ĐÃ DUYỆT mà chưa trả phí → trả ở đây; còn lại (chờ duyệt / đã trả) → sang chi tiết
   const existing = useQuery({
     queryKey: withdrawalKeys.detail(product?.activeWithdrawalId),
     queryFn: () => withdrawalApi.getWithdrawal(product.activeWithdrawalId),
     enabled: view === PRODUCT_VIEW.WITHDRAWING,
   });
+  const needsFee = (w) =>
+    !!w && w.status === WITHDRAWAL_STATUS.PENDING_PICKUP && !w.feePaid;
 
   const [request, setRequest] = useState(null); // yêu cầu đã tạo, chưa trả phí xong
   const [method, setMethod] = useState(PAYMENT_METHOD.WALLET);
@@ -120,12 +140,11 @@ export default function WithdrawalNewScreen() {
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
-    if (existing.data && !existing.data.feePaid && !request)
-      setRequest(existing.data);
+    if (needsFee(existing.data) && !request) setRequest(existing.data);
   }, [existing.data]);
 
-  const done = (id) => {
-    showToast("Đã gửi yêu cầu rút hàng");
+  const done = (id, message) => {
+    showToast(message);
     router.replace(`/withdrawals/${id}`);
   };
 
@@ -137,7 +156,7 @@ export default function WithdrawalNewScreen() {
     refetchInterval: () => (Date.now() < pollUntil ? POLL_MS : false),
   });
   useEffect(() => {
-    if (paid.data?.feePaid) done(paid.data.id);
+    if (paid.data?.feePaid) done(paid.data.id, "Đã trả phí rút hàng");
   }, [paid.data?.feePaid]);
   useEffect(() => {
     if (stage !== "gateway") return;
@@ -150,14 +169,17 @@ export default function WithdrawalNewScreen() {
     return () => sub.remove();
   }, [stage]);
 
-  // Tạo yêu cầu (dùng lại nếu đã có) → miễn phí thì xong; có phí → trả bằng cách đã chọn
+  // Chưa có yêu cầu → CHỈ tạo (BE chưa cho trả phí khi còn chờ duyệt) rồi sang chi tiết "Chờ duyệt".
+  // Đã duyệt mà chưa trả phí (request) → trả bằng cách đã chọn
   const submit = useWithdrawalMutation(async () => {
-    const w = request ?? (await withdrawalApi.createWithdrawal(productId));
-    setRequest(w);
-    if (!w.feeCharged || w.feePaid) return { done: w.id };
-    const pay = await withdrawalApi.payWithdrawalFee(w.id, method);
-    if (method === PAYMENT_METHOD.WALLET) return { done: w.id };
-    return { gateway: pay.payUrl ?? null, id: w.id };
+    if (!request) {
+      const w = await withdrawalApi.createWithdrawal(productId);
+      return { done: w.id, message: "Đã gửi yêu cầu rút hàng" };
+    }
+    const pay = await withdrawalApi.payWithdrawalFee(request.id, method);
+    if (method === PAYMENT_METHOD.WALLET)
+      return { done: request.id, message: "Đã trả phí rút hàng" };
+    return { gateway: pay.payUrl ?? null, id: request.id };
   });
   const mockPay = useWithdrawalMutation((success) =>
     withdrawalApi.mockMomoResult(request.id, success),
@@ -200,8 +222,13 @@ export default function WithdrawalNewScreen() {
     );
   }
 
-  // Đã có yêu cầu và đã trả phí (hoặc miễn phí) → xem chi tiết
-  if (view === PRODUCT_VIEW.WITHDRAWING && existing.data?.feePaid && !request)
+  // Đã có yêu cầu mà không cần trả phí ở đây (chờ duyệt / đã trả / miễn phí) → xem chi tiết
+  if (
+    view === PRODUCT_VIEW.WITHDRAWING &&
+    existing.data &&
+    !needsFee(existing.data) &&
+    !request
+  )
     return <Redirect href={`/withdrawals/${product.activeWithdrawalId}`} />;
   if (!canWithdraw(product) && !request) {
     return (
@@ -229,9 +256,9 @@ export default function WithdrawalNewScreen() {
   const onSubmit = () =>
     Alert.alert(
       request ? "Trả phí rút hàng?" : "Gửi yêu cầu rút hàng?",
-      fee > 0
-        ? `Phí ${formatVnd(fee)} trả bằng ${PAYMENT_METHOD_LABEL[method]}, không hoàn lại. Sản phẩm gỡ khỏi sàn ngay.`
-        : "Sản phẩm gỡ khỏi sàn ngay, bạn có 7 ngày để đến địa điểm ký gửi lấy.",
+      request
+        ? `Phí ${formatVnd(fee)} trả bằng ${PAYMENT_METHOD_LABEL[method]}, không hoàn lại.`
+        : `Sản phẩm gỡ khỏi sàn ngay và chờ ${product.warehouseName} duyệt.${fee > 0 ? ` Được duyệt thì bạn trả phí ${formatVnd(fee)} rồi đến lấy.` : " Được duyệt thì bạn đến lấy, không mất phí."}`,
       [
         { text: "Huỷ", style: "cancel" },
         {
@@ -240,7 +267,7 @@ export default function WithdrawalNewScreen() {
             setFormError(null);
             submit.mutate(undefined, {
               onSuccess: (res) => {
-                if (res.done) return done(res.done);
+                if (res.done) return done(res.done, res.message);
                 openGateway(res.gateway);
               },
               onError: (e) => {
@@ -275,7 +302,8 @@ export default function WithdrawalNewScreen() {
         text: "Thành công",
         onPress: () =>
           mockPay.mutate(true, {
-            onSuccess: (r) => (r.paid ? done(request.id) : null),
+            onSuccess: (r) =>
+              r.paid ? done(request.id, "Đã trả phí rút hàng") : null,
           }),
       },
     ]);
@@ -338,7 +366,7 @@ export default function WithdrawalNewScreen() {
   const footer = (
     <Button
       title={
-        fee > 0
+        request
           ? `Trả ${formatVnd(fee)} ${PAYMENT_METHOD_LABEL[method] ? `bằng ${PAYMENT_METHOD_LABEL[method]}` : ""}`.trim()
           : "Gửi yêu cầu rút hàng"
       }
@@ -356,10 +384,15 @@ export default function WithdrawalNewScreen() {
     >
       {request ? (
         <View style={[styles.box, styles.boxStrong]}>
-          <Text style={styles.strong}>Yêu cầu rút hàng chưa trả phí</Text>
+          <Text style={styles.strong}>
+            Yêu cầu đã được duyệt — chờ bạn trả phí
+          </Text>
           <Text style={styles.text}>
-            Sản phẩm đã gỡ khỏi sàn. Trả phí {formatVnd(fee)} để hoàn tất yêu
-            cầu.
+            Trả phí {formatVnd(fee)} để hoàn tất yêu cầu
+            {request.feePaymentDeadline
+              ? ` trước ${dayjs(request.feePaymentDeadline).format("HH:mm DD/MM")}`
+              : ""}
+            . Quá hạn mà chưa trả, yêu cầu tự huỷ và sản phẩm được đăng bán lại.
           </Text>
         </View>
       ) : (
@@ -379,7 +412,7 @@ export default function WithdrawalNewScreen() {
 
       <ProductRow product={product} />
 
-      {fee > 0 ? (
+      {request ? (
         <View style={styles.gapSm}>
           <Text style={styles.sectionTitle}>CÁCH TRẢ PHÍ</Text>
           <PaymentMethodPicker
@@ -391,7 +424,7 @@ export default function WithdrawalNewScreen() {
       ) : (
         <View style={styles.gapSm}>
           <Text style={styles.sectionTitle}>SAU KHI GỬI YÊU CẦU</Text>
-          {STEPS(product.warehouseName).map(([title, desc], i) => (
+          {STEPS(product.warehouseName, fee).map(([title, desc], i) => (
             <View key={title} style={styles.step}>
               <View style={styles.stepNo}>
                 <Text style={styles.stepNoText}>{i + 1}</Text>
@@ -420,11 +453,11 @@ export default function WithdrawalNewScreen() {
 
       <View style={[styles.box, styles.boxStrong]}>
         <Text style={styles.strong}>
-          {fee > 0 ? "Phí không hoàn lại" : "Nếu quá 7 ngày không đến nhận"}
+          {fee > 0 ? "Phí không hoàn lại" : "Nếu quá hạn không đến nhận"}
         </Text>
         <Text style={styles.text}>
           {fee > 0
-            ? `Nếu quá 7 ngày bạn không đến địa điểm ký gửi nhận hàng, yêu cầu bị huỷ, sản phẩm đăng bán lại và phí ${formatVnd(fee)} không được hoàn.`
+            ? `Nếu quá hạn lấy hàng mà bạn không đến địa điểm ký gửi, yêu cầu bị huỷ, sản phẩm đăng bán lại và phí ${formatVnd(fee)} không được hoàn.`
             : "Yêu cầu bị huỷ, sản phẩm được đăng bán lại và kỳ ký gửi tiếp tục như cũ."}
         </Text>
       </View>

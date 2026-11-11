@@ -44,6 +44,7 @@ export const NOTIFICATION_TARGET = {
   POST: "POST",
   ORGANIZATION: "ORGANIZATION", // hồ sơ tổ chức của mình (kết quả xác minh)
   LEGAL_CHANGE: "LEGAL_CHANGE", // yêu cầu đổi pháp lý của mình
+  DEGRADED_ITEM_CASE: "DEGRADED_ITEM_CASE", // BE 11/11: nhắc Member chốt cách đền hàng xuống cấp trước hạn
 };
 
 export const NOTIFICATION_LIMITS = { UNREAD_POLL_MS: 60000 };

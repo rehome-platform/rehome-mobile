@@ -46,11 +46,20 @@ function Timeline({ w }) {
       e.type === "HANDED_OVER" ? w.warehouseName : (EVENT_DESC[e.type] ?? null),
     right: e.at ? fmt(e.at) : null, // BE chưa trả giờ của một số mốc (vd bàn giao)
   }));
+  if (w.status === W.PENDING_APPROVAL) {
+    items.unshift({
+      key: "approving",
+      title: "Chờ địa điểm ký gửi duyệt",
+      active: true,
+    });
+  }
   if (w.status === W.PENDING_PICKUP) {
     items.unshift({
       key: "waiting",
       title: "Chờ bạn đến địa điểm",
-      right: `còn ${Math.max(0, daysLeft(w.pickupDeadline))} ngày`,
+      right: w.pickupDeadline
+        ? `còn ${Math.max(0, daysLeft(w.pickupDeadline))} ngày`
+        : null,
       active: true,
     });
   }
@@ -105,7 +114,7 @@ function MockPanel({ w }) {
   );
 }
 
-// KG-15 · Yêu cầu rút hàng: Chờ đến kho / Đã bàn giao / Hết hạn
+// KG-15 · Yêu cầu rút hàng: Chờ duyệt / Bị từ chối / Chờ đến lấy / Đã bàn giao / Hết hạn
 export default function WithdrawalDetailScreen() {
   const { id } = useLocalSearchParams();
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
@@ -143,9 +152,11 @@ export default function WithdrawalDetailScreen() {
     );
   }
 
-  const left = Math.max(0, daysLeft(w.pickupDeadline));
+  const left = w.pickupDeadline
+    ? Math.max(0, daysLeft(w.pickupDeadline))
+    : null;
 
-  // BE gỡ món khỏi sàn ngay khi tạo yêu cầu, phí trả sau → chưa trả thì mời trả tiếp
+  // Phí chỉ trả được SAU KHI địa điểm ký gửi duyệt (BE 11/11) → đã duyệt mà chưa trả thì mời trả
   const unpaid =
     w.status === W.PENDING_PICKUP && w.feeCharged > 0 && w.feePaid === false;
 
@@ -178,7 +189,7 @@ export default function WithdrawalDetailScreen() {
         onPress={() => router.replace("/consign")}
       />
     );
-  } else if (w.status === W.EXPIRED) {
+  } else if (w.status === W.EXPIRED || w.status === W.REJECTED) {
     footer = (
       <Button
         title="Xem sản phẩm đang bán"
@@ -210,17 +221,54 @@ export default function WithdrawalDetailScreen() {
       </View>
 
       {/* ---- Khối theo trạng thái ---- */}
+      {w.status === W.PENDING_APPROVAL ? (
+        <View style={[styles.box, styles.boxStrong]}>
+          <Text style={styles.boxTitle}>Chờ địa điểm ký gửi duyệt</Text>
+          <Text style={styles.text}>
+            Sản phẩm đã gỡ khỏi sàn, không ai mua được. {w.warehouseName} sẽ xem
+            yêu cầu của bạn; bạn nhận thông báo khi có kết quả.
+          </Text>
+          <Text style={styles.muted}>
+            {w.feeCharged > 0
+              ? `Được duyệt thì bạn trả phí ${formatVnd(w.feeCharged)} rồi đến lấy hàng trước hạn ghi tại đây.`
+              : "Được duyệt thì bạn đến lấy hàng trước hạn ghi tại đây, không mất phí."}
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.REJECTED ? (
+        <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
+          <Text style={styles.boxTitle}>Yêu cầu bị từ chối</Text>
+          {w.rejectReason ? (
+            <Text style={styles.text}>
+              Lý do: <Text style={styles.strong}>{w.rejectReason}</Text>
+            </Text>
+          ) : null}
+          <Text style={styles.text}>
+            Sản phẩm đã quay lại sàn và kỳ ký gửi tiếp tục như cũ. Bạn không mất
+            phí nào.
+          </Text>
+        </View>
+      ) : null}
+
       {w.status === W.PENDING_PICKUP ? (
         <View style={[styles.box, styles.boxStrong]}>
           <Text style={styles.boxTitle}>
-            Còn {left} ngày để đến địa điểm ký gửi
+            {left != null
+              ? `Còn ${left} ngày để đến địa điểm ký gửi`
+              : "Chờ bạn đến địa điểm ký gửi"}
           </Text>
           <Text style={styles.text}>
-            Hạn cuối{" "}
-            <Text style={styles.strong}>
-              {dayjs(w.pickupDeadline).format("DD/MM/YYYY")}
-            </Text>
-            . Sản phẩm đã gỡ khỏi sàn, không ai mua được.
+            {w.pickupDeadline ? (
+              <>
+                Hạn cuối{" "}
+                <Text style={styles.strong}>
+                  {dayjs(w.pickupDeadline).format("DD/MM/YYYY")}
+                </Text>
+                .{" "}
+              </>
+            ) : null}
+            Sản phẩm đã gỡ khỏi sàn, không ai mua được.
           </Text>
           {/* Chưa trả phí: quá feePaymentDeadline thì BE tự huỷ yêu cầu và đưa món lên sàn lại (sớm hơn hạn đến kho) */}
           {unpaid && w.feePaymentDeadline ? (
@@ -274,8 +322,9 @@ export default function WithdrawalDetailScreen() {
         <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
           <Text style={styles.boxTitle}>Đã quá hạn — hàng đăng bán lại</Text>
           <Text style={styles.text}>
-            Bạn không đến địa điểm ký gửi trong 7 ngày. Yêu cầu bị huỷ tự động,
-            sản phẩm đã quay lại sàn và kỳ ký gửi tiếp tục như cũ.
+            Bạn không đến địa điểm ký gửi trước hạn (hoặc chưa trả phí đúng
+            hạn). Yêu cầu bị huỷ tự động, sản phẩm đã quay lại sàn và kỳ ký gửi
+            tiếp tục như cũ.
           </Text>
         </View>
       ) : null}

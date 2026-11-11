@@ -34,6 +34,8 @@ export function notificationRoute(n, viewer = "member") {
       return `/my-products/${id}`;
     case T.CONSIGNMENT_FORM:
       return `/consign-forms/${id}`;
+    case T.DEGRADED_ITEM_CASE:
+      return `/degraded-cases/${id}`;
     case T.PAYOUT:
       return `/wallet/payouts/${id}`;
     case T.WALLET:

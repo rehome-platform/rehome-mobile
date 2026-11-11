@@ -3,7 +3,10 @@ import { File, Paths } from "expo-file-system";
 import { ENV } from "@/config/env";
 import { api, unwrap } from "@/lib/api/client";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
-import { DEGRADED_STATUS, WITHDRAWAL_STATUS } from "@/constants/withdrawal";
+import {
+  ACTIVE_WITHDRAWAL_STATUSES,
+  DEGRADED_STATUS,
+} from "@/constants/withdrawal";
 
 // ===== Ký gửi phía Member (API 14–24) — BE d10db3c =====
 
@@ -42,10 +45,12 @@ function toProduct(p) {
       Math.round((1 - p.expectedPayout / p.currentPrice) * 100) / 100;
   }
 
-  const pendingWithdrawal =
-    p.withdrawalRequest?.status === WITHDRAWAL_STATUS.PENDING_PICKUP
-      ? p.withdrawalRequest
-      : null;
+  // Yêu cầu rút hàng đang giữ món: chờ duyệt (PENDING_APPROVAL) hoặc chờ đến lấy (PENDING_PICKUP)
+  const pendingWithdrawal = ACTIVE_WITHDRAWAL_STATUSES.includes(
+    p.withdrawalRequest?.status,
+  )
+    ? p.withdrawalRequest
+    : null;
 
   return {
     ...p,
@@ -61,6 +66,7 @@ function toProduct(p) {
     order: p.order ? { ...p.order, code: p.order.orderNo } : null,
     // Phase 5 — BE withdrawalRequest { id, status, pickupDeadline } → tên mock đang dùng (đang chờ đến lấy)
     activeWithdrawalId: pendingWithdrawal ? pendingWithdrawal.id : null,
+    withdrawalStatus: pendingWithdrawal?.status ?? null,
     withdrawalPickupDeadline: pendingWithdrawal?.pickupDeadline ?? null,
     // BE degradedCase { id, status, decisionDeadline, decision } → choice: chưa chọn = null
     degradedCase: p.degradedCase

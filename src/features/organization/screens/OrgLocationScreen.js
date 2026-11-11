@@ -97,7 +97,7 @@ export default function OrgLocationScreen() {
           <TextField
             label="Tên điểm nhận"
             required
-            helper="VD: Kho Hạt Mầm Xanh — Quận 1"
+            helper="VD: Điểm nhận Hạt Mầm Xanh — Quận 1"
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}

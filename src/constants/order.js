@@ -85,7 +85,7 @@ export const ADDRESS_LIMIT = 5; // BR-06 — BE không giới hạn → app tự
 // API 64 events[].status [CHỜ BE danh sách đủ — câu 7]. Không có trong bảng → dùng chữ BE trả (label/description)
 export const TRACKING_EVENT_LABEL = {
   PICKED_UP: "GHN đã lấy hàng",
-  SORTED: "Đã rời kho phân loại",
+  SORTED: "Đã rời trung tâm phân loại GHN",
   DELIVERING: "Đang giao đến bạn",
   FAILED_DELIVERY: "Giao không thành công",
   DELIVERED: "Giao thành công",

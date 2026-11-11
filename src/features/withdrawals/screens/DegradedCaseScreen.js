@@ -114,7 +114,6 @@ export default function DegradedCaseScreen() {
   const left = c.decisionDeadline
     ? Math.max(0, daysLeft(c.decisionDeadline))
     : null;
-  const pickupDays = c.pickupDeadline ? null : 30; // [GIẢ ĐỊNH theo wireframe] chỉ để mô tả trước khi chọn
 
   const confirm = () =>
     Alert.alert(
@@ -146,6 +145,14 @@ export default function DegradedCaseScreen() {
         title={`Xác nhận nhận ${formatVnd(amount)}`}
         loading={decide.isPending}
         onPress={confirm}
+      />
+    );
+  } else if (c.choice === C.UNCLAIMED) {
+    footer = (
+      <Button
+        title="Về Hàng ký gửi"
+        variant="secondary"
+        onPress={() => router.replace("/consign")}
       />
     );
   } else if (c.choice === C.PARTIAL_WITH_ITEM_BACK) {
@@ -185,14 +192,18 @@ export default function DegradedCaseScreen() {
       </View>
 
       <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
+        {/* BE 11/11: ca mở từ hàng bị trả về (có reason của người mua) HOẶC địa điểm ký gửi mở trực tiếp lúc kiểm hàng */}
         <Text style={styles.boxTitle}>
-          Món bị hỏng khi vận chuyển về địa điểm ký gửi
+          {c.reason
+            ? "Món bị hỏng khi vận chuyển về địa điểm ký gửi"
+            : "Món bị xuống cấp trong thời gian ReHome giữ hàng"}
         </Text>
         <Text style={styles.text}>
-          Người mua đã trả món này và ReHome đã nhận lại
-          {c.receivedAt
-            ? ` ngày ${dayjs(c.receivedAt).format("DD/MM")}`
-            : ""}. {c.description}{" "}
+          {c.reason
+            ? "Người mua đã trả món này và ReHome đã nhận lại"
+            : "ReHome phát hiện khi kiểm tra hàng tại địa điểm ký gửi"}
+          {c.receivedAt ? ` ngày ${dayjs(c.receivedAt).format("DD/MM")}` : ""}.{" "}
+          {c.description}{" "}
           <Text style={styles.strong}>Không phải lỗi của bạn</Text>, và lần này
           không tính vào lịch sử ký gửi.
         </Text>
@@ -220,7 +231,7 @@ export default function DegradedCaseScreen() {
           />
           <OptionCard
             title={DEGRADED_CHOICE_LABEL.PARTIAL_WITH_ITEM_BACK}
-            desc={`Đến địa điểm ký gửi lấy trong ${pickupDays} ngày. Món vẫn hỏng như ảnh trên. Không mất phí rút hàng.`}
+            desc="Đến địa điểm ký gửi lấy lại món trước hạn hiện sau khi chọn. Món vẫn hỏng như ảnh trên. Không mất phí rút hàng."
             amountLabel={`Cộng vào ví · ${formatRate(c.degradedCompensationRate)}`}
             amount={partial}
             selected={choice === C.PARTIAL_WITH_ITEM_BACK}
@@ -231,15 +242,26 @@ export default function DegradedCaseScreen() {
               <Text style={styles.strong}>
                 Nếu bạn không chọn trước {fmt(c.decisionDeadline)}
               </Text>
+              {/* BE 11/11: quá hạn → tự gán UNCLAIMED (vô thừa nhận), không đền */}
               <Text style={styles.text}>
-                Hệ thống mặc định{" "}
-                <Text style={styles.strong}>nhận tiền đền</Text> và cộng{" "}
-                {formatVnd(full)} vào ví. Để im mà mất tiền thì vô lý, nên mặc
-                định nghiêng về phía bạn.
+                Món chuyển sang <Text style={styles.strong}>vô thừa nhận</Text>:
+                bạn mất quyền sở hữu và{" "}
+                <Text style={styles.strong}>không được đền</Text>. ReHome sẽ
+                nhắc bạn trước khi hết hạn.
               </Text>
             </View>
           ) : null}
         </>
+      ) : c.choice === C.UNCLAIMED ? (
+        <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
+          <Text style={styles.boxTitle}>Quá hạn — hàng vô thừa nhận</Text>
+          <Text style={styles.text}>
+            Bạn không chọn cách xử lý
+            {c.decisionDeadline ? ` trước ${fmt(c.decisionDeadline)}` : ""}, nên
+            hệ thống tự chuyển món sang vô thừa nhận. Bạn không còn quyền sở hữu
+            và không được đền.
+          </Text>
+        </View>
       ) : (
         <View style={[styles.box, styles.boxStrong]}>
           <Text style={styles.boxTitle}>

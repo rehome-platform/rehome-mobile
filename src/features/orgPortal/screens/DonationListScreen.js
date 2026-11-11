@@ -88,7 +88,7 @@ export default function DonationListScreen() {
     empty = (
       <EmptyState
         icon="cube-outline"
-        title="Chưa có ai mang đồ tới kho này"
+        title="Chưa có ai mang đồ tới địa điểm này"
         description="Khi nhân viên ReHome ghi nhận đồ quyên góp tại quầy, lượt đó sẽ hiện ở đây."
       />
     );

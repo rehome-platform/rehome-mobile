@@ -36,7 +36,7 @@ export function WarehousePicker({
         <Text style={styles.loadingText}>
           {nearest
             ? "Đang tìm địa điểm ký gửi gần bạn…"
-            : "Đang tải danh sách kho…"}
+            : "Đang tải danh sách địa điểm ký gửi…"}
         </Text>
       </View>
     );
