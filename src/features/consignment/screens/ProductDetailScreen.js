@@ -25,6 +25,7 @@ import {
   PRODUCT_STATUS,
   PRODUCT_VIEW,
 } from "@/constants/consignment";
+import { WITHDRAWAL_STATUS } from "@/constants/withdrawal";
 import { formatVnd } from "@/utils/money";
 import {
   commissionRates,
@@ -504,7 +505,17 @@ export default function ProductDetailScreen() {
           </View>
         ) : null}
 
-        {view === PRODUCT_VIEW.WITHDRAWING ? (
+        {view === PRODUCT_VIEW.WITHDRAWING &&
+        product.withdrawalStatus === WITHDRAWAL_STATUS.PENDING_APPROVAL ? (
+          <View style={styles.attention}>
+            <Text style={styles.boxTitle}>Chờ địa điểm ký gửi duyệt</Text>
+            <Text style={styles.body}>
+              Sản phẩm đã gỡ khỏi sàn. {product.warehouseName} sẽ xem yêu cầu
+              rút hàng của bạn; được duyệt thì bạn mới cần đến lấy (và trả phí
+              nếu có). Bị từ chối thì sản phẩm được đăng bán lại.
+            </Text>
+          </View>
+        ) : view === PRODUCT_VIEW.WITHDRAWING ? (
           <View style={styles.attention}>
             <Text style={styles.boxTitle}>Chờ bạn đến địa điểm lấy hàng</Text>
             <Text style={styles.body}>

@@ -14,7 +14,7 @@ const isOrg = () => useAuthStore.getState().user?.role === ROLES.ORGANIZATION;
 const myAccountId = () => useAuthStore.getState().user?.accountId;
 
 const FALLBACK_NAME = {
-  [C.MEMBER_WAREHOUSE]: "Kho ReHome",
+  [C.MEMBER_WAREHOUSE]: "Địa điểm ký gửi ReHome",
   [C.MEMBER_ORGANIZATION]: "Tổ chức",
 };
 

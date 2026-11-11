@@ -94,7 +94,7 @@ function EditForm({ campaign }) {
         <ErrorBox
           message={
             update.error.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_HAS_PENDING
-              ? `${update.error.message} Chọn lại kho đó rồi lưu.`
+              ? `${update.error.message} Chọn lại địa điểm đó rồi lưu.`
               : update.error.message
           }
         />

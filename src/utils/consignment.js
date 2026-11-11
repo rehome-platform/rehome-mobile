@@ -37,7 +37,13 @@ export function getProductView(p) {
   // Đang chờ đến lấy hàng rút: xét TRƯỚC status — BE đổi món sang WITHDRAWN ngay khi gửi yêu cầu (gỡ khỏi sàn)
   if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING;
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
-  if (p.status !== PRODUCT_STATUS.ON_SALE) return PRODUCT_VIEW.ENDED;
+  // Quyết định cuối kỳ áp dụng cho món đang bán HOẶC đã gỡ khỏi sàn chờ quyết định (WAREHOUSE — BE 11/11:
+  // hết kỳ cuối thì món gỡ khỏi sàn). Trước đây xét "khác ON_SALE → kết thúc" TRƯỚC nên WAREHOUSE hiện nhầm "Đã kết thúc"
+  if (
+    p.status !== PRODUCT_STATUS.ON_SALE &&
+    p.status !== PRODUCT_STATUS.WAREHOUSE
+  )
+    return PRODUCT_VIEW.ENDED;
   const decision = p.endOfTermDecision;
   if (decision?.decision === END_OF_TERM_DECISION.TAKE_BACK)
     return PRODUCT_VIEW.PICKUP;
@@ -45,6 +51,8 @@ export function getProductView(p) {
     return PRODUCT_VIEW.REPRICING;
   if (decision && decision.decision == null)
     return PRODUCT_VIEW.AWAITING_DECISION;
+  // WAREHOUSE mà BE chưa gắn quyết định / ca xuống cấp → không phải đang bán (nhãn "Đã gỡ khỏi sàn")
+  if (p.status === PRODUCT_STATUS.WAREHOUSE) return PRODUCT_VIEW.ENDED;
   return PRODUCT_VIEW.SELLING;
 }
 

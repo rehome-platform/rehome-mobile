@@ -69,7 +69,9 @@ export default function CreateCampaignScreen() {
                 .then(
                   (n) =>
                     n > 0 &&
-                    showToast(`Đã bỏ ${n} kho không còn nhận đồ khỏi nháp`),
+                    showToast(
+                      `Đã bỏ ${n} địa điểm ký gửi không còn nhận đồ khỏi nháp`,
+                    ),
                 )
                 .catch(() => {});
             },

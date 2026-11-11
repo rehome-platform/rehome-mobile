@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
@@ -9,11 +9,7 @@ import { BellButton } from "@/features/notifications/components/BellButton";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
-import { CONSIGN_LIMITS } from "@/constants/consignment";
-import {
-  useDraftCount,
-  usePendingFormCount,
-} from "@/features/consignment/hooks/usePendingFormCount";
+import { useDraftCount } from "@/features/consignment/hooks/usePendingFormCount";
 import { Ionicons } from "@expo/vector-icons";
 import { usePendingDegradedCases } from "@/features/withdrawals/hooks/useDegradedCases";
 import { MyConsignSection } from "@/features/consignment/components/MyConsignSection";
@@ -124,19 +120,14 @@ function DraftBanner() {
 }
 
 // Nút lớn "Ký gửi món mới" ở chân tab (luôn hiện) — cùng kiểu "Tạo chiến dịch mới" / "Đăng bài mới" của tổ chức;
-// header chỉ giữ nút icon. Đủ 5 yêu cầu chờ → giải thích lý do thay vì mở màn (BE có thể chặn 409)
+// header chỉ giữ nút icon. Số yêu cầu chờ tối đa do Admin cấu hình → không tự chặn, BE báo từng món khi gửi
 function CreateFormButton() {
-  const pending = usePendingFormCount();
-  const onPress = () => {
-    if (pending.data >= CONSIGN_LIMITS.MAX_PENDING_FORMS) {
-      return Alert.alert(
-        "Chưa tạo thêm được",
-        `Bạn đang có ${pending.data} yêu cầu chờ duyệt (tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS}). Chờ ReHome xử lý bớt rồi tạo tiếp nhé.`,
-      );
-    }
-    router.push("/consign-forms/new");
-  };
-  return <Button title="Ký gửi món mới" onPress={onPress} />;
+  return (
+    <Button
+      title="Ký gửi món mới"
+      onPress={() => router.push("/consign-forms/new")}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

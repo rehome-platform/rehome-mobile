@@ -27,6 +27,9 @@ export const PRODUCT_STATUS = {
   DONATED: "DONATED",
   DESTROYED: "DESTROYED",
   RETURNED: "RETURNED", // BE 3e95bc6: người mua trả hàng hợp lệ / thất lạc, về kho chờ ReHome xử lý
+  // BE 11/11: hàng còn ở địa điểm ký gửi nhưng đã gỡ khỏi sàn, CHỜ MEMBER QUYẾT ĐỊNH — hết kỳ cuối (endOfTermDecision)
+  // hoặc Moderator phát hiện xuống cấp lúc kiểm kho (degradedCase). Không phải "đã kết thúc"
+  WAREHOUSE: "WAREHOUSE",
 };
 
 export const END_OF_TERM_DECISION = {
@@ -48,7 +51,7 @@ export const PRODUCT_VIEW = {
 };
 
 export const CONSIGN_LIMITS = {
-  MAX_PENDING_FORMS: 5,
+  MAX_PENDING_FORMS: 5, // CHỈ cho consignmentApi.mock — bản thật Admin cấu hình (max_pending_forms_per_member), BE tự chặn
   MIN_PHOTOS: 1, // [GIẢ ĐỊNH]
   MAX_PHOTOS: 6, // theo KG-02 "2 / 6"
 };
@@ -70,6 +73,7 @@ export const PRODUCT_ENDED_LABEL = {
   DONATED: "Đã quyên góp",
   DESTROYED: "Đã huỷ",
   RETURNED: "Bị trả lại",
+  WAREHOUSE: "Đã gỡ khỏi sàn", // chỉ khi BE chưa gắn quyết định / ca xuống cấp (dữ liệu lệch)
 };
 
 // Theo enum OrderStatus của BE — tiến trình đơn ở KG-09 "Đã có đơn"

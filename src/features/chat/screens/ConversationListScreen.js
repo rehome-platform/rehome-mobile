@@ -92,7 +92,7 @@ export default function ConversationListScreen({ viewer = "member" }) {
           placeholder={
             isOrg
               ? "Tìm theo tên người nhắn, nội dung…"
-              : "Tìm kho, tổ chức, nội dung…"
+              : "Tìm địa điểm ký gửi, tổ chức, nội dung…"
           }
         />
       </View>

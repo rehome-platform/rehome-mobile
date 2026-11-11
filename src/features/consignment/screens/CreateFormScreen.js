@@ -23,7 +23,6 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
-import { CONSIGN_LIMITS } from "@/constants/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
 import { saveItemDraft } from "@/features/consignment/utils/consignDraft";
 import { draftToItem } from "@/features/consignment/utils/consignItem";
@@ -107,9 +106,8 @@ export default function CreateFormScreen() {
   const toggleAll = () =>
     setSkipped(allSelected ? new Set(items.map((i) => i.key)) : new Set());
 
-  // Số món còn được gửi lần này = giới hạn yêu cầu chờ duyệt − số đang chờ
-  const allowed = CONSIGN_LIMITS.MAX_PENDING_FORMS - (pending.data ?? 0);
-  const overLimit = selectedItems.length > allowed;
+  // Số yêu cầu chờ duyệt tối đa do Admin cấu hình (BE max_pending_forms_per_member) và app chưa đọc được →
+  // KHÔNG tự chặn. BE /submit trả kết quả TỪNG MÓN: món vượt mức hiện "chưa gửi được" kèm lý do của BE
 
   const go = (n) => {
     setStep(n);
@@ -238,21 +236,6 @@ export default function CreateFormScreen() {
 
   if (status !== "authenticated") return <Redirect href="/login" />;
 
-  // Đã đủ số yêu cầu chờ duyệt → báo luôn, khỏi nhập rồi mới bị chặn
-  if (allowed <= 0 && !items.length) {
-    return (
-      <Screen header={<AppHeader title="Ký gửi món mới" onBack={quit} />}>
-        <EmptyState
-          icon="hourglass-outline"
-          title={`Bạn đang có ${pending.data} yêu cầu chờ duyệt`}
-          description={`Tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ cùng lúc. Chờ ReHome xử lý bớt rồi gửi tiếp nhé.`}
-        >
-          <Button title="Về danh sách" onPress={quit} />
-        </EmptyState>
-      </Screen>
-    );
-  }
-
   const footer = [
     <Button
       key="0"
@@ -278,7 +261,7 @@ export default function CreateFormScreen() {
           : "Tích ít nhất 1 món để gửi"
       }
       loading={sending}
-      disabled={!selectedItems.length || overLimit}
+      disabled={!selectedItems.length}
       onPress={sendAll}
     />,
   ][step];
@@ -345,14 +328,15 @@ export default function CreateFormScreen() {
           <Button
             title="+ Thêm món"
             variant="secondary"
-            disabled={items.length >= allowed}
             onPress={() => router.push("/consign-forms/item")}
           />
-          <Text style={styles.hint}>
-            {items.length >= allowed
-              ? `Đã đủ ${allowed} món cho lần này (tối đa ${CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ duyệt cùng lúc).`
-              : `Lần này thêm được tối đa ${allowed} món.`}
-          </Text>
+          {pending.data ? (
+            <Text style={styles.hint}>
+              Bạn đang có {pending.data} yêu cầu chờ duyệt. ReHome giới hạn số
+              yêu cầu chờ cùng lúc — món vượt mức sẽ được báo khi gửi và vẫn giữ
+              làm nháp.
+            </Text>
+          ) : null}
         </>
       ) : null}
 
@@ -391,19 +375,11 @@ export default function CreateFormScreen() {
               onToggle={sending ? undefined : () => toggleItem(item.key)}
             />
           ))}
-          {overLimit ? (
-            <Text style={styles.error}>
-              Lần này gửi được tối đa {allowed} món (tối đa{" "}
-              {CONSIGN_LIMITS.MAX_PENDING_FORMS} yêu cầu chờ duyệt cùng lúc). Bỏ
-              tích bớt {selectedItems.length - allowed} món.
-            </Text>
-          ) : null}
-
           <NoteBox>
             <Text style={styles.note}>
               ReHome duyệt <Text style={styles.bold}>từng món</Text> (thường 1–2
-              ngày làm việc). Món nào được duyệt, bạn có{" "}
-              <Text style={styles.bold}>7 ngày</Text> để mang tới địa điểm này.
+              ngày làm việc). Món nào được duyệt, bạn mang tới địa điểm này{" "}
+              <Text style={styles.bold}>trước hạn ghi trên yêu cầu</Text>.
             </Text>
           </NoteBox>
         </>

@@ -87,12 +87,12 @@ export function ReceivingPlaceField({
         checked={warehouseIds.length > 0}
         title="Nhận tại điểm ký gửi"
         onPress={() => setPicking(true)}
-        right={<Text style={styles.link}>Chọn kho</Text>}
+        right={<Text style={styles.link}>Chọn địa điểm</Text>}
       >
         <Text style={styles.muted}>
           {warehouseIds.length
-            ? `${warehouseIds.length} kho: ${names.join(", ")}`
-            : "Chưa chọn kho — bấm để chọn"}
+            ? `${warehouseIds.length} địa điểm: ${names.join(", ")}`
+            : "Chưa chọn địa điểm ký gửi — bấm để chọn"}
         </Text>
         <Text style={styles.hint}>
           Nhân viên ReHome nhận đồ giúp bạn tại quầy, bạn xem danh sách đồ chờ
@@ -125,7 +125,7 @@ export function ReceivingPlaceField({
             <Button
               title={
                 warehouseIds.length
-                  ? `Xong · đã chọn ${warehouseIds.length} kho`
+                  ? `Xong · đã chọn ${warehouseIds.length} địa điểm`
                   : "Xong"
               }
               onPress={() => setPicking(false)}
@@ -137,8 +137,8 @@ export function ReceivingPlaceField({
             value={warehouseIds}
             onChange={(ids) => onChangeWarehouseIds(ids)}
             lockedIds={lockedIds}
-            lockedNote="Còn đồ chờ bạn tới lấy — chưa bỏ được kho này."
-            note="Chọn bao nhiêu kho cũng được. Người quyên góp sẽ thấy địa chỉ và giờ mở cửa của từng kho."
+            lockedNote="Còn đồ chờ bạn tới lấy — chưa bỏ được địa điểm này."
+            note="Chọn bao nhiêu địa điểm cũng được. Người quyên góp sẽ thấy địa chỉ và giờ mở cửa của từng địa điểm ký gửi."
           />
         </Screen>
       </Modal>

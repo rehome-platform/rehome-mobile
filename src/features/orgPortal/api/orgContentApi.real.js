@@ -64,7 +64,7 @@ async function friendly(promise) {
         status: e.status,
         code: ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID,
         message:
-          "Có kho bạn chọn không còn nhận đồ nên đã được bỏ khỏi danh sách. Kiểm tra lại nơi nhận rồi bấm lại.",
+          "Có địa điểm ký gửi bạn chọn không còn nhận đồ nên đã được bỏ khỏi danh sách. Kiểm tra lại nơi nhận rồi bấm lại.",
       });
     const rewrite = FRIENDLY[e.code];
     if (!rewrite) throw e;

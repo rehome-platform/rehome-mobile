@@ -3,9 +3,11 @@ import { WITHDRAWAL_STATUS as W } from "@/constants/withdrawal";
 import { warehouseApi } from "@/features/warehouses/api/warehouseApi";
 
 // API 90–92 (BE ItemWithdrawalRequestController). Đổi dữ liệu BE về hình dạng màn hình đang dùng (giống mock).
-// BE: tạo yêu cầu là PENDING_PICKUP + gỡ món khỏi sàn NGAY; phí (nếu có) trả riêng bằng ĐÚNG 1 cách WALLET | MOMO | VNPAY.
-// Chi tiết có sẵn địa chỉ / giờ mở cửa kho, ảnh món, completedAt, feePaymentDeadline (quá hạn chưa trả phí →
-// BE tự huỷ yêu cầu, món lên sàn lại). BE chưa có lịch sử trạng thái → dòng thời gian dựng từ createdAt / status
+// BE (11/11): tạo yêu cầu → PENDING_APPROVAL + gỡ món khỏi sàn NGAY, chưa có hạn nào. Địa điểm ký gửi duyệt →
+// PENDING_PICKUP + pickupDeadline + feePaymentDeadline (có phí); từ chối → REJECTED + rejectReason, món lên sàn lại.
+// Phí (nếu có) CHỈ trả được sau khi duyệt, bằng ĐÚNG 1 cách WALLET | MOMO | VNPAY; quá feePaymentDeadline chưa trả →
+// BE tự huỷ. Chi tiết có sẵn địa chỉ / giờ mở cửa, ảnh món, completedAt. BE chưa có lịch sử trạng thái (không có giờ
+// duyệt / từ chối) → dòng thời gian dựng từ createdAt / status
 
 // Dòng thời gian KG-15, mới nhất ở trên. Mốc không có giờ → at = null
 const eventsOf = (w) => {
@@ -13,15 +15,23 @@ const eventsOf = (w) => {
     { type: "REMOVED", at: w.createdAt },
     { type: "REQUESTED", at: w.createdAt },
   ];
+  const approved = [{ type: "APPROVED", at: null }, ...base];
+  if (w.status === W.REJECTED)
+    return [
+      { type: "RELISTED", at: null },
+      { type: "REJECTED", at: null },
+      ...base,
+    ];
+  if (w.status === W.PENDING_PICKUP) return approved;
   if (w.status === W.COMPLETED)
-    return [{ type: "HANDED_OVER", at: w.completedAt ?? null }, ...base];
+    return [{ type: "HANDED_OVER", at: w.completedAt ?? null }, ...approved];
   if (w.status === W.EXPIRED)
     return [
       { type: "RELISTED", at: w.pickupDeadline },
       { type: "EXPIRED", at: w.pickupDeadline },
-      ...base,
+      ...approved,
     ];
-  return base;
+  return base; // PENDING_APPROVAL
 };
 
 async function warehouseByName(name) {
@@ -43,7 +53,8 @@ const toWithdrawal = (w, warehouse) => ({
   events: eventsOf(w),
 });
 
-// API 90 → { id, productId, feeCharged, status: PENDING_PICKUP, pickupDeadline }. 409 PRODUCT_ALREADY_ORDERED
+// API 90 → { id, productId, feeCharged, status: PENDING_APPROVAL } (chưa có hạn — có sau khi duyệt).
+// 409 PRODUCT_ALREADY_ORDERED / ITEM_WITHDRAWAL_ALREADY_PENDING
 export async function createWithdrawal(productId) {
   const w = unwrap(await api.post("/item-withdrawal-requests", { productId }));
   const fee = Number(w.feeCharged ?? 0);

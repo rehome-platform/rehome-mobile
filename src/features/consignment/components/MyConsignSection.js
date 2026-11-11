@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import {
-  CONSIGN_LIMITS,
   CONSIGN_STAGE as G,
   CONSIGN_STAGE_TABS,
 } from "@/constants/consignment";
@@ -30,7 +29,7 @@ const showHowItWorks = () =>
     "Ký gửi hoạt động thế nào?",
     "1. Gửi yêu cầu: chọn địa điểm ký gửi, thêm ảnh và thông tin từng món.\n" +
       "2. ReHome duyệt từng món (thường 1–2 ngày làm việc).\n" +
-      "3. Mang đồ đến địa điểm ký gửi trong 7 ngày, nhân viên kiểm định và chốt giá với bạn.\n" +
+      "3. Mang đồ đến địa điểm ký gửi trước hạn ghi trên yêu cầu, nhân viên kiểm định và chốt giá với bạn.\n" +
       "4. Bạn xác nhận biên nhận trên app → hàng lên sàn.",
   );
 
@@ -123,13 +122,11 @@ export function MyConsignSection() {
     <View style={styles.header}>
       <StageTabs value={tab} onChange={setPicked} stages={stages} />
       {tab === G.PENDING && pendingCount > 0 ? (
+        // Mức tối đa do Admin cấu hình (BE max_pending_forms_per_member), app chưa đọc được → không ghi số
         <Text style={styles.info}>
-          Đang có{" "}
-          <Text style={styles.bold}>
-            {pendingCount}/{CONSIGN_LIMITS.MAX_PENDING_FORMS}
-          </Text>{" "}
-          yêu cầu chờ duyệt. Đủ {CONSIGN_LIMITS.MAX_PENDING_FORMS} thì chưa gửi
-          thêm được.
+          Đang có <Text style={styles.bold}>{pendingCount}</Text> yêu cầu chờ
+          duyệt. ReHome giới hạn số yêu cầu chờ cùng lúc, đủ mức thì chờ duyệt
+          bớt rồi gửi thêm.
         </Text>
       ) : null}
     </View>
