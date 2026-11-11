@@ -2,8 +2,16 @@
 import { MOCK } from "@/config/env";
 import * as real from "./consignmentApi.real";
 import * as mock from "./consignmentApi.mock";
+import { applyMockDonation } from "./donateApi";
 
 const impl = MOCK.consignment ? mock : real;
+
+// Quyên góp món ký gửi còn mock (MOCK.donateConsigned) → đè trạng thái "đã quyên góp" lên sản phẩm đọc về
+const getMyProducts = async (args) => {
+  const page = await impl.getMyProducts(args);
+  return { ...page, content: page.content.map(applyMockDonation) };
+};
+const getProduct = async (id) => applyMockDonation(await impl.getProduct(id));
 
 export const consignmentApi = {
   getNearestWarehouses: impl.getNearestWarehouses,
@@ -19,8 +27,8 @@ export const consignmentApi = {
   getReceipt: impl.getReceipt,
   confirmReceipt: impl.confirmReceipt,
   downloadReceiptPdf: impl.downloadReceiptPdf,
-  getMyProducts: impl.getMyProducts,
-  getProduct: impl.getProduct,
+  getMyProducts,
+  getProduct,
   reducePrice: impl.reducePrice,
   decideEndOfTerm: impl.decideEndOfTerm,
   // [DEV] chỉ có ở mock: giả lập Moderator đề xuất giá mới (ReconsignScreen)

@@ -31,11 +31,13 @@ import {
   commissionRates,
   currentRate,
   daysLeft,
+  donateCaseOf,
   formatRate,
   getProductView,
   productTiming,
 } from "@/utils/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
+import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
 import { consignKeys } from "@/features/consignment/api/queryKeys";
 import { ProductBadge } from "@/features/consignment/components/ProductBadge";
 import { PayoutBreakdown } from "@/features/consignment/components/PayoutBreakdown";
@@ -306,39 +308,84 @@ function AwaitingBody({ product }) {
   );
 }
 
+// Đã quyên góp: BE trả donation { campaignTitle, organizationName, status PENDING_PICKUP | HANDED_OVER, handedOverAt }
+function DonationBox({ donation: d }) {
+  const handedOver = d.status === "HANDED_OVER";
+  return (
+    <View style={styles.infoBox}>
+      <Text style={styles.boxTitle}>
+        {handedOver ? "Đã bàn giao cho tổ chức" : "Đã quyên góp"}
+      </Text>
+      <Text style={styles.body}>
+        Quyên góp cho chiến dịch{" "}
+        <Text style={styles.bold}>{d.campaignTitle}</Text>
+        {d.organizationName ? ` của ${d.organizationName}` : ""}.
+      </Text>
+      <Text style={styles.body}>
+        {handedOver
+          ? `ReHome đã bàn giao món cho tổ chức${d.handedOverAt ? ` ngày ${fmtDate(d.handedOverAt)}` : ""}. Cảm ơn bạn!`
+          : "Món đang ở địa điểm ký gửi, chờ tổ chức đến nhận. Bạn sẽ nhận thông báo khi đã bàn giao."}
+      </Text>
+    </View>
+  );
+}
+
+// Nút "Quyên góp" (đặc tả 11/11) — chỉ hiện khi món đang ở trường hợp được quyên góp (donateCaseOf)
+function DonateLink({ product, label }) {
+  if (!DONATE_ENABLED || !donateCaseOf(product)) return null;
+  return (
+    <Button
+      title={label}
+      variant="text"
+      onPress={() => router.push(`/my-products/${product.id}/donate`)}
+    />
+  );
+}
+
 // Nút ở đáy theo trạng thái
 function Footer({ product, view }) {
   const base = `/my-products/${product.id}`;
   if (view === PRODUCT_VIEW.SELLING) {
     return (
-      <View style={styles.footerRow}>
-        <Button
-          title="Rút hàng về"
-          variant="secondary"
-          style={styles.flex}
-          onPress={() =>
-            router.push({
-              pathname: "/withdrawals/new",
-              params: { productId: product.id },
-            })
-          }
-        />
-        <Button
-          title="Giảm giá bán"
-          style={styles.flex}
-          onPress={() => router.push(`${base}/reduce-price`)}
-        />
+      <View style={styles.footerCol}>
+        <View style={styles.footerRow}>
+          <Button
+            title="Rút hàng về"
+            variant="secondary"
+            style={styles.flex}
+            onPress={() =>
+              router.push({
+                pathname: "/withdrawals/new",
+                params: { productId: product.id },
+              })
+            }
+          />
+          <Button
+            title="Giảm giá bán"
+            style={styles.flex}
+            onPress={() => router.push(`${base}/reduce-price`)}
+          />
+        </View>
+        <DonateLink product={product} label="Quyên góp món này" />
       </View>
     );
   }
   if (view === PRODUCT_VIEW.WITHDRAWING) {
     return (
-      <Button
-        title="Xem yêu cầu rút hàng"
-        onPress={() =>
-          router.push(`/withdrawals/${product.activeWithdrawalId}`)
-        }
-      />
+      <View style={styles.footerCol}>
+        <Button
+          title="Xem yêu cầu rút hàng"
+          onPress={() =>
+            router.push(`/withdrawals/${product.activeWithdrawalId}`)
+          }
+        />
+        <DonateLink product={product} label="Không đến lấy được? Quyên góp" />
+      </View>
+    );
+  }
+  if (view === PRODUCT_VIEW.PICKUP) {
+    return (
+      <DonateLink product={product} label="Không đến lấy được? Quyên góp" />
     );
   }
   if (view === PRODUCT_VIEW.DEGRADED_DECISION) {
@@ -354,28 +401,31 @@ function Footer({ product, view }) {
 
   if (view === PRODUCT_VIEW.AWAITING_DECISION) {
     return (
-      <View style={styles.footerRow}>
-        <Button
-          title="Nhận lại hàng"
-          variant="secondary"
-          style={styles.flex}
-          onPress={() =>
-            router.push({
-              pathname: `${base}/end-of-term`,
-              params: { choice: "TAKE_BACK" },
-            })
-          }
-        />
-        <Button
-          title="Ký gửi lại"
-          style={styles.flex}
-          onPress={() =>
-            router.push({
-              pathname: `${base}/end-of-term`,
-              params: { choice: "RE_CONSIGN" },
-            })
-          }
-        />
+      <View style={styles.footerCol}>
+        <View style={styles.footerRow}>
+          <Button
+            title="Nhận lại hàng"
+            variant="secondary"
+            style={styles.flex}
+            onPress={() =>
+              router.push({
+                pathname: `${base}/end-of-term`,
+                params: { choice: "TAKE_BACK" },
+              })
+            }
+          />
+          <Button
+            title="Ký gửi lại"
+            style={styles.flex}
+            onPress={() =>
+              router.push({
+                pathname: `${base}/end-of-term`,
+                params: { choice: "RE_CONSIGN" },
+              })
+            }
+          />
+        </View>
+        <DonateLink product={product} label="Hoặc quyên góp món này" />
       </View>
     );
   }
@@ -547,6 +597,8 @@ export default function ProductDetailScreen() {
             đang ở địa điểm ký gửi, ReHome sẽ liên hệ bạn về cách xử lý tiếp
             theo.
           </NoteBox>
+        ) : product.status === PRODUCT_STATUS.DONATED && product.donation ? (
+          <DonationBox donation={product.donation} />
         ) : view === PRODUCT_VIEW.ENDED ? (
           <NoteBox>{`Sản phẩm đã kết thúc ký gửi: ${PRODUCT_ENDED_LABEL[product.status] ?? product.status}.`}</NoteBox>
         ) : null}
@@ -655,4 +707,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   footerRow: { flexDirection: "row", gap: spacing.md },
+  footerCol: { gap: spacing.xs },
 });

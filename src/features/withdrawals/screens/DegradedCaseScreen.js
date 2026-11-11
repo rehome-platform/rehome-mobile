@@ -29,6 +29,7 @@ import {
 } from "@/constants/withdrawal";
 import { PhotoThumbs } from "@/features/returns/components/PhotoThumbs";
 import { degradedApi } from "../api/degradedApi";
+import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
 import {
   useDegradedCase,
   useDegradedMutation,
@@ -157,18 +158,28 @@ export default function DegradedCaseScreen() {
     );
   } else if (c.choice === C.PARTIAL_WITH_ITEM_BACK) {
     footer = (
-      <View style={styles.footerRow}>
-        <Button
-          title="Xem ví"
-          variant="secondary"
-          onPress={() => router.push("/wallet")}
-          style={styles.flex}
-        />
-        <Button
-          title="Mã Member của tôi"
-          onPress={() => router.push("/profile/member-code")}
-          style={styles.flex}
-        />
+      <View style={styles.footerCol}>
+        <View style={styles.footerRow}>
+          <Button
+            title="Xem ví"
+            variant="secondary"
+            onPress={() => router.push("/wallet")}
+            style={styles.flex}
+          />
+          <Button
+            title="Mã Member của tôi"
+            onPress={() => router.push("/profile/member-code")}
+            style={styles.flex}
+          />
+        </View>
+        {/* Không đến lấy được → quyên góp món (tiền đền đã cộng giữ nguyên). Màn Quyên góp tự kiểm còn được không */}
+        {DONATE_ENABLED && c.productId ? (
+          <Button
+            title="Không đến lấy được? Quyên góp"
+            variant="text"
+            onPress={() => router.push(`/my-products/${c.productId}/donate`)}
+          />
+        ) : null}
       </View>
     );
   } else {
@@ -424,5 +435,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
   },
   footerRow: { flexDirection: "row", gap: spacing.md },
+  footerCol: { gap: spacing.xs },
   mock: { gap: spacing.xs, alignItems: "flex-start" },
 });

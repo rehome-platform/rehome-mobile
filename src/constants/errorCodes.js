@@ -38,4 +38,9 @@ export const ERROR_CODES = {
   DUPLICATE_PENDING_REPORT: "DUPLICATE_PENDING_REPORT", // đã báo cáo đối tượng này, báo cáo cũ còn chờ xử lý (409)
   CAMPAIGN_HIDDEN: "CAMPAIGN_HIDDEN", // chiến dịch bị Moderator ẩn: không đóng / ghi note được (409)
   POST_ALREADY_REMOVED: "POST_ALREADY_REMOVED", // sửa bài đã bị Moderator gỡ (409) — BE #250; message BE đã là câu tiếng Việt
+  // Quyên góp món ký gửi (đặc tả gửi BE 11/11 — [CHỜ BE] chốt tên mã)
+  PRODUCT_NOT_DONATABLE: "PRODUCT_NOT_DONATABLE", // món không ở trạng thái được quyên góp (409)
+  WITHDRAWAL_PENDING_APPROVAL: "WITHDRAWAL_PENDING_APPROVAL", // yêu cầu rút hàng còn chờ duyệt (409)
+  CAMPAIGN_NOT_ACCEPTING: "CAMPAIGN_NOT_ACCEPTING", // chiến dịch đã đóng / hết hạn (409)
+  CAMPAIGN_NOT_AT_WAREHOUSE: "CAMPAIGN_NOT_AT_WAREHOUSE", // chiến dịch không nhận đồ tại địa điểm giữ món (409)
 };

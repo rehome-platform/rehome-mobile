@@ -8,4 +8,10 @@ export const consignKeys = {
   receipt: (id) => ["consign", "receipt", id],
   products: () => ["consign", "products"],
   product: (id) => ["consign", "product", id],
+  // Chiến dịch đang nhận đồ tại 1 địa điểm ký gửi (màn Quyên góp món ký gửi)
+  donateCampaigns: (warehouseId) => [
+    "consign",
+    "donate-campaigns",
+    warehouseId,
+  ],
 };

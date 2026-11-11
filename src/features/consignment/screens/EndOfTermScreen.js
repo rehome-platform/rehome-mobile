@@ -26,6 +26,7 @@ import { END_OF_TERM_DECISION, PRODUCT_VIEW } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
 import { consignKeys } from "@/features/consignment/api/queryKeys";
+import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
 import { PickupInfo } from "@/features/consignment/components/PickupInfo";
 
 const { TAKE_BACK, RE_CONSIGN } = END_OF_TERM_DECISION;
@@ -249,6 +250,15 @@ function EndOfTermBody({ product, header, initialChoice }) {
           onPress={() => pick(RE_CONSIGN)}
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {/* Lựa chọn thứ 3 (đặc tả 11/11): quyên góp cho chiến dịch đang nhận đồ tại địa điểm này */}
+        {DONATE_ENABLED ? (
+          <Button
+            title="Không muốn nhận lại? Quyên góp món này"
+            variant="text"
+            onPress={() => router.push(`/my-products/${product.id}/donate`)}
+          />
+        ) : null}
 
         {history.length >= 2 ? (
           <NoteBox>
