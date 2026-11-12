@@ -25,7 +25,10 @@ export default function LiveTryonResultScreen() {
   const download = async () => {
     setDownloading(true);
     try {
-      const permission = await MediaLibrary.requestPermissionsAsync();
+      // writeOnly = true: chỉ LƯU video vào thư viện, không đọc ảnh/video/âm thanh của máy.
+      // Không truyền thì thư viện xin cả quyền đọc ảnh + video + âm thanh, và ném lỗi nếu bản
+      // build không khai báo đủ trong AndroidManifest (vd. READ_MEDIA_AUDIO).
+      const permission = await MediaLibrary.requestPermissionsAsync(true);
       if (!permission.granted) {
         Alert.alert(
           "Chưa được cấp quyền",
@@ -33,7 +36,9 @@ export default function LiveTryonResultScreen() {
         );
         return;
       }
-      const destination = new File(Paths.cache, `tryon-live-${Date.now()}.webm`);
+      // Android quay ra .webm, iPhone quay ra .mp4 - lấy đuôi theo đúng file BE đã lưu
+      const ext = /\.mp4(\?|$)/i.test(String(videoUrl)) ? "mp4" : "webm";
+      const destination = new File(Paths.cache, `tryon-live-${Date.now()}.${ext}`);
       const downloaded = await new DownloadTask(videoUrl, destination).downloadAsync();
       if (!downloaded) throw new Error("Tải video thất bại.");
       await Asset.create(downloaded.uri);

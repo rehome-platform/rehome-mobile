@@ -82,10 +82,16 @@ async function sendToken(token) {
 // Firebase đổi token (hiếm) → đăng ký lại. Trả hàm huỷ
 export function listenTokenRefresh() {
   if (!pushSupported()) return () => {};
-  const sub = N.addPushTokenListener(({ data }) => {
-    sendToken(data).catch(() => {});
-  });
-  return () => sub.remove();
+  // Expo Go trên Android có sẵn module nhưng đã bỏ push từ SDK 53: addPushTokenListener NÉM LỖI
+  // (không chỉ cảnh báo) → bắt lại, coi như không có push; dev build / APK chạy bình thường.
+  try {
+    const sub = N.addPushTokenListener(({ data }) => {
+      sendToken(data).catch(() => {});
+    });
+    return () => sub.remove();
+  } catch {
+    return () => {};
+  }
 }
 
 // Đăng xuất: gỡ token TRƯỚC khi xoá token đăng nhập (API cần access token) → máy này thôi nhận push của tài khoản cũ
