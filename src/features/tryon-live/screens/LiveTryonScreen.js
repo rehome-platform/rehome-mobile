@@ -43,9 +43,10 @@ export default function LiveTryonScreen() {
   const completeSession = useCompleteLiveTryon();
   const [permission, requestPermission] = useCameraPermissions();
 
-  // checking | permission | permission-denied | connecting | recording | no-quota | error
+  // checking | permission | permission-denied | connecting | recording | saving | no-quota | error
   const [phase, setPhase] = useState("checking");
   const [session, setSession] = useState(null);
+  const [webReady, setWebReady] = useState(false); // WebView đã tải xong SDK Decart ("ready")
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [connectStatusText, setConnectStatusText] = useState("Đang kết nối AI...");
@@ -54,10 +55,30 @@ export default function LiveTryonScreen() {
   const connectTimeoutRef = useRef(null);
   const sessionRef = useRef(null);
   const startedRef = useRef(false); // chặn bấm "Mở camera" 2 lần gọi startSession 2 lần
+  const startSentRef = useRef(false); // "start" chỉ gửi vào WebView ĐÚNG 1 lần mỗi phiên
+  const endedRef = useRef(false); // phiên đã chốt (xong / lỗi / huỷ) -> bỏ qua event đến muộn
 
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  // Gửi "start" đúng 1 lần, khi ĐỦ cả hai: BE đã trả phiên (token) và WebView đã tải xong SDK.
+  // Gửi lặp = mỗi lần mở thêm 1 camera + 1 phiên Decart chạy song song -> hình nháy, giật,
+  // tốn tiền gấp nhiều lần; gửi sớm trước khi SDK tải xong thì message rơi mất.
+  useEffect(() => {
+    if (!session || !webReady || startSentRef.current) return;
+    startSentRef.current = true;
+    webviewRef.current?.start({
+      apiKey: session.apiKey,
+      modelId: session.modelId,
+      garmentImageUrl: session.garmentImageUrl,
+      prompt: session.prompt,
+      maxDurationSeconds: session.maxDurationSeconds,
+      apiBaseUrl: ENV.API_BASE_URL,
+      accessToken: session.accessToken,
+      sessionId: session.sessionId,
+    });
+  }, [session, webReady]);
 
   useEffect(() => {
     if (!quota.data || phase !== "checking") return;
@@ -73,6 +94,7 @@ export default function LiveTryonScreen() {
   };
 
   const failConnecting = (message) => {
+    endedRef.current = true; // WebView sẽ báo thêm "error" sau khi stop - không để ghi đè message
     clearConnectTimeout();
     webviewRef.current?.stop();
     if (sessionRef.current) {
@@ -89,6 +111,28 @@ export default function LiveTryonScreen() {
 
   const close = () =>
     router.canGoBack() ? router.back() : router.replace(`/products/${productId}`);
+
+  // Nút ✕ trên màn camera. Đang kết nối: chưa có gì để lưu -> huỷ và thoát luôn (WebView có
+  // thể còn chưa tải xong SDK nên không trông vào nó trả lời). Đang quay: dừng sớm, WebView
+  // tự upload phần đã quay rồi báo "done". Đang lưu: bỏ qua.
+  const onClosePress = () => {
+    if (phase === "recording") {
+      webviewRef.current?.stop();
+      return;
+    }
+    if (phase !== "connecting") return;
+    endedRef.current = true;
+    clearConnectTimeout();
+    webviewRef.current?.stop();
+    if (sessionRef.current) {
+      completeSession.mutate({
+        sessionId: sessionRef.current.sessionId,
+        status: TRYON_LIVE_STATUS.FAILED,
+        actualDurationSeconds: 0,
+      });
+    }
+    close();
+  };
 
   const begin = async () => {
     if (!permission?.granted) {
@@ -124,20 +168,6 @@ export default function LiveTryonScreen() {
     });
   };
 
-  const onWebviewReady = () => {
-    if (!session) return;
-    webviewRef.current?.start({
-      apiKey: session.apiKey,
-      modelId: session.modelId,
-      garmentImageUrl: session.garmentImageUrl,
-      prompt: session.prompt,
-      maxDurationSeconds: session.maxDurationSeconds,
-      apiBaseUrl: ENV.API_BASE_URL,
-      accessToken: session.accessToken,
-      sessionId: session.sessionId,
-    });
-  };
-
   const startCountdown = (seconds) => {
     clearConnectTimeout();
     clearInterval(countdownRef.current); // phòng hờ nếu lỡ có "recording-started" bắn 2 lần
@@ -155,6 +185,21 @@ export default function LiveTryonScreen() {
   };
 
   const onEvent = (event) => {
+    if (event.type === "log") {
+      if (__DEV__) console.log("[tryon-live]", event); // cỡ camera thật, lý do Decart cắt phiên
+      return;
+    }
+    if (endedRef.current) return;
+    if (event.type === "ready") {
+      setWebReady(true);
+      return;
+    }
+    if (event.type === "saving") {
+      // Hết giờ / bấm ✕ / Decart cắt phiên sớm -> đang upload, không còn đếm ngược nữa
+      clearInterval(countdownRef.current);
+      setPhase("saving");
+      return;
+    }
     if (event.type === "status") {
       // WebRTC đang tự retry (connecting/reconnecting) - cho người xem thấy app vẫn đang chạy,
       // không phải đứng hình, nhất là lúc demo trực tiếp.
@@ -171,6 +216,7 @@ export default function LiveTryonScreen() {
       return;
     }
     if (event.type === "done") {
+      endedRef.current = true;
       clearInterval(countdownRef.current);
       router.replace({
         pathname: "/tryon-live/result",
@@ -179,6 +225,7 @@ export default function LiveTryonScreen() {
       return;
     }
     if (event.type === "error") {
+      endedRef.current = true;
       clearInterval(countdownRef.current);
       clearConnectTimeout();
       // Không có video để BE tự đánh dấu COMPLETED -> tự báo FAILED để audit (không hoàn quota)
@@ -265,30 +312,31 @@ export default function LiveTryonScreen() {
     );
   }
 
-  // connecting | recording - toàn màn hình, không qua Screen() vì camera phải full-bleed
+  // connecting | recording | saving - toàn màn hình, không qua Screen() vì camera phải full-bleed.
+  // WebView dựng ngay từ lúc "connecting" (chưa cần session) để tải SDK Decart song song với
+  // lúc gọi BE lấy token - token chỉ sống 30 giây nên không để phí vào việc tải thư viện.
   return (
     <SafeAreaView style={styles.fill} edges={["top", "left", "right"]}>
-      {session ? (
-        <>
-          <TryonLiveWebview ref={webviewRef} onEvent={onEvent} />
-          <StartOnReady onReady={onWebviewReady} />
-        </>
-      ) : null}
+      <TryonLiveWebview ref={webviewRef} onEvent={onEvent} />
 
-      <Pressable
-        onPress={() => webviewRef.current?.stop()}
-        style={styles.close}
-        accessibilityRole="button"
-        accessibilityLabel="Đóng"
-        hitSlop={8}
-      >
-        <Ionicons name="close" size={22} color={colors.onPrimary} />
-      </Pressable>
+      {phase === "saving" ? null : (
+        <Pressable
+          onPress={onClosePress}
+          style={styles.close}
+          accessibilityRole="button"
+          accessibilityLabel="Đóng"
+          hitSlop={8}
+        >
+          <Ionicons name="close" size={22} color={colors.onPrimary} />
+        </Pressable>
+      )}
 
-      {phase === "connecting" ? (
-        <View style={styles.centerOverlay}>
+      {phase === "connecting" || phase === "saving" ? (
+        <View style={styles.centerOverlay} pointerEvents="none">
           <ActivityIndicator color={colors.onPrimary} />
-          <Text style={styles.overlayText}>{connectStatusText}</Text>
+          <Text style={styles.overlayText}>
+            {phase === "saving" ? "Đang lưu video..." : connectStatusText}
+          </Text>
         </View>
       ) : null}
 
@@ -300,16 +348,6 @@ export default function LiveTryonScreen() {
       ) : null}
     </SafeAreaView>
   );
-}
-
-// WebView chạy HTML tĩnh nhúng sẵn (không gọi mạng để load trang) nên "ready" gần như ngay lập
-// tức - đợi 1 nhịp ngắn thay vì forward thêm 1 prop onLoadEnd xuyên qua forwardRef chỉ cho việc này.
-function StartOnReady({ onReady }) {
-  useEffect(() => {
-    const t = setTimeout(onReady, 300);
-    return () => clearTimeout(t);
-  }, [onReady]);
-  return null;
 }
 
 const styles = StyleSheet.create({
