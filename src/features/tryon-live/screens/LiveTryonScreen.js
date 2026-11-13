@@ -25,6 +25,7 @@ import {
   useTryonLiveQuota,
 } from "../hooks/useTryonLive";
 import { TryonLiveWebview } from "../components/TryonLiveWebview";
+import { liveQuotaView, remainingText } from "../utils/liveQuota";
 
 // Thử đồ AI real-time qua camera (Decart Lucy VTON). BE đã trừ quota + mint token ngay ở
 // POST /tryon/live/sessions (LiveTryOnServiceImpl) - màn hình này chỉ xin quyền camera, nhúng
@@ -80,9 +81,12 @@ export default function LiveTryonScreen() {
     });
   }, [session, webReady]);
 
+  // Lượt theo gói thành viên (BE đổi dữ liệu: canStart, lượt tháng / ngày, maxSeconds, upsellTier)
+  const q = liveQuotaView(quota.data);
+
   useEffect(() => {
-    if (!quota.data || phase !== "checking") return;
-    setPhase(quota.data.remaining <= 0 ? "no-quota" : "permission");
+    if (!q || phase !== "checking") return;
+    setPhase(q.canStart ? "permission" : "no-quota");
   }, [quota.data, phase]);
 
   useEffect(() => () => clearInterval(countdownRef.current), []);
@@ -159,6 +163,7 @@ export default function LiveTryonScreen() {
         clearConnectTimeout();
         startedRef.current = false;
         if (e.code === ERROR_CODES.TRYON_LIVE_QUOTA_EXCEEDED) {
+          quota.refetch(); // lấy lại số lượt thật để màn "hết lượt" ghi đúng
           setPhase("no-quota");
         } else {
           setErrorMessage(e.message);
@@ -255,12 +260,30 @@ export default function LiveTryonScreen() {
       <Screen>
         <EmptyState
           icon="time-outline"
-          title="Hết lượt thử đồ AI real-time hôm nay"
-          description={`Mỗi tài khoản chỉ có ${quota.data?.dailyLimit ?? 2} lượt/ngày, mỗi lượt ${
-            quota.data?.maxDurationSeconds ?? 10
-          } giây. Quay lại vào ngày mai nhé.`}
+          title={`Bạn đã dùng hết lượt thử đồ real-time ${q?.period ?? ""}`.trim()}
+          description={[
+            q?.limit != null
+              ? `Gói ${q.tierName ?? "của bạn"} có ${q.limit} lượt/${q.unit}, mỗi lượt ${q.maxSeconds} giây.`
+              : null,
+            q?.resetText,
+            q?.upsellLabel ? `Nâng cấp lên gói ${q.upsellLabel} để có thêm lượt.` : null,
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
-          <Button title="Đóng" variant="secondary" onPress={close} />
+          {q?.upsellLabel ? (
+            <Button
+              title={`Nâng cấp gói ${q.upsellLabel}`}
+              onPress={() => router.push("/membership")}
+            />
+          ) : null}
+          <Button
+            title="Dùng Phối đồ AI thay thế"
+            variant="secondary"
+            onPress={() => router.replace(`/tryon?productId=${productId}`)}
+            style={styles.mt}
+          />
+          <Button title="Đóng" variant="text" onPress={close} style={styles.mt} />
         </EmptyState>
       </Screen>
     );
@@ -302,8 +325,8 @@ export default function LiveTryonScreen() {
           icon="camera-outline"
           title="Thử đồ AI real-time"
           description={`Mở camera, thử món này trực tiếp tối đa ${
-            quota.data?.maxDurationSeconds ?? 10
-          } giây. Còn ${quota.data?.remaining ?? 2} lượt hôm nay.`}
+            q?.maxSeconds ?? 10
+          } giây. ${remainingText(q)}.`}
         >
           <Button title="Mở camera" onPress={begin} />
           <Button title="Để sau" variant="secondary" onPress={close} style={styles.mt} />

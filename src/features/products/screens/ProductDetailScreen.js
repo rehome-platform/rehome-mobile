@@ -26,6 +26,7 @@ import {
 import { SALE_STATE, saleStateOf } from "../utils/saleState";
 import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PriceTag } from "../components/PriceTag";
+import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
 import { SimilarProducts } from "../components/SimilarProducts";
 import { setPendingRedirect } from "@/stores/pendingRedirect";
 import { MockStatusPanel } from "../components/MockStatusPanel";
@@ -294,6 +295,15 @@ export default function ProductDetailScreen() {
               </Text>
             </View>
           ) : null}
+          {/* Minh bạch với người mua: "Nổi bật" là quyền lợi gói của người ký gửi, không phải đánh giá chất lượng */}
+          {product.featured && !gone ? (
+            <View style={styles.featuredRow}>
+              <FeaturedBadge />
+              <Text style={styles.featuredText}>
+                Người ký gửi đang dùng gói thành viên
+              </Text>
+            </View>
+          ) : null}
         </View>
         {/* Phase 6 · BR-04: Thử đồ AI (không chiếm chân màn) */}
         {!query.isPlaceholderData && canTryOn(product) ? (
@@ -457,6 +467,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.primary,
   },
+  featuredRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  featuredText: { ...textStyles.caption, color: colors.textSecondary },
   chatBtn: {
     width: 64,
     alignItems: "center",

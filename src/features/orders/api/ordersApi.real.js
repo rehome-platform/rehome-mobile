@@ -38,10 +38,14 @@ const toTracking = (t) => ({
 // KHÔNG có tên món / tên kho (checkout tự điền)
 // - Có productIds → đặt các món đó, BE tự xoá chúng khỏi giỏ. Checkout luôn gửi productIds
 // - Không gửi productIds → đặt CẢ GIỎ (thứ tự theo giỏ của BE); 1 món không còn bán → 409 cả lần
-export async function createOrders({ shippingAddressId, productIds }) {
-  const body = productIds?.length
-    ? { shippingAddressId, productIds }
-    : { shippingAddressId };
+// - voucherCode (gói thành viên): MỘT mã cho cả lần đặt, BE tự chia phần giảm về từng đơn → mỗi đơn trả
+//   discountAmount + totalAmount ĐÃ trừ giảm. Lỗi mã: VOUCHER_* (400/403/404/409), không tạo đơn nào
+export async function createOrders({ shippingAddressId, productIds, voucherCode }) {
+  const body = {
+    shippingAddressId,
+    ...(productIds?.length ? { productIds } : {}),
+    ...(voucherCode ? { voucherCode } : {}),
+  };
   return unwrap(await api.post("/orders", body));
 }
 

@@ -35,6 +35,16 @@ export function usePurchaseHistory() {
   });
 }
 
+// M-07: mã dùng được cho lần đặt hàng này (đổi món / đổi địa chỉ → hỏi lại)
+export function useApplicableVouchers(productIds, shippingAddressId) {
+  return useQuery({
+    queryKey: ["vouchers", "applicable", productIds.join(","), shippingAddressId],
+    queryFn: () =>
+      membershipApi.getApplicableVouchers({ productIds, shippingAddressId }),
+    enabled: productIds.length > 0 && !!shippingAddressId,
+  });
+}
+
 // M-04: một tab một trạng thái; trả { items, total }
 export function useMyVouchers(status) {
   return useInfiniteQuery({

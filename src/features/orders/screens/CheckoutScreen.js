@@ -32,6 +32,8 @@ import { shopKeys } from "@/features/products/api/queryKeys";
 import { shippingFeeQuery } from "@/features/products/hooks/useShippingFee";
 import { ordersApi } from "../api/ordersApi";
 import { OrderGroupCard, OrderLine } from "../components/OrderGroupCard";
+import { useApplicableVouchers } from "@/features/membership/hooks/useMembership";
+import { VoucherPickerSheet } from "@/features/membership/components/VoucherPickerSheet";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/cart");
@@ -93,6 +95,8 @@ export default function CheckoutScreen() {
           .filter(Boolean),
   );
   const [formError, setFormError] = useState(null);
+  const [voucherId, setVoucherId] = useState(null);
+  const [voucherSheet, setVoucherSheet] = useState(false);
   const place = useMutation({ mutationFn: ordersApi.createOrders });
 
   // Dữ liệu đặt hàng tính TRƯỚC các nhánh return sớm → hook phí ship bên dưới luôn được gọi
@@ -121,6 +125,16 @@ export default function CheckoutScreen() {
   const feeTotal = feesKnown
     ? feeQueries.reduce((s, q) => s + q.data, 0)
     : null;
+
+  // Gói thành viên · M-07: MỘT mã cho cả lần đặt (BE chia về từng đơn). Số tiền giảm lấy từ BE, không tự tính.
+  // Đổi món / địa chỉ → BE tính lại; mã đang chọn không còn dùng được thì tự bỏ (selected = null)
+  const vouchers = useApplicableVouchers(
+    okLines.map((l) => l.productId),
+    address?.id,
+  );
+  const usableVouchers = (vouchers.data?.vouchers ?? []).filter((v) => v.applicable);
+  const selectedVoucher = usableVouchers.find((v) => v.id === voucherId) ?? null;
+  const discount = Number(selectedVoucher?.discountAmount ?? 0);
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -159,7 +173,11 @@ export default function CheckoutScreen() {
     const productIds = list.map((l) => l.productId);
 
     place.mutate(
-      { shippingAddressId: address.id, productIds },
+      {
+        shippingAddressId: address.id,
+        productIds,
+        voucherCode: selectedVoucher?.code,
+      },
       {
         onSuccess: (orders) => {
           setPendingOrders(
@@ -177,6 +195,14 @@ export default function CheckoutScreen() {
           router.replace("/payment"); // replace: Back không quay lại đây đặt thêm lần nữa
         },
         onError: (e) => {
+          // Lỗi mã giảm giá: BE không tạo đơn nào → bỏ chọn mã, giữ nguyên giỏ và các lựa chọn khác để đặt lại
+          if (String(e.code ?? "").startsWith("VOUCHER_")) {
+            setVoucherId(null);
+            queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+            return setFormError(
+              `Không dùng được mã giảm giá: ${e.message} Đã bỏ chọn mã, bạn có thể đặt lại.`,
+            );
+          }
           if (e.status === 409) {
             // Có món vừa bị người khác đặt trước — BE không nói món nào → tải lại để biết
             queryClient.invalidateQueries({ queryKey: cartKeys.cart });
@@ -289,11 +315,17 @@ export default function CheckoutScreen() {
                   : "Tính khi đặt hàng"}
             </Text>
           </View>
+          {selectedVoucher ? (
+            <View style={styles.sumRow}>
+              <Text style={styles.muted}>Giảm giá ({selectedVoucher.code})</Text>
+              <Text style={styles.discount}>− {formatVnd(discount)}</Text>
+            </View>
+          ) : null}
           {feesKnown ? (
             <View style={styles.sumRow}>
               <Text style={styles.strong}>Tổng thanh toán</Text>
               <Text style={styles.strong}>
-                {formatVnd(sum(okLines) + feeTotal)}
+                {formatVnd(Math.max(0, sum(okLines) + feeTotal - discount))}
               </Text>
             </View>
           ) : null}
@@ -332,16 +364,53 @@ export default function CheckoutScreen() {
         />
       ))}
 
+      {/* Mã giảm giá (gói thành viên) — một mã cho cả lần đặt */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>MÃ GIẢM GIÁ</Text>
+        <Pressable
+          onPress={() => setVoucherSheet(true)}
+          disabled={!address}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.voucherRow, pressed && styles.pressed]}
+        >
+          <Ionicons name="pricetags-outline" size={20} color={colors.primary} />
+          <Text
+            style={[styles.voucherText, !selectedVoucher && styles.muted]}
+            numberOfLines={1}
+          >
+            {selectedVoucher
+              ? `${selectedVoucher.name} · −${formatVnd(discount)}`
+              : vouchers.isPending && vouchers.fetchStatus !== "idle"
+                ? "Đang tìm mã dùng được…"
+                : usableVouchers.length
+                  ? `${usableVouchers.length} mã dùng được cho đơn này`
+                  : "Chưa có mã dùng được"}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>THANH TOÁN</Text>
         <PaymentMethodPicker
           value={paymentMethod}
           onChange={setPaymentMethod}
-          // Đã biết phí ship → so ví với tổng thật; chưa biết → so tiền hàng và nhắc cần đủ phí ship
-          amount={sum(okLines) + (feeTotal ?? 0)}
+          // Đã biết phí ship → so ví với tổng thật (đã trừ mã giảm); chưa biết → so tiền hàng và nhắc cần đủ phí ship
+          amount={Math.max(0, sum(okLines) + (feeTotal ?? 0) - discount)}
           isSubtotal={!feesKnown}
         />
       </View>
+
+      <VoucherPickerSheet
+        visible={voucherSheet}
+        onClose={() => setVoucherSheet(false)}
+        query={vouchers}
+        value={selectedVoucher?.id ?? null}
+        onApply={(id) => {
+          setVoucherId(id);
+          setVoucherSheet(false);
+        }}
+      />
 
       <NoteBox>
         {feesKnown
@@ -472,6 +541,18 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   footerCol: { gap: spacing.xs },
+  discount: { ...textStyles.body, fontFamily: fonts.semibold, color: colors.primary },
+  voucherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  voucherText: { flex: 1, ...textStyles.body, color: colors.text },
   sumRow: { flexDirection: "row", justifyContent: "space-between" },
   mainBtn: { marginTop: spacing.sm },
   resultHead: {

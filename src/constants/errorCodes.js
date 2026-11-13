@@ -48,4 +48,11 @@ export const ERROR_CODES = {
   MEMBERSHIP_PLAN_NOT_PURCHASABLE: "MEMBERSHIP_PLAN_NOT_PURCHASABLE", // gói vừa ngừng bán (409)
   MEMBERSHIP_PLAN_YEARLY_NOT_AVAILABLE: "MEMBERSHIP_PLAN_YEARLY_NOT_AVAILABLE", // gói không bán theo năm (400)
   MEMBERSHIP_PAYMENT_PENDING: "MEMBERSHIP_PAYMENT_PENDING", // đang có giao dịch mua gói chờ thanh toán (409)
+  // Voucher khi đặt hàng (POST /orders voucherCode) — sai mã thì không tạo đơn nào
+  VOUCHER_NOT_FOUND: "VOUCHER_NOT_FOUND", // 404
+  VOUCHER_FORBIDDEN: "VOUCHER_FORBIDDEN", // mã không thuộc về bạn (403)
+  VOUCHER_ALREADY_USED: "VOUCHER_ALREADY_USED", // 409
+  VOUCHER_EXPIRED: "VOUCHER_EXPIRED", // 409
+  VOUCHER_MIN_ORDER_NOT_MET: "VOUCHER_MIN_ORDER_NOT_MET", // đơn chưa đủ giá trị tối thiểu (400)
+  VOUCHER_NOT_APPLICABLE: "VOUCHER_NOT_APPLICABLE", // mã không giảm được gì cho đơn này (400)
 };

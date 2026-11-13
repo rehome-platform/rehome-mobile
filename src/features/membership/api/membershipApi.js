@@ -54,3 +54,14 @@ export async function getMyVouchers({ status, page = 0, size = 20 } = {}) {
     await api.get("/vouchers/me", { params: { status, page, size } }),
   );
 }
+
+// §8.6 GET /vouchers/applicable?productIds=a,b&shippingAddressId= → { subtotal, shippingFee, vouchers: [{ id, code,
+//   name, description, type, minOrderAmount, expiresAt, applicable, discountAmount, reason }] }.
+// BE tự tính số tiền giảm THẬT (trần hoa hồng theo kỳ, trần phí ship) — app KHÔNG tự tính
+export async function getApplicableVouchers({ productIds, shippingAddressId }) {
+  return unwrap(
+    await api.get("/vouchers/applicable", {
+      params: { productIds: productIds.join(","), shippingAddressId },
+    }),
+  );
+}

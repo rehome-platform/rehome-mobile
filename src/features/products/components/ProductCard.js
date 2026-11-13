@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { discountPercent } from "@/utils/money";
 import { PriceTag } from "./PriceTag";
+import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
 
 // "Uniqlo · M · Như mới" — bỏ phần BE không trả
 export const metaLine = (...parts) => parts.filter(Boolean).join(" · ");
@@ -37,6 +38,8 @@ export function ProductCard({ product, onPress, style }) {
           <Text style={styles.verifiedText}>Đã kiểm định</Text>
         </View>
         {off > 0 ? <Text style={styles.off}>-{off}%</Text> : null}
+        {/* Gói thành viên: người ký gửi có quyền ưu tiên hiển thị (BE xếp lên trên + featured = true) */}
+        {product.featured ? <FeaturedBadge small style={styles.featured} /> : null}
       </View>
 
       <View style={styles.body}>
@@ -101,6 +104,7 @@ const styles = StyleSheet.create({
     ...textStyles.label,
     fontFamily: fonts.bold,
   },
+  featured: { position: "absolute", left: spacing.xs, bottom: spacing.xs },
   body: { gap: 2, padding: spacing.sm },
   name: { ...textStyles.body, color: colors.text },
   meta: { ...textStyles.caption, color: colors.textSecondary },
