@@ -5,13 +5,13 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Button } from "@/components/ui/Button";
 import { daysLeft } from "@/utils/consignment";
 
-// Sau khi chọn "Nhận lại hàng": đến kho trong 7 ngày, đọc mã Member. Dùng ở KG-11 (kết quả) và KG-09
+// Sau khi chọn "Nhận lại hàng": đến địa điểm ký gửi trước hạn, đọc mã Member. Dùng ở KG-11 (kết quả) và KG-09.
+// Hạn lấy từ BE (pickupDeadline — số ngày do Admin cấu hình), KHÔNG tự cộng; BE chưa trả thì không hiện ngày
 export function PickupInfo({ product }) {
-  const d = product.endOfTermDecision;
   const due =
-    d?.pickupDeadline ??
-    product.degradedCase?.pickupDeadline ?? // Phase 5: nhận lại món hỏng
-    (d?.decidedAt ? dayjs(d.decidedAt).add(7, "day").toISOString() : null);
+    product.endOfTermDecision?.pickupDeadline ??
+    product.degradedCase?.pickupDeadline ?? // Phase 5: nhận lại món hỏng (BE hiện chưa có hạn riêng)
+    null;
   const left = due ? daysLeft(due) : null;
   return (
     <View style={styles.box}>

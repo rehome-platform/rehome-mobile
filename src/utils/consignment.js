@@ -32,11 +32,26 @@ export function getProductView(p) {
   // Phase 5: ca hàng xuống cấp [CHỜ BE câu 13] tên field. Xét trước status vì món đã bán rồi bị trả về
   const dc = p.degradedCase;
   if (dc && !dc.choice) return PRODUCT_VIEW.DEGRADED_DECISION;
-  if (dc?.choice === DEGRADED_CHOICE.PARTIAL_WITH_ITEM_BACK)
-    return PRODUCT_VIEW.PICKUP; // nhận lại món hỏng — dùng chung màn "Chờ nhận lại"
+  // Nhận lại món hỏng — dùng chung màn "Chờ nhận lại". Đã lấy (pickedUpAt) hoặc đã quyên góp thì thôi.
+  // [CHỜ BE việc 3, báo 13/11] BE mới trả degradedCase khi CHƯA quyết định → nhánh này chưa xảy ra với API thật
+  if (
+    dc?.choice === DEGRADED_CHOICE.PARTIAL_WITH_ITEM_BACK &&
+    dc.pickedUpAt == null &&
+    p.status !== PRODUCT_STATUS.DONATED
+  )
+    return PRODUCT_VIEW.PICKUP;
   // Đang chờ đến lấy hàng rút: xét TRƯỚC status — BE đổi món sang WITHDRAWN ngay khi gửi yêu cầu (gỡ khỏi sàn)
   if (p.activeWithdrawalId) return PRODUCT_VIEW.WITHDRAWING;
   if (p.status === PRODUCT_STATUS.RESERVED) return PRODUCT_VIEW.HAS_ORDER;
+  // Chọn "Nhận lại" cuối kỳ: BE đổi món sang WITHDRAWN ngay lúc chọn → phải xét TRƯỚC nhánh "khác ON_SALE → kết thúc".
+  // Chỉ coi là đang chờ lấy khi BE trả takenBackAt = null RÕ RÀNG [CHỜ BE việc 2, báo 13/11]. BE chưa có field
+  // (undefined) thì giữ "Đã kết thúc" như cũ — không thì món đã lấy xong cũng hiện "Chờ nhận lại" mãi
+  if (
+    p.status === PRODUCT_STATUS.WITHDRAWN &&
+    p.endOfTermDecision?.decision === END_OF_TERM_DECISION.TAKE_BACK &&
+    p.endOfTermDecision.takenBackAt === null
+  )
+    return PRODUCT_VIEW.PICKUP;
   // Quyết định cuối kỳ áp dụng cho món đang bán HOẶC đã gỡ khỏi sàn chờ quyết định (WAREHOUSE — BE 11/11:
   // hết kỳ cuối thì món gỡ khỏi sàn). Trước đây xét "khác ON_SALE → kết thúc" TRƯỚC nên WAREHOUSE hiện nhầm "Đã kết thúc"
   if (
