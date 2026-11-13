@@ -19,6 +19,11 @@ import { unreadTotal } from "@/features/chat/utils/chatRules";
 import dayjs from "dayjs";
 import { BellButton } from "@/features/notifications/components/BellButton";
 import { ChatButton } from "@/features/chat/components/ChatButton";
+import { useMyMembership } from "@/features/membership/hooks/useMembership";
+import {
+  hasPaidPlan,
+  isExpiringSoon,
+} from "@/features/membership/utils/membershipRules";
 
 // Thẻ ví (Phase 4) hiện số dư khả dụng — WalletCard.
 const SHIPPING_TAB = ORDER_TABS.find((t) => t.key === "SHIPPING");
@@ -71,6 +76,9 @@ function MemberAccount() {
   const hasNewTryon = useTryonJobStore((s) => s.hasNew);
   const chats = useConversations({ poll: true }); // badge "n hội thoại chưa đọc" — hỏi lại 30 giây/lần
   const unread = unreadTotal(chats.data);
+  const membership = useMyMembership();
+  const paidPlan = hasPaidPlan(membership.data);
+  const expiringPlan = isExpiringSoon(membership.data);
 
   // Hỏi xác nhận trước khi đăng xuất (nút đỏ "destructive" như mọi app)
   const confirmSignOut = () =>
@@ -127,6 +135,32 @@ function MemberAccount() {
         />
       </Pressable>
       <WalletCard />
+
+      <ListGroup>
+        <ListItem
+          icon="ribbon-outline"
+          title="Gói thành viên"
+          description={
+            paidPlan
+              ? `${membership.data.tierName} · còn ${membership.data.daysRemaining} ngày`
+              : "Nâng cấp để thử đồ nhiều hơn, nhận voucher mỗi tháng"
+          }
+          badge={expiringPlan ? "Sắp hết hạn" : undefined}
+          onPress={() =>
+            router.push(paidPlan ? "/membership/me" : "/membership")
+          }
+        />
+        <ListItem
+          icon="pricetags-outline"
+          title="Voucher của tôi"
+          badge={
+            membership.data?.voucherSummary?.unused
+              ? `${membership.data.voucherSummary.unused} mã`
+              : undefined
+          }
+          onPress={() => router.push("/vouchers")}
+        />
+      </ListGroup>
 
       <ListGroup>
         <ListItem

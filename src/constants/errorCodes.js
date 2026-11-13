@@ -43,4 +43,9 @@ export const ERROR_CODES = {
   WITHDRAWAL_PENDING_APPROVAL: "WITHDRAWAL_PENDING_APPROVAL", // yêu cầu rút hàng còn chờ duyệt (409)
   CAMPAIGN_NOT_ACCEPTING: "CAMPAIGN_NOT_ACCEPTING", // chiến dịch đã đóng / hết hạn (409)
   CAMPAIGN_NOT_AT_WAREHOUSE: "CAMPAIGN_NOT_AT_WAREHOUSE", // chiến dịch không nhận đồ tại địa điểm giữ món (409)
+  // Gói thành viên (BE MembershipServiceImpl)
+  MEMBERSHIP_PLAN_NOT_FOUND: "MEMBERSHIP_PLAN_NOT_FOUND", // 404
+  MEMBERSHIP_PLAN_NOT_PURCHASABLE: "MEMBERSHIP_PLAN_NOT_PURCHASABLE", // gói vừa ngừng bán (409)
+  MEMBERSHIP_PLAN_YEARLY_NOT_AVAILABLE: "MEMBERSHIP_PLAN_YEARLY_NOT_AVAILABLE", // gói không bán theo năm (400)
+  MEMBERSHIP_PAYMENT_PENDING: "MEMBERSHIP_PAYMENT_PENDING", // đang có giao dịch mua gói chờ thanh toán (409)
 };
