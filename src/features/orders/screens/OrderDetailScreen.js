@@ -189,7 +189,14 @@ export default function OrderDetailScreen() {
   const confirmCancel = () =>
     Alert.alert(
       `Huỷ đơn ${order.orderNo}?`,
-      `Bạn được hoàn ${formatVnd(order.totalAmount)} (gồm phí vận chuyển) vào ví ReHome.`,
+      // Có mã giảm giá: hoàn đúng số đã trả (totalAmount đã trừ giảm), không phải giá gốc; mã không được trả lại
+      `Bạn được hoàn ${formatVnd(order.totalAmount)} (gồm phí vận chuyển${
+        Number(order.discountAmount) > 0 ? ", đã trừ phần giảm giá" : ""
+      }) vào ví ReHome.${
+        Number(order.discountAmount) > 0 && order.voucherCode
+          ? ` Mã ${order.voucherCode} đã dùng cho đơn này không được trả lại.`
+          : ""
+      }`,
       [
         { text: "Không", style: "cancel" },
         {
@@ -343,7 +350,9 @@ export default function OrderDetailScreen() {
 
       {order.status === S.PAID ? (
         <InfoBox title="Còn huỷ được tới khi ReHome đóng gói">
-          Huỷ bây giờ được hoàn 100% (gồm phí vận chuyển) vào ví ReHome.
+          {Number(order.discountAmount) > 0
+            ? `Huỷ bây giờ được hoàn ${formatVnd(order.totalAmount)} — đúng số đã trả, gồm phí vận chuyển — vào ví ReHome. Mã giảm giá không được trả lại.`
+            : "Huỷ bây giờ được hoàn 100% (gồm phí vận chuyển) vào ví ReHome."}
         </InfoBox>
       ) : null}
 
@@ -481,10 +490,20 @@ export default function OrderDetailScreen() {
                 label="Phí vận chuyển"
                 value={formatVnd(order.shippingFee)}
               />
+              {Number(order.discountAmount) > 0 ? (
+                <MoneyRow
+                  label="Đã giảm khi đặt"
+                  value={`− ${formatVnd(order.discountAmount)}`}
+                />
+              ) : null}
               <View style={styles.innerNote}>
                 <Text style={styles.text}>
                   Hoàn{" "}
-                  <Text style={styles.strong}>100%, gồm cả phí vận chuyển</Text>
+                  <Text style={styles.strong}>
+                    {Number(order.discountAmount) > 0
+                      ? "đúng số bạn đã trả (đã trừ giảm giá), gồm phí vận chuyển"
+                      : "100%, gồm cả phí vận chuyển"}
+                  </Text>
                   . Tiền vào <Text style={styles.strong}>ví ReHome</Text>
                   {order.cancelledAt ? ` lúc ${fmt(order.cancelledAt)}` : ""},
                   không chuyển về tài khoản ngân hàng.
@@ -548,6 +567,12 @@ export default function OrderDetailScreen() {
       <Section title="THANH TOÁN">
         <MoneyRow label="Tiền hàng" value={formatVnd(order.subtotal)} />
         <MoneyRow label="Phí vận chuyển" value={formatVnd(order.shippingFee)} />
+        {Number(order.discountAmount) > 0 ? (
+          <MoneyRow
+            label={`Giảm giá${order.voucherCode ? ` (${order.voucherCode})` : ""}`}
+            value={`− ${formatVnd(order.discountAmount)}`}
+          />
+        ) : null}
         <MoneyRow strong label="Tổng" value={formatVnd(order.totalAmount)} />
         {/* Dựa vào trạng thái (đã qua chờ thanh toán) — paidAt có đơn BE trả rỗng (vd. trả bằng ví) */}
         {order.status !== S.PENDING_PAYMENT &&
