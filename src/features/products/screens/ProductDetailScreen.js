@@ -27,6 +27,11 @@ import { SALE_STATE, saleStateOf } from "../utils/saleState";
 import { PhotoCarousel } from "../components/PhotoCarousel";
 import { PriceTag } from "../components/PriceTag";
 import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
+import { useTryonLiveQuota } from "@/features/tryon-live/hooks/useTryonLive";
+import {
+  liveQuotaView,
+  remainingText,
+} from "@/features/tryon-live/utils/liveQuota";
 import { SimilarProducts } from "../components/SimilarProducts";
 import { setPendingRedirect } from "@/stores/pendingRedirect";
 import { MockStatusPanel } from "../components/MockStatusPanel";
@@ -99,6 +104,8 @@ export default function ProductDetailScreen() {
   const addToCart = useAddToCart();
   const queryClient = useQueryClient();
   const inCart = cartItems(cart.data).some((i) => i.product.id === id);
+  // Lượt thử đồ real-time theo gói (khách không gọi) — dòng mô tả dưới nút "Thử đồ AI real-time"
+  const liveQuota = liveQuotaView(useTryonLiveQuota({ enabled: isAuthed }).data);
   const scrollRef = useRef(null);
   const similarY = useRef(0);
   const [expanded, setExpanded] = useState(false);
@@ -341,7 +348,7 @@ export default function ProductDetailScreen() {
             />
           </Pressable>
         ) : null}
-        {/* Thử đồ AI real-time qua camera (Decart Lucy VTON) - 2 lượt/ngày, 10 giây/lượt (BE chặn) */}
+        {/* Thử đồ AI real-time qua camera (Decart Lucy VTON) — số lượt, số giây theo gói thành viên (BE trả) */}
         {!query.isPlaceholderData && canTryOn(product) ? (
           <Pressable
             onPress={() =>
@@ -360,7 +367,9 @@ export default function ProductDetailScreen() {
             <View style={styles.flex}>
               <Text style={styles.tryonTitle}>Thử đồ AI real-time</Text>
               <Text style={styles.muted}>
-                Mở camera, mặc thử ngay trong 10 giây (2 lượt/ngày)
+                {liveQuota
+                  ? `Mở camera, mặc thử ngay trong ${liveQuota.maxSeconds} giây · ${remainingText(liveQuota)}`
+                  : "Mở camera, mặc thử ngay trên người bạn"}
               </Text>
             </View>
             <Ionicons

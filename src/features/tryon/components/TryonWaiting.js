@@ -9,7 +9,7 @@ import { TryonProgressBar } from "./TryonProgressBar";
 // AI-03 · Đang tạo ảnh. Thanh % là ƯỚC LƯỢNG theo thời gian (BE không báo tiến độ — useTryonProgress), dùng chung
 // với khung nổi TryonJobBanner để hai nơi luôn khớp số. (Đổi so với PHASE6_GUIDE 0.5 A2 "không thanh %": 13/11)
 export function TryonWaiting({ job }) {
-  const { percent, waitedSec } = useTryonProgress(job);
+  const { percent, waitedSec, typicalSec, slow } = useTryonProgress(job);
   const model = MODEL_TYPE_LABEL[job.payload.modelType]?.toLowerCase() ?? "";
 
   return (
@@ -24,9 +24,15 @@ export function TryonWaiting({ job }) {
             <Text style={styles.percent}>{percent}%</Text>
           </View>
         </View>
+        {/* Không ghi cứng "mất x giây": thời gian tuỳ máy chủ AI đông / vắng. Có số đo thật thì nói theo số đó */}
         <Text style={styles.muted}>
-          Thường mất 20 – 40 giây. Bấm &quot;Chạy nền&quot; để xem món khác, thanh
-          tiến độ vẫn hiện ở cuối màn hình và báo bạn khi xong.
+          {slow
+            ? "Máy chủ AI đang đông nên lâu hơn mọi lần. "
+            : typicalSec
+              ? `Lần gần đây mất khoảng ${typicalSec} giây. `
+              : "Thời gian tạo ảnh tuỳ lúc máy chủ AI đông hay vắng. "}
+          Bấm &quot;Chạy nền&quot; để xem món khác — thanh tiến độ vẫn hiện ở cuối
+          màn hình và báo bạn khi xong.
         </Text>
       </View>
 
