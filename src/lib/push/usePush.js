@@ -13,6 +13,9 @@ import {
 // Tin nhắn (type CHAT_MESSAGE, có conversationId) → phòng chat. Thông báo thường → màn chi tiết thông báo
 // (3.13.4: tự đánh dấu đã đọc + nút mở bản ghi liên quan theo targetType / targetId)
 function hrefOf(d, isOrg) {
+  // Thông báo tại máy (tryonJobStore): ảnh thử đồ AI tạo xong lúc app ở nền → mở thẳng ảnh
+  if (d.type === "TRYON_DONE" && d.tryonImageId)
+    return `/tryon/result/${d.tryonImageId}`;
   if (d.type === "CHAT_MESSAGE" && d.conversationId)
     return isOrg
       ? `/org/my-messages/${d.conversationId}`

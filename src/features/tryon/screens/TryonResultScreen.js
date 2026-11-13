@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -49,6 +50,14 @@ export default function TryonResultScreen() {
   const queryClient = useQueryClient();
   const jobRunning = useTryonJobStore((s) => s.job?.status === J.RUNNING);
   const start = useTryonJobStore((s) => s.start);
+
+  // Mở đúng ảnh vừa tạo (từ thông báo tại máy / bộ sưu tập) → coi như đã xem, tắt khung nổi "đã xong"
+  const doneHere = useTryonJobStore(
+    (s) => s.job?.status === J.DONE && s.job.resultId === id,
+  );
+  useEffect(() => {
+    if (doneHere) useTryonJobStore.getState().clear();
+  }, [doneHere]);
 
   // Thêm lần lượt các món chưa có trong giỏ; 409 (vừa bán / đã có) tính là không thêm được
   const addAll = useMutation({

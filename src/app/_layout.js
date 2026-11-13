@@ -20,6 +20,7 @@ import { ROLES } from "@/constants/roles";
 import { BootSplash } from "@/components/ui/BootSplash";
 import { useRealtime } from "@/lib/realtime/useRealtime";
 import { usePush } from "@/lib/push/usePush";
+import { TryonJobBanner } from "@/features/tryon/components/TryonJobBanner";
 
 // Mở app không kèm đường dẫn → mặc định vào nhóm (member) (tab Mua sắm).
 // Không khai báo thì Expo Router lấy nhóm đứng đầu theo bảng chữ cái là "(auth)" → khách bị đưa vào màn Đăng nhập.
@@ -77,6 +78,8 @@ export default function RootLayout() {
           <Stack.Screen name="(org)" />
         </Stack.Protected>
       </Stack>
+      {/* Khung nổi tiến độ tạo ảnh thử đồ AI — đè lên mọi màn của Member */}
+      {!isOrg ? <TryonJobBanner /> : null}
     </QueryClientProvider>
   );
 }

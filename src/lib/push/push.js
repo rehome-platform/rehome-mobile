@@ -40,8 +40,12 @@ export function configurePushHandler() {
   N.setNotificationHandler({
     handleNotification: async (notification) => {
       const d = pushData(notification);
+      // Thông báo tại máy của thử đồ AI chỉ gửi khi app ở nền → luôn hiện
       const show =
-        d.type === "CHAT_MESSAGE" && d.conversationId !== activeConversationId;
+        (d.type === "CHAT_MESSAGE" &&
+          d.conversationId !== activeConversationId) ||
+        d.type === "TRYON_DONE" ||
+        d.type === "TRYON_FAILED";
       return {
         shouldShowBanner: show,
         shouldShowList: show,
@@ -91,6 +95,22 @@ export function listenTokenRefresh() {
     return () => sub.remove();
   } catch {
     return () => {};
+  }
+}
+
+// Thông báo TẠI MÁY (không qua BE) — vd. ảnh thử đồ AI tạo xong lúc app đang ở nền. data đi theo như push
+// (bấm vào → usePush mở màn theo data). Chưa cấp quyền / máy không có module → bỏ qua, không lỗi
+export async function notifyLocal({ title, body, data }) {
+  if (!pushSupported()) return;
+  try {
+    const { status } = await N.getPermissionsAsync();
+    if (status !== "granted") return;
+    await N.scheduleNotificationAsync({
+      content: { title, body, data },
+      trigger: { channelId: CHANNEL_ID }, // gửi ngay, vào kênh mặc định
+    });
+  } catch {
+    // Không hiện được thì thôi — khung nổi trong app vẫn báo khi người dùng mở lại
   }
 }
 
