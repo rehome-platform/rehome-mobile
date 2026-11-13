@@ -3,11 +3,13 @@ import { tryonLiveApi } from "../api/tryonLiveApi";
 import { tryonLiveKeys } from "../api/queryKeys";
 
 // Gọi khi mở màn hình thử đồ AI real-time, trước khi xin quyền camera — biết ngay còn lượt hay không
-export function useTryonLiveQuota() {
+// enabled = false cho khách (API cần đăng nhập) — vd. dòng "Còn x/y lượt" ở trang sản phẩm
+export function useTryonLiveQuota({ enabled = true } = {}) {
   return useQuery({
     queryKey: tryonLiveKeys.quota,
     queryFn: tryonLiveApi.getQuota,
     staleTime: 0, // luôn hỏi lại BE, quota đổi liên tục trong ngày
+    enabled,
   });
 }
 

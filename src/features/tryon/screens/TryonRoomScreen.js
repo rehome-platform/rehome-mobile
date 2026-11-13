@@ -59,6 +59,8 @@ function tryonErrorMessage(e) {
       return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";
     case "TRYON_GENERATION_FAILED":
       return "Máy chủ AI chưa tạo được ảnh (đang bận hoặc lỗi)." + keep;
+    case ERROR_CODES.TRYON_IMAGE_QUOTA_EXCEEDED:
+      return "Bạn đã dùng hết lượt phối đồ AI hôm nay theo gói thành viên, lượt mới vào 00:00. Nâng cấp gói để có thêm lượt.";
   }
   // 4xx có câu của BE (món hết bán, sai vị trí áo/quần…) → hiện thẳng
   if (e?.status >= 400 && e?.status < 500 && e?.message) return e.message;
@@ -143,6 +145,8 @@ export default function TryonRoomScreen() {
   // ----- Lỗi tạo ảnh -----
   if (job?.status === J.ERROR) {
     const incomplete = job.error?.code === ERROR_CODES.INCOMPLETE_OUTFIT;
+    // Hết lượt phối đồ theo gói: thử lại vô ích → mời xem gói thay cho "Thử lại"
+    const noQuota = job.error?.code === ERROR_CODES.TRYON_IMAGE_QUOTA_EXCEEDED;
     return (
       <Screen
         header={<AppHeader title="Phòng thử đồ" onBack={goBack} />}
@@ -154,7 +158,16 @@ export default function TryonRoomScreen() {
               onPress={clear}
               style={styles.flex1}
             />
-            {!incomplete ? (
+            {noQuota ? (
+              <Button
+                title="Xem gói thành viên"
+                onPress={() => {
+                  clear();
+                  router.push("/membership");
+                }}
+                style={styles.flex1}
+              />
+            ) : !incomplete ? (
               <Button
                 title="Thử lại"
                 onPress={() => start(job.payload, job.items)}
