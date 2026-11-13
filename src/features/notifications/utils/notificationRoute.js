@@ -1,8 +1,15 @@
-import { NOTIFICATION_TARGET as T } from "@/constants/notification";
+import {
+  NOTIFICATION_TARGET as T,
+  NOTIFICATION_TYPE as TYPE,
+} from "@/constants/notification";
 
 // MỘT chỗ duy nhất quyết định bấm thông báo mở màn nào (PHASE6_GUIDE 0.5 A19).
 // viewer = "member" | "org" (phía tổ chức thêm đích riêng ở nhánh 10). Không có đích → null (chỉ đánh dấu đã đọc)
 export function notificationRoute(n, viewer = "member") {
+  // Gói thành viên / voucher: BE không gắn targetType → mở theo loại thông báo
+  if (viewer === "member" && n?.type === TYPE.MEMBERSHIP_EVENT)
+    return "/membership/me";
+  if (viewer === "member" && n?.type === TYPE.VOUCHER_ISSUED) return "/vouchers";
   if (!n?.targetType) return null;
   const id = n.targetId;
   // Màn con của tổ chức nằm ở my-* (tránh trùng URL với tab /org/campaigns, /org/posts…)
