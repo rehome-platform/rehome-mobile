@@ -13,6 +13,12 @@ export const NOTIFICATION_TYPE = {
   // Báo cáo vi phạm (BE ee01f91)
   VIOLATION_WARNING: "VIOLATION_WARNING", // tổ chức: bị cảnh cáo; targetType POST / CAMPAIGN / ORGANIZATION → mở đúng nội dung
   VIOLATION_REPORT_HANDLED: "VIOLATION_REPORT_HANDLED", // Member: báo cáo đã được xử lý (không có đích, chỉ đọc)
+  // BE 1a27081 → e812dda
+  DONATION_HANDED_OVER: "DONATION_HANDED_OVER", // Member: món ký gửi đã quyên góp được bàn giao (PRODUCT) · tổ chức: đã nhận n lượt (CAMPAIGN)
+  WITHDRAWAL_APPROVED: "WITHDRAWAL_APPROVED", // Member: yêu cầu rút hàng được duyệt (WITHDRAWAL)
+  WITHDRAWAL_REJECTED: "WITHDRAWAL_REJECTED", // Member: yêu cầu rút hàng bị từ chối (WITHDRAWAL)
+  MEMBERSHIP_EVENT: "MEMBERSHIP_EVENT", // Member: gói thành viên mua / sắp hết / hết hạn (không có đích)
+  VOUCHER_ISSUED: "VOUCHER_ISSUED", // Member: nhận voucher mới (không có đích)
 };
 
 // Icon theo loại (Ionicons)
@@ -29,9 +35,15 @@ export const NOTIFICATION_ICON = {
   FOLLOWED_ORG_POST: "newspaper-outline",
   VIOLATION_WARNING: "warning-outline",
   VIOLATION_REPORT_HANDLED: "flag-outline",
+  DONATION_HANDED_OVER: "gift-outline",
+  WITHDRAWAL_APPROVED: "checkmark-circle-outline",
+  WITHDRAWAL_REJECTED: "close-circle-outline",
+  MEMBERSHIP_EVENT: "ribbon-outline",
+  VOUCHER_ISSUED: "pricetag-outline",
 };
 
-// Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE
+// Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE,
+// DEGRADED_ITEM_CASE, WITHDRAWAL, PRODUCT
 export const NOTIFICATION_TARGET = {
   ORDER: "ORDER",
   RETURN_REQUEST: "RETURN_REQUEST",

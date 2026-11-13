@@ -28,13 +28,14 @@ import { consignmentApi } from "../api/consignmentApi";
 import { consignKeys } from "../api/queryKeys";
 import { DONATE_ENABLED, donateApi } from "../api/donateApi";
 
-// Câu riêng theo trường hợp (đặc tả 11/11): phí rút hàng đã trả KHÔNG hoàn [CHỜ LEAD chốt], tiền đền giữ nguyên
+// Câu riêng theo trường hợp (đặc tả 11/11), tiền đền giữ nguyên. Phí rút hàng đã trả: BE 1a27081 đang HOÀN vào ví,
+// đặc tả ghi "không hoàn" — [CHỜ LEAD chốt] nên tạm không nhắc tới phí, chốt xong thì thêm câu đúng vào WITHDRAWAL
 const CASE_NOTE = {
   [DONATE_CASE.ON_SALE]: "Món được gỡ khỏi sàn ngay, không ai mua được nữa.",
   [DONATE_CASE.END_OF_TERM]:
     "Thay cho việc chọn Nhận lại / Ký gửi lại ở cuối kỳ. Bạn không phải đến lấy hàng.",
   [DONATE_CASE.WITHDRAWAL]:
-    "Yêu cầu rút hàng được đóng lại, bạn không phải đến lấy. Phí rút hàng đã trả (nếu có) không được hoàn.",
+    "Yêu cầu rút hàng được đóng lại, bạn không phải đến lấy.",
   [DONATE_CASE.TAKE_BACK]:
     "Thay cho việc đến địa điểm ký gửi nhận lại hàng. Bạn không phải đi lại.",
   [DONATE_CASE.DEGRADED]:
