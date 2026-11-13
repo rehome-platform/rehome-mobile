@@ -22,6 +22,7 @@ import {
 import { useMyConsignItems } from "@/features/consignment/hooks/useMyConsignItems";
 import { FormCard } from "./FormCard";
 import { ProductCard } from "./ProductCard";
+import { ConsignMembershipHint } from "@/features/membership/components/ConsignMembershipHint";
 
 // Giải thích ngắn cách ký gửi (link dưới trạng thái rỗng)
 const showHowItWorks = () =>
@@ -121,13 +122,15 @@ export function MyConsignSection() {
   const header = (
     <View style={styles.header}>
       <StageTabs value={tab} onChange={setPicked} stages={stages} />
-      {tab === G.PENDING && pendingCount > 0 ? (
-        // Mức tối đa do Admin cấu hình (BE max_pending_forms_per_member), app chưa đọc được → không ghi số
-        <Text style={styles.info}>
-          Đang có <Text style={styles.bold}>{pendingCount}</Text> yêu cầu chờ
-          duyệt. ReHome giới hạn số yêu cầu chờ cùng lúc, đủ mức thì chờ duyệt
-          bớt rồi gửi thêm.
-        </Text>
+      {/* Mức tối đa theo gói thành viên (GET /memberships/me → consignmentForms) + gợi ý nâng cấp khi đủ mức */}
+      {tab === G.PENDING ? (
+        <ConsignMembershipHint kind="pending" pendingCount={pendingCount} />
+      ) : null}
+      {tab === G.SELLING ? (
+        <ConsignMembershipHint
+          kind="selling"
+          sellingCount={stages[G.SELLING].length}
+        />
       ) : null}
     </View>
   );

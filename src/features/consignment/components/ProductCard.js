@@ -14,6 +14,7 @@ import {
   productTiming,
 } from "@/utils/consignment";
 import { ProductBadge } from "./ProductBadge";
+import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
 
 // Dòng thông tin theo trạng thái
 function Detail({ product, view }) {
@@ -141,7 +142,13 @@ export function ProductCard({ product, onPress }) {
         <Text style={styles.name} numberOfLines={2}>
           {product.name}
         </Text>
-        <ProductBadge product={product} />
+        <View style={styles.badges}>
+          <ProductBadge product={product} />
+          {/* Gói thành viên có ưu tiên hiển thị (BE featured) — chỉ có nghĩa khi món đang trên sàn */}
+          {product.featured && view === PRODUCT_VIEW.SELLING ? (
+            <FeaturedBadge />
+          ) : null}
+        </View>
         <Detail product={product} view={view} />
       </View>
     </Pressable>
@@ -149,6 +156,7 @@ export function ProductCard({ product, onPress }) {
 }
 
 const styles = StyleSheet.create({
+  badges: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.xs },
   card: {
     flexDirection: "row",
     gap: spacing.md,
