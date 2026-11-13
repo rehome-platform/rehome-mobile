@@ -1,14 +1,15 @@
-import { Alert } from "react-native";
-import { router } from "expo-router";
+import { AppState } from "react-native";
 import { create } from "zustand";
 import { queryClient } from "@/lib/query/queryClient";
-import { showToast } from "@/utils/toast";
+import { notifyLocal } from "@/lib/push/push";
 import { TRYON_JOB_STATUS as J } from "@/constants/tryon";
 import { tryonApi } from "@/features/tryon/api/tryonApi";
 import { tryonKeys } from "@/features/tryon/api/queryKeys";
 
-// Việc tạo ảnh thử đồ chạy NGOÀI màn hình (PHASE6_GUIDE 0.5 A3): rời AI-03 vẫn chạy tiếp,
-// xong mà không đứng ở phòng thử đồ → hỏi "Xem". Chỉ một việc một lúc. Tắt hẳn app thì mất (chưa có API job)
+// Việc tạo ảnh thử đồ chạy NGOÀI màn hình (PHASE6_GUIDE 0.5 A3): rời AI-03 vẫn chạy tiếp.
+// Báo tiến độ / kết quả bằng khung nổi TryonJobBanner (gắn ở layout gốc, hiện trên mọi màn trừ phòng thử đồ).
+// App đang ở nền lúc xong / lỗi → thêm thông báo tại máy. Chỉ một việc một lúc. Tắt hẳn app thì mất (chưa có API job)
+const inBackground = () => AppState.currentState !== "active";
 let controller = null; // AbortController của việc đang chạy (không để trong state)
 
 export const useTryonJobStore = create((set, get) => ({
@@ -45,28 +46,24 @@ export const useTryonJobStore = create((set, get) => ({
         job: { ...s.job, status: J.DONE, resultId: img.id },
         hasNew: true,
       }));
-      if (!get().watching) {
-        Alert.alert(
-          "Ảnh thử đồ đã xong",
-          "Ảnh đã lưu vào bộ sưu tập của bạn.",
-          [
-            { text: "Để sau", style: "cancel" },
-            {
-              text: "Xem",
-              onPress: () => {
-                get().clear();
-                router.push(`/tryon/result/${img.id}`);
-              },
-            },
-          ],
-        );
-      }
+      // Trong app: khung nổi tự đổi sang "Đã xong · Bấm để xem" (phòng thử đồ đang mở thì tự chuyển màn)
+      if (inBackground())
+        notifyLocal({
+          title: "Ảnh thử đồ đã xong",
+          body: "Ảnh đã lưu vào bộ sưu tập. Bấm để xem.",
+          data: { type: "TRYON_DONE", tryonImageId: img.id },
+        });
     } catch (e) {
       if (controller !== mine || mine.signal.aborted) return; // huỷ → không báo lỗi
       controller = null;
       set((s) => ({ job: { ...s.job, status: J.ERROR, error: e } }));
-      if (!get().watching)
-        showToast("Chưa tạo được ảnh thử đồ. Mở lại phòng thử đồ để thử lại.");
+      // Trong app: khung nổi đổi sang "Chưa tạo được · Bấm để thử lại"
+      if (inBackground())
+        notifyLocal({
+          title: "Chưa tạo được ảnh thử đồ",
+          body: "Mở ReHome để thử lại.",
+          data: { type: "TRYON_FAILED" },
+        });
     }
   },
 

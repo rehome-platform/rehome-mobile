@@ -1,18 +1,15 @@
-import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { MODEL_TYPE_LABEL } from "@/constants/tryon";
 import { outfitTitle } from "../utils/tryonRules";
+import { useTryonProgress } from "../hooks/useTryonProgress";
+import { TryonProgressBar } from "./TryonProgressBar";
 
-// AI-03 · Đang tạo ảnh. Chỉ đếm giây đã chờ — không thanh %/bước giả (PHASE6_GUIDE 0.5 A2)
+// AI-03 · Đang tạo ảnh. Thanh % là ƯỚC LƯỢNG theo thời gian (BE không báo tiến độ — useTryonProgress), dùng chung
+// với khung nổi TryonJobBanner để hai nơi luôn khớp số. (Đổi so với PHASE6_GUIDE 0.5 A2 "không thanh %": 13/11)
 export function TryonWaiting({ job }) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const waited = Math.max(0, Math.floor((now - job.startedAt) / 1000));
+  const { percent, waitedSec } = useTryonProgress(job);
   const model = MODEL_TYPE_LABEL[job.payload.modelType]?.toLowerCase() ?? "";
 
   return (
@@ -20,11 +17,17 @@ export function TryonWaiting({ job }) {
       <View style={styles.box}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.title}>Đang ghép outfit lên người mẫu</Text>
+        <View style={styles.progress}>
+          <TryonProgressBar percent={percent} height={8} />
+          <View style={styles.progressRow}>
+            <Text style={styles.muted}>Đã chờ {waitedSec} giây</Text>
+            <Text style={styles.percent}>{percent}%</Text>
+          </View>
+        </View>
         <Text style={styles.muted}>
-          Thường mất 20 – 40 giây. Bạn có thể để màn hình mở hoặc chạy nền rồi
-          xem món khác.
+          Thường mất 20 – 40 giây. Bấm &quot;Chạy nền&quot; để xem món khác, thanh
+          tiến độ vẫn hiện ở cuối màn hình và báo bạn khi xong.
         </Text>
-        <Text style={styles.waited}>Đã chờ {waited} giây</Text>
       </View>
 
       <View style={styles.summary}>
@@ -72,10 +75,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
   },
-  waited: {
-    ...textStyles.body,
-    fontFamily: fonts.semibold,
-    color: colors.text,
+  progress: { alignSelf: "stretch", gap: spacing.xs },
+  progressRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  percent: {
+    ...textStyles.heading,
+    fontFamily: fonts.bold,
+    color: colors.primary,
   },
   summary: {
     flexDirection: "row",
