@@ -1,25 +1,33 @@
 import dayjs from "dayjs";
 import { api, unwrap } from "@/lib/api/client";
-import { CAMPAIGN_STATUS } from "@/constants/community";
-import { communityApi } from "@/features/community/api/communityApi";
 
-// Quyên góp món ký gửi — theo đặc tả gửi BE 11/11.
-// - Chiến dịch nhận đồ tại 1 địa điểm: BE CHƯA có GET /warehouses/{id}/campaigns (đã xin) → tạm lấy mọi chiến dịch
-//   đang nhận (GET /campaigns?status=ACTIVE, đã có warehouses[]) rồi lọc trên máy. BE có API thì đổi sang gọi thẳng
-// - Lệnh quyên góp: POST /products/{id}/donate { campaignId, isAnonymous }
+// Quyên góp món ký gửi (BE 1a27081, theo đặc tả 11/11)
+// - GET /warehouses/{id}/campaigns?page&size (MEMBER, MODERATOR): BE đã lọc OPEN, chưa hết hạn, không HIDDEN,
+//   có nhận đồ tại địa điểm này → trang { content[{ id, title, coverUrl, endTime, preferredItemTypes[],
+//   organizationId, organizationName, organizationLogoUrl }], page, size, totalElements, totalPages }
+// - POST /products/{id}/donate { campaignId, isAnonymous }
 //   → { productId, productStatus: "DONATED", donationId, campaignId, campaignTitle, organizationName }
 
-const BIG_PAGE = 50; // BE tối đa 50 / trang
+const BIG_PAGE = 50; // BE tối đa 50 / trang — một địa điểm không có nhiều chiến dịch đến vậy
+
+// Tên field BE → hình dạng màn đang dùng (giống chiến dịch ở cộng đồng: organization.displayName)
+const toCampaign = (c) => ({
+  ...c,
+  organization: {
+    id: c.organizationId,
+    displayName: c.organizationName,
+    logoUrl: c.organizationLogoUrl,
+  },
+});
 
 export async function getCampaignsAtWarehouse(warehouseId) {
-  const page = await communityApi.getOpenCampaigns({ size: BIG_PAGE });
+  const page = unwrap(
+    await api.get(`/warehouses/${warehouseId}/campaigns`, {
+      params: { page: 0, size: BIG_PAGE },
+    }),
+  );
   return (page?.content ?? [])
-    .filter(
-      (c) =>
-        c.status === CAMPAIGN_STATUS.OPEN &&
-        dayjs(c.endTime).isAfter(dayjs()) &&
-        (c.warehouses ?? []).some((w) => w.id === warehouseId),
-    )
+    .map(toCampaign)
     .sort((a, b) => dayjs(a.endTime).diff(b.endTime)); // sắp hết hạn trước
 }
 
