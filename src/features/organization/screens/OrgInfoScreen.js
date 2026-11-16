@@ -1,0 +1,364 @@
+import { useEffect, useState } from "react";
+import { locateAddress } from "@/features/organization/utils/geocode";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as ImagePicker from "expo-image-picker";
+import { colors, fonts, spacing, textStyles } from "@/theme";
+import { Screen } from "@/components/ui/Screen";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
+import { RadioCard } from "@/components/ui/RadioCard";
+import { ChipGroup } from "@/components/ui/ChipGroup";
+import { Avatar } from "@/components/ui/Avatar";
+import { OrgRegisterHeader } from "@/features/organization/components/OrgRegisterHeader";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { orgInfoSchema } from "@/features/organization/schemas";
+import { useOrgOptions } from "@/features/organization/hooks/useOrgOptions";
+import { useOrgRegisterStore } from "@/features/organization/store/orgRegisterStore";
+import { useAuthStore } from "@/stores/authStore";
+
+const EMPTY_INFO = {
+  legalName: "",
+  displayName: "",
+  orgType: "",
+  taxCode: "",
+  operationScope: "", // không chọn sẵn: bắt người dùng chủ động chọn
+  address: "",
+  contactPhone: "",
+  contactEmail: "",
+  website: "",
+  description: "",
+  logoUri: null,
+};
+
+export default function OrgInfoScreen() {
+  const loginEmail = useAuthStore((s) => s.user?.email);
+  const saved = useOrgRegisterStore((s) => s.info);
+  const saveStep = useOrgRegisterStore((s) => s.saveStep);
+  const reset = useOrgRegisterStore((s) => s.reset);
+
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    setError,
+    watch,
+    formState: { errors, isDirty },
+  } = useForm({
+    resolver: zodResolver(orgInfoSchema),
+    defaultValues: saved ?? { ...EMPTY_INFO, contactEmail: loginEmail ?? "" }, // điền sẵn email đăng nhập
+  });
+
+  const logoUri = watch("logoUri");
+  const displayName = watch("displayName");
+
+  // Loại hình / phạm vi lấy từ BE. Hồ sơ cũ (nộp lại) mang mã không còn trong danh sách → bỏ chọn, bắt chọn lại
+  const options = useOrgOptions();
+  const orgType = watch("orgType");
+  const operationScope = watch("operationScope");
+  useEffect(() => {
+    if (!options.data) return;
+    const has = (list, v) => list.some((o) => o.value === v);
+    if (orgType && !has(options.data.orgTypes, orgType))
+      setValue("orgType", "");
+    if (operationScope && !has(options.data.operationScopes, operationScope))
+      setValue("operationScope", "");
+  }, [options.data, orgType, operationScope, setValue]);
+
+  // Thoát luồng: xoá dữ liệu tạm. Đã nhập gì thì hỏi trước
+  const exit = () => {
+    reset();
+    router.canGoBack() ? router.back() : router.replace("/org");
+  };
+  const onBack = () => {
+    if (!isDirty && !saved) return exit();
+    Alert.alert(
+      "Thoát đăng ký tổ chức?",
+      "Thông tin bạn đã nhập sẽ không được lưu.",
+      [
+        { text: "Ở lại", style: "cancel" },
+        { text: "Thoát", style: "destructive", onPress: exit },
+      ],
+    );
+  };
+
+  // Logo: chọn ảnh vuông trong máy. Upload khi gửi hồ sơ [CHỜ BE /uploads]
+  const pickLogo = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled)
+      setValue("logoUri", result.assets[0].uri, { shouldDirty: true });
+  };
+
+  const [locating, setLocating] = useState(false);
+  // Kiểm tra địa chỉ trụ sở NGAY bước 1 (trước đây tới bước Gửi mới biết sai → phải quay lại 3 bước).
+  // Toạ độ lưu kèm → bước 4 / Xem lại dùng lại, không tra lần nữa
+  const onSubmit = handleSubmit(async (values) => {
+    setLocating(true);
+    try {
+      const coords = await locateAddress(values.address);
+      saveStep("info", { ...values, coords });
+      router.push("/org/registration/representative");
+    } catch (e) {
+      setError("address", { message: e.message });
+    } finally {
+      setLocating(false);
+    }
+  });
+
+  return (
+    <Screen
+      scroll
+      header={<OrgRegisterHeader step={0} onBack={onBack} />}
+      footer={
+        <Button
+          title="Tiếp tục — Người đại diện"
+          onPress={onSubmit}
+          loading={locating}
+        />
+      }
+      contentStyle={styles.content}
+    >
+      <Controller
+        control={control}
+        name="legalName"
+        render={({ field }) => (
+          <TextField
+            label="Tên đầy đủ theo giấy tờ"
+            required
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.legalName?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="displayName"
+        render={({ field }) => (
+          <TextField
+            label="Tên hiển thị trên nền tảng"
+            required
+            helper="Tên người dùng nhìn thấy, có thể ngắn gọn hơn"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.displayName?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="orgType"
+        render={({ field }) => (
+          <View style={styles.group}>
+            <Text style={styles.groupLabel}>
+              Loại hình tổ chức<Text style={styles.required}> *</Text>
+            </Text>
+            {options.isPending ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : options.isError ? (
+              <ErrorBox message={options.error.message}>
+                <Button
+                  title="Thử lại"
+                  variant="secondary"
+                  onPress={() => options.refetch()}
+                />
+              </ErrorBox>
+            ) : (
+              options.data.orgTypes.map((type) => (
+                <RadioCard
+                  key={type.value}
+                  title={type.label}
+                  selected={field.value === type.value}
+                  onPress={() => field.onChange(type.value)}
+                  style={styles.radio}
+                />
+              ))
+            )}
+            {errors.orgType ? (
+              <Text style={styles.error}>{errors.orgType.message}</Text>
+            ) : (
+              <Text style={styles.helper}>
+                Quyết định danh sách giấy tờ gợi ý ở bước 3
+              </Text>
+            )}
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="taxCode"
+        render={({ field }) => (
+          <TextField
+            label="Mã số thuế"
+            helper="Không bắt buộc — câu lạc bộ thường chưa có"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.taxCode?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="operationScope"
+        render={({ field }) => (
+          <View style={styles.group}>
+            <Text style={styles.groupLabel}>
+              Phạm vi hoạt động<Text style={styles.required}> *</Text>
+            </Text>
+            <ChipGroup
+              options={options.data?.operationScopes ?? []}
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.operationScope?.message}
+            />
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="address"
+        render={({ field }) => (
+          <TextField
+            label="Địa chỉ trụ sở"
+            required
+            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.address?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="contactPhone"
+        render={({ field }) => (
+          <TextField
+            label="Số điện thoại liên hệ"
+            required
+            keyboardType="phone-pad"
+            maxLength={14}
+            helper="Moderator gọi số này để xác minh — nhớ bắt máy"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.contactPhone?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="contactEmail"
+        render={({ field }) => (
+          <TextField
+            label="Email liên hệ"
+            required
+            keyboardType="email-address"
+            autoCapitalize="none"
+            helper="Email tổ chức nhận thông báo và người quyên góp liên hệ. Mặc định là email đăng nhập, đổi được"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.contactEmail?.message}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="website"
+        render={({ field }) => (
+          <TextField
+            label="Website hoặc fanpage"
+            keyboardType="url"
+            autoCapitalize="none"
+            placeholder="facebook.com/tentochuc"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+          />
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="description"
+        render={({ field }) => (
+          <TextField
+            label="Mô tả hoạt động"
+            required
+            multiline
+            maxLength={1000}
+            helper="Hiện trên hồ sơ công khai của tổ chức"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.description?.message}
+          />
+        )}
+      />
+
+      <View style={styles.group}>
+        <Text style={styles.groupLabel}>Logo</Text>
+        <View style={styles.logoRow}>
+          <Avatar
+            uri={logoUri}
+            name={displayName || "?"}
+            size={64}
+            initialOf="first"
+          />
+          <View style={styles.logoActions}>
+            <Button
+              title={logoUri ? "Đổi logo" : "Chọn logo"}
+              variant="secondary"
+              onPress={pickLogo}
+            />
+            {logoUri ? (
+              <Button
+                title="Xoá logo"
+                variant="text"
+                onPress={() => setValue("logoUri", null, { shouldDirty: true })}
+              />
+            ) : null}
+          </View>
+        </View>
+        <Text style={styles.helper}>
+          Không bắt buộc. Chưa có thì hiện chữ cái đầu của tên tổ chức.
+        </Text>
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { gap: spacing.lg },
+  group: { gap: spacing.sm },
+  groupLabel: { ...textStyles.label, fontSize: 14, color: colors.text },
+  required: { color: colors.error },
+  radio: { flex: 0 }, // RadioCard mặc định flex:1 (dùng trong hàng ngang) → trong cột thì bỏ
+  helper: { ...textStyles.caption, color: colors.textSecondary },
+  error: {
+    ...textStyles.caption,
+    fontFamily: fonts.medium,
+    color: colors.error,
+  },
+  logoRow: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  logoActions: { flex: 1, gap: spacing.xs },
+});

@@ -1,0 +1,602 @@
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
+import { Screen } from "@/components/ui/Screen";
+import { AppHeader } from "@/components/ui/AppHeader";
+import { Button } from "@/components/ui/Button";
+import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
+import { NoteBox } from "@/components/ui/NoteBox";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { MOCK } from "@/config/env";
+import { PRODUCT_STATUS } from "@/constants/consignment";
+import { useAuthStore } from "@/stores/authStore";
+import { useCheckoutStore } from "@/stores/checkoutStore";
+import { formatVnd } from "@/utils/money";
+import { formatAddress, formatPhone } from "@/utils/format";
+import { showToast } from "@/utils/toast";
+import { cartKeys } from "@/features/cart/api/queryKeys";
+import { useCart } from "@/features/cart/hooks/useCart";
+import { useAddresses } from "@/features/addresses/hooks/useAddresses";
+import { useProductDetail } from "@/features/products/hooks/useProductDetail";
+import { shopKeys } from "@/features/products/api/queryKeys";
+import { shippingFeeQuery } from "@/features/products/hooks/useShippingFee";
+import { ordersApi } from "../api/ordersApi";
+import { OrderGroupCard, OrderLine } from "../components/OrderGroupCard";
+import { useApplicableVouchers } from "@/features/membership/hooks/useMembership";
+import { VoucherPickerSheet } from "@/features/membership/components/VoucherPickerSheet";
+
+const goBack = () =>
+  router.canGoBack() ? router.back() : router.replace("/cart");
+const sum = (lines) => lines.reduce((s, l) => s + l.price, 0);
+
+// Mọi món trong giỏ → dạng dòng chung { productId, cartItemId, name, thumbnailUrl, price, warehouseId, warehouseName, available }
+const cartLines = (cart) =>
+  (cart?.groupedByWarehouse ?? []).flatMap((g) =>
+    g.items.map((i) => ({
+      productId: i.product.id,
+      cartItemId: i.id,
+      name: i.product.name,
+      thumbnailUrl: i.product.thumbnailUrl,
+      price: i.product.currentPrice,
+      warehouseId: g.warehouseId,
+      warehouseName: g.warehouseName,
+      available: !i.unavailableReason,
+    })),
+  );
+
+const productLine = (p) => ({
+  productId: p.id,
+  cartItemId: null,
+  name: p.name,
+  thumbnailUrl: p.thumbnailUrl,
+  price: p.currentPrice,
+  warehouseId: p.warehouseId ?? "buy-now",
+  warehouseName: p.warehouseName ?? "Địa điểm ký gửi",
+  available: p.status === PRODUCT_STATUS.ON_SALE,
+});
+
+// Mỗi món = một đơn, một phí vận chuyển (BE 963758f: tách đơn theo món như Shopee, kể cả cùng kho)
+const toOrders = (lines) =>
+  lines.map((l) => ({
+    key: l.productId,
+    warehouseName: l.warehouseName,
+    lines: [l],
+  }));
+
+// BR-08 · Đặt hàng. Vào từ giỏ (?ids=…) hoặc Mua ngay (?buyNow=id)
+export default function CheckoutScreen() {
+  const params = useLocalSearchParams();
+  const buyNowId = params.buyNow;
+  const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const queryClient = useQueryClient();
+  const cart = useCart();
+  const product = useProductDetail(buyNowId);
+  const addresses = useAddresses();
+  const storeAddressId = useCheckoutStore((s) => s.addressId);
+  const setPendingOrders = useCheckoutStore((s) => s.setPendingOrders);
+  const paymentMethod = useCheckoutStore((s) => s.paymentMethod);
+  const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
+
+  const [ids, setIds] = useState(() =>
+    buyNowId
+      ? [buyNowId]
+      : String(params.ids ?? "")
+          .split(",")
+          .filter(Boolean),
+  );
+  const [formError, setFormError] = useState(null);
+  const [voucherId, setVoucherId] = useState(null);
+  const [voucherSheet, setVoucherSheet] = useState(false);
+  const place = useMutation({ mutationFn: ordersApi.createOrders });
+
+  // Dữ liệu đặt hàng tính TRƯỚC các nhánh return sớm → hook phí ship bên dưới luôn được gọi
+  const inCart = cartLines(cart.data);
+  const source = buyNowId
+    ? product.data
+      ? [productLine(product.data)]
+      : []
+    : inCart;
+  const lines = source.filter((l) => ids.includes(l.productId));
+  const lost = lines.filter((l) => !l.available); // vừa bị người khác đặt / không còn bán
+  const okLines = lines.filter((l) => l.available);
+  const groups = toOrders(okLines);
+
+  const addrList = addresses.data ?? [];
+  const address =
+    addrList.find((a) => a.id === storeAddressId) ??
+    addrList.find((a) => a.isDefault) ??
+    addrList[0];
+
+  // Phí ship GHN thật từng đơn (= từng món), đổi địa chỉ là tính lại. Tổng phí = cộng phí mọi đơn
+  const feeQueries = useQueries({
+    queries: groups.map((g) => shippingFeeQuery(g.lines[0].productId, address)),
+  });
+  const feesKnown = groups.length > 0 && feeQueries.every((q) => q.isSuccess);
+  const feeTotal = feesKnown
+    ? feeQueries.reduce((s, q) => s + q.data, 0)
+    : null;
+
+  // Gói thành viên · M-07: MỘT mã cho cả lần đặt (BE chia về từng đơn). Số tiền giảm lấy từ BE, không tự tính.
+  // Đổi món / địa chỉ → BE tính lại; mã đang chọn không còn dùng được thì tự bỏ (selected = null)
+  const vouchers = useApplicableVouchers(
+    okLines.map((l) => l.productId),
+    address?.id,
+  );
+  const usableVouchers = (vouchers.data?.vouchers ?? []).filter((v) => v.applicable);
+  const selectedVoucher = usableVouchers.find((v) => v.id === voucherId) ?? null;
+  const discount = Number(selectedVoucher?.discountAmount ?? 0);
+
+  if (!isAuthed) return <Redirect href="/login" />;
+
+  const header = <AppHeader title="Đặt hàng" onBack={goBack} />;
+  const loading = buyNowId
+    ? product.isPending || product.isPlaceholderData
+    : cart.isPending;
+  if (loading) {
+    return (
+      <Screen header={header}>
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      </Screen>
+    );
+  }
+
+  if (!lines.length) {
+    return (
+      <Screen header={header}>
+        <EmptyState
+          icon="cart-outline"
+          title="Không có món nào để đặt"
+          description="Các món bạn chọn không còn trong giỏ."
+        >
+          <Button title="Về giỏ hàng" onPress={goBack} />
+        </EmptyState>
+      </Screen>
+    );
+  }
+
+  const submit = (list) => {
+    if (place.isPending) return; // chống bấm 2 lần: mỗi lần là tạo đơn + giữ hàng
+    if (!address) return setFormError("Thêm địa chỉ giao hàng trước khi đặt.");
+    setFormError(null);
+    // Luôn gửi productIds (kể cả đặt cả giỏ): BE tạo đơn ĐÚNG THỨ TỰ productIds và tự xoá các món đó khỏi giỏ
+    // → đơn thứ i là món list[i]. BE không trả tên món / tên kho trong đơn → app ghép từ các dòng vừa đặt
+    const productIds = list.map((l) => l.productId);
+
+    place.mutate(
+      {
+        shippingAddressId: address.id,
+        productIds,
+        voucherCode: selectedVoucher?.code,
+      },
+      {
+        onSuccess: (orders) => {
+          setPendingOrders(
+            orders.map((o, i) => {
+              const line = list[i];
+              return {
+                ...o,
+                itemName: line?.name ?? null,
+                warehouseName: line?.warehouseName ?? "Địa điểm ký gửi",
+              };
+            }),
+          );
+          queryClient.invalidateQueries({ queryKey: cartKeys.cart });
+          queryClient.invalidateQueries({ queryKey: ["products"] }); // món đã RESERVED, rời sàn
+          router.replace("/payment"); // replace: Back không quay lại đây đặt thêm lần nữa
+        },
+        onError: (e) => {
+          // Lỗi mã giảm giá: BE không tạo đơn nào → bỏ chọn mã, giữ nguyên giỏ và các lựa chọn khác để đặt lại
+          if (String(e.code ?? "").startsWith("VOUCHER_")) {
+            setVoucherId(null);
+            queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+            return setFormError(
+              `Không dùng được mã giảm giá: ${e.message} Đã bỏ chọn mã, bạn có thể đặt lại.`,
+            );
+          }
+          if (e.status === 409) {
+            // Có món vừa bị người khác đặt trước — BE không nói món nào → tải lại để biết
+            queryClient.invalidateQueries({ queryKey: cartKeys.cart });
+            if (buyNowId)
+              queryClient.invalidateQueries({
+                queryKey: shopKeys.product(buyNowId),
+              });
+            return showToast("Có món vừa bị người khác đặt trước");
+          }
+          setFormError(e.message);
+        },
+      },
+    );
+  };
+
+  // ---- Trạng thái "Giữ hàng thất bại": có món không đặt được ----
+  if (lost.length) {
+    const orderRest = () => {
+      setIds(okLines.map((l) => l.productId));
+      submit(okLines);
+    };
+    return (
+      <Screen
+        scroll
+        header={header}
+        contentStyle={styles.content}
+        footer={
+          <View style={styles.footerCol}>
+            {okLines.length ? (
+              <Button
+                title={`Đặt ${okLines.length} món còn lại — ${formatVnd(sum(okLines))}`}
+                loading={place.isPending}
+                onPress={orderRest}
+              />
+            ) : null}
+            <Button
+              title={buyNowId ? "Xem món khác" : "Quay lại giỏ hàng"}
+              variant="secondary"
+              onPress={goBack}
+            />
+          </View>
+        }
+      >
+        <View style={styles.resultHead}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.text} />
+          <Text style={styles.resultTitle}>
+            {lost.length} món vừa có người khác mua trước
+          </Text>
+          <Text style={styles.resultDesc}>
+            Chưa đặt đơn nào, chưa có khoản tiền nào bị trừ.
+            {okLines.length
+              ? ` Bạn vẫn đặt được ${okLines.length} món còn lại.`
+              : ""}
+          </Text>
+        </View>
+
+        <View style={[styles.box, styles.boxStrong]}>
+          <Text style={styles.boxTitle}>KHÔNG ĐẶT ĐƯỢC</Text>
+          {lost.map((l) => (
+            <OrderLine key={l.productId} line={l} faded />
+          ))}
+          <Text style={styles.boxNote}>
+            Hàng ký gửi là món duy nhất, không có món thứ hai giống hệt. Món này
+            chỉ quay lại sàn nếu người mua kia không thanh toán kịp trong thời
+            gian giữ hàng.
+          </Text>
+        </View>
+
+        {okLines.length ? (
+          <View style={styles.box}>
+            <Text style={styles.boxTitle}>VẪN ĐẶT ĐƯỢC</Text>
+            {okLines.map((l) => (
+              <OrderLine key={l.productId} line={l} />
+            ))}
+            <View style={styles.boxTotal}>
+              <Text style={styles.muted}>
+                Tiền hàng (chưa gồm phí vận chuyển)
+              </Text>
+              <Text style={styles.strong}>{formatVnd(sum(okLines))}</Text>
+            </View>
+          </View>
+        ) : null}
+        <ErrorBox message={formError} />
+      </Screen>
+    );
+  }
+
+  // ---- Bình thường ----
+  const feePending = feeQueries.some(
+    (q) => q.isPending && q.fetchStatus !== "idle",
+  );
+  return (
+    <Screen
+      scroll
+      header={header}
+      contentStyle={styles.content}
+      footer={
+        <View style={styles.footerCol}>
+          <View style={styles.sumRow}>
+            <Text style={styles.muted}>Tiền hàng</Text>
+            <Text style={styles.text}>{formatVnd(sum(okLines))}</Text>
+          </View>
+          <View style={styles.sumRow}>
+            <Text style={styles.muted}>Vận chuyển {groups.length} đơn</Text>
+            <Text style={feesKnown ? styles.text : styles.muted}>
+              {feesKnown
+                ? formatVnd(feeTotal)
+                : feePending
+                  ? "Đang tính…"
+                  : "Tính khi đặt hàng"}
+            </Text>
+          </View>
+          {selectedVoucher ? (
+            <View style={styles.sumRow}>
+              <Text style={styles.muted}>Giảm giá ({selectedVoucher.code})</Text>
+              <Text style={styles.discount}>− {formatVnd(discount)}</Text>
+            </View>
+          ) : null}
+          {feesKnown ? (
+            <View style={styles.sumRow}>
+              <Text style={styles.strong}>Tổng thanh toán</Text>
+              <Text style={styles.strong}>
+                {formatVnd(Math.max(0, sum(okLines) + feeTotal - discount))}
+              </Text>
+            </View>
+          ) : null}
+          <Button
+            title="Đặt hàng · giữ hàng chờ thanh toán"
+            loading={place.isPending}
+            disabled={!address}
+            onPress={() => submit(okLines)}
+            style={styles.mainBtn}
+          />
+        </View>
+      }
+    >
+      <AddressBlock address={address} loading={addresses.isPending} />
+
+      {groups.length >= 2 ? (
+        <View style={styles.banner}>
+          <Ionicons
+            name="information-circle-outline"
+            size={18}
+            color={colors.text}
+          />
+          <Text style={styles.bannerText}>
+            {`Mỗi món là một đơn riêng: ${groups.length} món thành ${groups.length} đơn, giao riêng và tính phí vận chuyển riêng từng đơn.`}
+          </Text>
+        </View>
+      ) : null}
+
+      {groups.map((g, i) => (
+        <OrderGroupCard
+          key={g.key}
+          group={g}
+          index={i}
+          total={groups.length}
+          fee={feeQueries[i]}
+        />
+      ))}
+
+      {/* Mã giảm giá (gói thành viên) — một mã cho cả lần đặt */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>MÃ GIẢM GIÁ</Text>
+        <Pressable
+          onPress={() => setVoucherSheet(true)}
+          disabled={!address}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.voucherRow, pressed && styles.pressed]}
+        >
+          <Ionicons name="pricetags-outline" size={20} color={colors.primary} />
+          <Text
+            style={[styles.voucherText, !selectedVoucher && styles.muted]}
+            numberOfLines={1}
+          >
+            {selectedVoucher
+              ? `${selectedVoucher.name} · −${formatVnd(discount)}`
+              : vouchers.isPending && vouchers.fetchStatus !== "idle"
+                ? "Đang tìm mã dùng được…"
+                : usableVouchers.length
+                  ? `${usableVouchers.length} mã dùng được cho đơn này`
+                  : "Chưa có mã dùng được"}
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>THANH TOÁN</Text>
+        <PaymentMethodPicker
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          // Đã biết phí ship → so ví với tổng thật (đã trừ mã giảm); chưa biết → so tiền hàng và nhắc cần đủ phí ship
+          amount={Math.max(0, sum(okLines) + (feeTotal ?? 0) - discount)}
+          isSubtotal={!feesKnown}
+        />
+      </View>
+
+      <VoucherPickerSheet
+        visible={voucherSheet}
+        onClose={() => setVoucherSheet(false)}
+        query={vouchers}
+        value={selectedVoucher?.id ?? null}
+        onApply={(id) => {
+          setVoucherId(id);
+          setVoucherSheet(false);
+        }}
+      />
+
+      <NoteBox>
+        {feesKnown
+          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."
+          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."}
+      </NoteBox>
+
+      {__DEV__ && MOCK.orders ? (
+        <Button
+          title="Mock: lần đặt tới có 1 món bị người khác mua trước"
+          variant="text"
+          onPress={() => {
+            ordersApi.mockFailNextOrder();
+            showToast("Đã bật: lần đặt tới sẽ lỗi 409");
+          }}
+        />
+      ) : null}
+
+      <ErrorBox message={formError} />
+    </Screen>
+  );
+}
+
+// Khối "Giao đến" + nút Đổi (mở danh sách địa chỉ ở chế độ chọn)
+function AddressBlock({ address, loading }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionTitle}>GIAO ĐẾN</Text>
+        {address ? (
+          <Pressable
+            onPress={() => router.push("/addresses?select=1")}
+            hitSlop={8}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.changeBtn,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.changeText}>Đổi</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {loading ? (
+        <ActivityIndicator color={colors.primary} />
+      ) : address ? (
+        <View style={styles.addressBox}>
+          <Text style={styles.strong}>
+            {address.recipientName} · {formatPhone(address.phone)}
+          </Text>
+          <Text style={styles.muted}>{formatAddress(address)}</Text>
+          {/* Mục 1 (lead chốt 06/11): nhắc kiểm tra phường / tỉnh — phí ship và nơi shipper giao tính theo đây */}
+          <Text style={styles.addressHint}>
+            Kiểm tra kỹ phường, tỉnh: phí ship và nơi giao tính theo đây. Đặt
+            rồi vẫn đổi được 1 lần, trước khi ReHome đóng gói.
+          </Text>
+        </View>
+      ) : (
+        <Pressable
+          onPress={() => router.push("/addresses/new")}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.addAddress,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons name="add-circle-outline" size={20} color={colors.accent} />
+          <Text style={styles.changeText}>Thêm địa chỉ giao hàng</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  loading: { marginTop: spacing.xxl },
+  content: { gap: spacing.lg },
+  pressed: { opacity: 0.6 },
+  section: { gap: spacing.sm },
+  sectionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sectionTitle: { ...textStyles.label, color: colors.textSecondary },
+  changeBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+  },
+  changeText: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+  },
+  addressBox: { gap: 2 },
+  addressHint: {
+    marginTop: spacing.xs,
+    ...textStyles.caption,
+    color: tones.warning.fg,
+  },
+  addAddress: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.accent,
+    borderRadius: radius.input,
+  },
+  banner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.input,
+    backgroundColor: colors.neutral,
+  },
+  bannerText: { flex: 1, ...textStyles.body, color: colors.text },
+  text: { ...textStyles.body, color: colors.text },
+  muted: { ...textStyles.body, color: colors.textSecondary },
+  strong: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
+  footerCol: { gap: spacing.xs },
+  discount: { ...textStyles.body, fontFamily: fonts.semibold, color: colors.primary },
+  voucherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  voucherText: { flex: 1, ...textStyles.body, color: colors.text },
+  sumRow: { flexDirection: "row", justifyContent: "space-between" },
+  mainBtn: { marginTop: spacing.sm },
+  resultHead: {
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  resultTitle: {
+    ...textStyles.heading,
+    color: colors.text,
+    textAlign: "center",
+  },
+  resultDesc: {
+    ...textStyles.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  box: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+  },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
+  boxTitle: { ...textStyles.label, color: colors.textSecondary },
+  boxNote: {
+    ...textStyles.body,
+    color: colors.textSecondary,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral,
+  },
+  boxTotal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.neutral,
+  },
+});

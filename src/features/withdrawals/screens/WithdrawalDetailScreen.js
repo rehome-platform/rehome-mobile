@@ -1,0 +1,478 @@
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
+import dayjs from "dayjs";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
+import { MOCK } from "@/config/env";
+import { Screen } from "@/components/ui/Screen";
+import { AppHeader } from "@/components/ui/AppHeader";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { NoteBox } from "@/components/ui/NoteBox";
+import { useAuthStore } from "@/stores/authStore";
+import { formatVnd } from "@/utils/money";
+import { showToast } from "@/utils/toast";
+import { daysLeft } from "@/utils/consignment";
+import {
+  FEE_PAYMENT_METHOD_LABEL,
+  WITHDRAWAL_EVENT_LABEL,
+  WITHDRAWAL_STATUS as W,
+} from "@/constants/withdrawal";
+import { withdrawalApi } from "../api/withdrawalApi";
+import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
+import { useWithdrawal, useWithdrawalMutation } from "../hooks/useWithdrawals";
+
+const goBack = () =>
+  router.canGoBack() ? router.back() : router.replace("/consign");
+const fmt = (v) => dayjs(v).format("DD/MM HH:mm");
+
+// Chữ phụ dưới từng mốc
+const EVENT_DESC = {
+  REMOVED: "Không ai mua được nữa",
+};
+
+// Dòng thời gian mới nhất ở trên (KG-15). Đang chờ đến kho → thêm mốc "Chờ bạn đến kho" đang chạy
+function Timeline({ w }) {
+  const items = w.events.map((e) => ({
+    key: `${e.type}-${e.at}`,
+    title: WITHDRAWAL_EVENT_LABEL[e.type] ?? e.type,
+    desc:
+      e.type === "HANDED_OVER" ? w.warehouseName : (EVENT_DESC[e.type] ?? null),
+    right: e.at ? fmt(e.at) : null, // BE chưa trả giờ của một số mốc (vd bàn giao)
+  }));
+  if (w.status === W.PENDING_APPROVAL) {
+    items.unshift({
+      key: "approving",
+      title: "Chờ địa điểm ký gửi duyệt",
+      active: true,
+    });
+  }
+  if (w.status === W.PENDING_PICKUP) {
+    items.unshift({
+      key: "waiting",
+      title: "Chờ bạn đến địa điểm",
+      right: w.pickupDeadline
+        ? `còn ${Math.max(0, daysLeft(w.pickupDeadline))} ngày`
+        : null,
+      active: true,
+    });
+  }
+  return (
+    <View>
+      {items.map((it, i) => {
+        const last = i === items.length - 1;
+        return (
+          <View key={it.key} style={styles.event}>
+            <View style={styles.rail}>
+              <View style={[styles.dot, it.active && styles.dotActive]} />
+              {!last ? <View style={styles.line} /> : null}
+            </View>
+            <View style={styles.eventBody}>
+              <View style={styles.eventHead}>
+                <Text style={[styles.strong, styles.flex]}>{it.title}</Text>
+                <Text style={styles.caption}>{it.right}</Text>
+              </View>
+              {it.desc ? <Text style={styles.caption}>{it.desc}</Text> : null}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// [DEV] Khung Mock: việc của kho / job hết hạn
+function MockPanel({ w }) {
+  const act = useWithdrawalMutation((key) =>
+    withdrawalApi.mockWithdrawalAction(w.id, key),
+  );
+  if (!__DEV__ || !MOCK.withdrawals || w.status !== W.PENDING_PICKUP)
+    return null;
+  return (
+    <NoteBox>
+      <View style={styles.mock}>
+        <Text style={styles.caption}>Mock (chỉ bản dev): việc của ReHome</Text>
+        {withdrawalApi.MOCK_WITHDRAWAL_ACTIONS.map((a) => (
+          <Button
+            key={a.key}
+            title={a.label}
+            variant="text"
+            disabled={act.isPending}
+            onPress={() =>
+              act.mutate(a.key, { onError: (e) => showToast(e.message) })
+            }
+          />
+        ))}
+      </View>
+    </NoteBox>
+  );
+}
+
+// KG-15 · Yêu cầu rút hàng: Chờ duyệt / Bị từ chối / Chờ đến lấy / Đã bàn giao / Hết hạn
+export default function WithdrawalDetailScreen() {
+  const { id } = useLocalSearchParams();
+  const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const query = useWithdrawal(id);
+  const w = query.data;
+
+  if (!isAuthed) return <Redirect href="/login" />;
+
+  const header = <AppHeader title="Yêu cầu rút hàng" onBack={goBack} />;
+  if (query.isPending) {
+    return (
+      <Screen header={header}>
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      </Screen>
+    );
+  }
+  if (query.isError) {
+    return (
+      <Screen header={header}>
+        {query.error.status === 404 || query.error.status === 403 ? (
+          <EmptyState
+            icon="cube-outline"
+            title="Không tìm thấy yêu cầu rút hàng"
+          />
+        ) : (
+          <ErrorBox message={query.error.message}>
+            <Button
+              title="Thử lại"
+              variant="secondary"
+              onPress={() => query.refetch()}
+            />
+          </ErrorBox>
+        )}
+      </Screen>
+    );
+  }
+
+  const left = w.pickupDeadline
+    ? Math.max(0, daysLeft(w.pickupDeadline))
+    : null;
+
+  // Phí chỉ trả được SAU KHI địa điểm ký gửi duyệt (BE 11/11) → đã duyệt mà chưa trả thì mời trả
+  const unpaid =
+    w.status === W.PENDING_PICKUP && w.feeCharged > 0 && w.feePaid === false;
+
+  let footer = null;
+  if (unpaid) {
+    footer = (
+      <Button
+        title={`Trả phí rút hàng ${formatVnd(w.feeCharged)}`}
+        onPress={() =>
+          router.push({
+            pathname: "/withdrawals/new",
+            params: { productId: w.productId },
+          })
+        }
+      />
+    );
+  } else if (w.status === W.PENDING_PICKUP) {
+    // "Huỷ yêu cầu" ẩn — chưa có API (PHASE5_GUIDE 0.4 #6)
+    footer = (
+      <Button
+        title="Mã Member của tôi"
+        onPress={() => router.push("/profile/member-code")}
+      />
+    );
+  } else if (w.status === W.COMPLETED) {
+    footer = (
+      <Button
+        title="Về Hàng ký gửi"
+        variant="secondary"
+        onPress={() => router.replace("/consign")}
+      />
+    );
+  } else if (w.status === W.EXPIRED || w.status === W.REJECTED) {
+    footer = (
+      <Button
+        title="Xem sản phẩm đang bán"
+        variant="secondary"
+        onPress={() => router.replace(`/my-products/${w.productId}`)}
+      />
+    );
+  }
+  // Đã duyệt, chờ đến lấy: không đến được thì quyên góp thay (đặc tả 11/11) — chưa trả phí thì khỏi trả
+  if (w.status === W.PENDING_PICKUP && DONATE_ENABLED) {
+    footer = (
+      <View style={styles.footerCol}>
+        {footer}
+        <Button
+          title="Không đến lấy được? Quyên góp"
+          variant="text"
+          onPress={() => router.push(`/my-products/${w.productId}/donate`)}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <Screen
+      scroll
+      header={header}
+      footer={footer}
+      contentStyle={styles.content}
+    >
+      <View style={styles.productRow}>
+        {w.photoUrl ? (
+          <Image source={{ uri: w.photoUrl }} style={styles.thumb} />
+        ) : (
+          <View style={styles.thumb} />
+        )}
+        <View style={styles.flex}>
+          <Text style={styles.strong}>{w.productName}</Text>
+          <Text style={styles.caption}>
+            {w.productId} · {w.warehouseName}
+          </Text>
+        </View>
+      </View>
+
+      {/* ---- Khối theo trạng thái ---- */}
+      {w.status === W.PENDING_APPROVAL ? (
+        <View style={[styles.box, styles.boxStrong]}>
+          <Text style={styles.boxTitle}>Chờ địa điểm ký gửi duyệt</Text>
+          <Text style={styles.text}>
+            Sản phẩm đã gỡ khỏi sàn, không ai mua được. {w.warehouseName} sẽ xem
+            yêu cầu của bạn; bạn nhận thông báo khi có kết quả.
+          </Text>
+          <Text style={styles.muted}>
+            {w.feeCharged > 0
+              ? `Được duyệt thì bạn trả phí ${formatVnd(w.feeCharged)} rồi đến lấy hàng trước hạn ghi tại đây.`
+              : "Được duyệt thì bạn đến lấy hàng trước hạn ghi tại đây, không mất phí."}
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.REJECTED ? (
+        <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
+          <Text style={styles.boxTitle}>Yêu cầu bị từ chối</Text>
+          {w.rejectReason ? (
+            <Text style={styles.text}>
+              Lý do: <Text style={styles.strong}>{w.rejectReason}</Text>
+            </Text>
+          ) : null}
+          <Text style={styles.text}>
+            Sản phẩm đã quay lại sàn và kỳ ký gửi tiếp tục như cũ. Bạn không mất
+            phí nào.
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.PENDING_PICKUP ? (
+        <View style={[styles.box, styles.boxStrong]}>
+          <Text style={styles.boxTitle}>
+            {left != null
+              ? `Còn ${left} ngày để đến địa điểm ký gửi`
+              : "Chờ bạn đến địa điểm ký gửi"}
+          </Text>
+          <Text style={styles.text}>
+            {w.pickupDeadline ? (
+              <>
+                Hạn cuối{" "}
+                <Text style={styles.strong}>
+                  {dayjs(w.pickupDeadline).format("DD/MM/YYYY")}
+                </Text>
+                .{" "}
+              </>
+            ) : null}
+            Sản phẩm đã gỡ khỏi sàn, không ai mua được.
+          </Text>
+          {/* Chưa trả phí: quá feePaymentDeadline thì BE tự huỷ yêu cầu và đưa món lên sàn lại (sớm hơn hạn đến kho) */}
+          {unpaid && w.feePaymentDeadline ? (
+            <View style={styles.feeDue}>
+              <Text style={styles.feeDueText}>
+                Trả phí trước{" "}
+                <Text style={styles.strong}>
+                  {dayjs(w.feePaymentDeadline).format("HH:mm DD/MM")}
+                </Text>
+                . Quá hạn mà chưa trả, yêu cầu tự huỷ và món được đăng bán lại.
+              </Text>
+            </View>
+          ) : null}
+          {w.warehouseAddress ? (
+            <>
+              <Text style={styles.muted}>
+                {w.warehouseName} · {w.warehouseAddress}
+              </Text>
+              {w.warehouseOpeningHours ? (
+                <Text style={styles.caption}>
+                  Mở cửa {w.warehouseOpeningHours}
+                </Text>
+              ) : null}
+              <Text
+                style={styles.link}
+                accessibilityRole="link"
+                onPress={() =>
+                  Linking.openURL(
+                    `geo:0,0?q=${encodeURIComponent(w.warehouseAddress)}`,
+                  )
+                }
+              >
+                Chỉ đường
+              </Text>
+            </>
+          ) : null}
+        </View>
+      ) : null}
+
+      {w.status === W.COMPLETED ? (
+        <View style={styles.box}>
+          <Text style={styles.boxTitle}>Đã bàn giao</Text>
+          <Text style={styles.text}>
+            Bạn đã nhận lại hàng tại {w.warehouseName}. Biên nhận ký gửi kết
+            thúc.
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.EXPIRED ? (
+        <View style={[styles.box, styles.boxStrong, styles.boxSoft]}>
+          <Text style={styles.boxTitle}>Đã quá hạn — hàng đăng bán lại</Text>
+          <Text style={styles.text}>
+            Bạn không đến địa điểm ký gửi trước hạn (hoặc chưa trả phí đúng
+            hạn). Yêu cầu bị huỷ tự động, sản phẩm đã quay lại sàn và kỳ ký gửi
+            tiếp tục như cũ.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* ---- Phần chung ---- */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>TRẠNG THÁI · MỚI NHẤT TRÊN CÙNG</Text>
+        <Timeline w={w} />
+      </View>
+
+      {w.feeCharged > 0 ? (
+        <View style={styles.feeRow}>
+          <Text style={styles.muted}>Phí rút hàng</Text>
+          <Text style={styles.strong}>
+            {formatVnd(w.feeCharged)}
+            {w.feePaymentMethod
+              ? ` · đã trả ${FEE_PAYMENT_METHOD_LABEL[w.feePaymentMethod]}`
+              : unpaid
+                ? " · chưa trả"
+                : ""}
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.PENDING_PICKUP ? (
+        <View style={styles.dashed}>
+          <Text style={styles.text}>
+            Đến quầy <Text style={styles.strong}>đọc mã Member</Text> để
+            Moderator đối chiếu rồi bàn giao.{" "}
+            <Text style={styles.strong}>Quá hạn không đến</Text> thì yêu cầu tự
+            huỷ, sản phẩm đăng bán lại và kỳ ký gửi tiếp tục như cũ
+            {w.feeCharged > 0 ? " — phí đã trả không được hoàn." : "."}
+          </Text>
+        </View>
+      ) : null}
+
+      {w.status === W.COMPLETED ? (
+        <View style={styles.dashed}>
+          <Text style={styles.text}>
+            Hàng <Text style={styles.strong}>không còn trên ReHome</Text>. Muốn
+            bán lại thì gửi yêu cầu ký gửi mới — kỳ và hoa hồng tính lại từ đầu.
+          </Text>
+        </View>
+      ) : null}
+
+      <MockPanel w={w} />
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  feeDue: {
+    padding: spacing.sm,
+    borderRadius: radius.input,
+    backgroundColor: tones.warning.bg,
+  },
+  feeDueText: { ...textStyles.caption, color: tones.warning.fg },
+  loading: { marginTop: spacing.xxl },
+  content: { gap: spacing.lg },
+  footerCol: { gap: spacing.xs },
+  flex: { flex: 1 },
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral,
+  },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.input,
+    backgroundColor: colors.neutral,
+  },
+  text: { ...textStyles.body, color: colors.text },
+  muted: { flexShrink: 1, ...textStyles.body, color: colors.textSecondary },
+  caption: { ...textStyles.caption, color: colors.textSecondary },
+  strong: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+  },
+  link: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+  },
+  box: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  boxStrong: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.highlight,
+  },
+  boxSoft: { backgroundColor: colors.neutral },
+  boxTitle: { ...textStyles.heading, color: colors.text },
+  section: { gap: spacing.sm },
+  sectionTitle: { ...textStyles.label, color: colors.textSecondary },
+  event: { flexDirection: "row", gap: spacing.md },
+  rail: { width: 16, alignItems: "center" },
+  dot: {
+    width: 14,
+    height: 14,
+    marginTop: 3,
+    borderRadius: 7,
+    backgroundColor: colors.primary,
+  },
+  dotActive: {
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  line: {
+    flex: 1,
+    width: 2,
+    marginVertical: 2,
+    backgroundColor: colors.neutral,
+  },
+  eventBody: { flex: 1, gap: 2, paddingBottom: spacing.lg },
+  eventHead: { flexDirection: "row", gap: spacing.sm },
+  feeRow: { flexDirection: "row", justifyContent: "space-between" },
+  dashed: {
+    padding: spacing.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.textSecondary,
+    borderRadius: radius.input,
+  },
+  mock: { gap: spacing.xs, alignItems: "flex-start" },
+});

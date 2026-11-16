@@ -1,0 +1,98 @@
+{
+  "expo": {
+    "name": "ReHome",
+    "slug": "rehome-mobile",
+    "owner": "tranthimyhanhs-team",
+    "scheme": "rehome",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3b69c8e6-0973-4f95-af12-f271e8fec947"
+    },
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rehome.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo/logoIcon.png",
+          "imageWidth": 120,
+          "backgroundColor": "#F6F9F4"
+        }
+      ],
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ReHome cần truy cập thư viện ảnh để bạn chọn ảnh sản phẩm ký gửi, ảnh đại diện và giấy tờ.",
+          "cameraPermission": "ReHome cần dùng camera để bạn chụp ảnh sản phẩm ký gửi, CCCD và giấy tờ."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ReHome dùng vị trí để gợi ý địa điểm ký gửi gần bạn."
+        }
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-web-browser",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#006B2C",
+          "defaultChannel": "default"
+        }
+      ],
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ReHome cần dùng camera để bạn thử đồ AI real-time.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "ReHome cần quyền này để lưu video thử đồ AI vào thư viện ảnh của bạn.",
+          "savePhotosPermission": "ReHome cần quyền này để lưu video thử đồ AI vào thư viện ảnh của bạn.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "3b69c8e6-0973-4f95-af12-f271e8fec947"
+      }
+    }
+  }
+}

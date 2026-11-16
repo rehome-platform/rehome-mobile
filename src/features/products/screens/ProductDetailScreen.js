@@ -1,0 +1,488 @@
+import { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { Screen } from "@/components/ui/Screen";
+import { AppHeader } from "@/components/ui/AppHeader";
+import { Button } from "@/components/ui/Button";
+import { NoteBox } from "@/components/ui/NoteBox";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useAuthStore } from "@/stores/authStore";
+import { formatVnd } from "@/utils/money";
+import {
+  useProductDetail,
+  useSimilarProducts,
+} from "../hooks/useProductDetail";
+import { SALE_STATE, saleStateOf } from "../utils/saleState";
+import { PhotoCarousel } from "../components/PhotoCarousel";
+import { PriceTag } from "../components/PriceTag";
+import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
+import { useTryonLiveQuota } from "@/features/tryon-live/hooks/useTryonLive";
+import {
+  liveQuotaView,
+  remainingText,
+} from "@/features/tryon-live/utils/liveQuota";
+import { SimilarProducts } from "../components/SimilarProducts";
+import { setPendingRedirect } from "@/stores/pendingRedirect";
+import { MockStatusPanel } from "../components/MockStatusPanel";
+import { useQueryClient } from "@tanstack/react-query";
+import { showToast } from "@/utils/toast";
+import { CartButton } from "@/features/cart/components/CartButton";
+import {
+  cartItems,
+  useAddToCart,
+  useCart,
+} from "@/features/cart/hooks/useCart";
+import { shopKeys } from "../api/queryKeys";
+import { canTryOn } from "@/features/tryon/utils/tryonRules";
+import { ProductInfoTable } from "../components/ProductInfoTable";
+import { ShippingFeeRow } from "../components/ShippingFeeRow";
+import { useOpenConversation } from "@/features/chat/hooks/useChat";
+import { CONVERSATION_TYPE } from "@/constants/chat";
+
+const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
+
+// Món không còn bán: nhãn trên ảnh + khối giải thích (+ ghi chú)
+const STATE_INFO = {
+  [SALE_STATE.UNAVAILABLE]: {
+    label: "ĐANG GIỮ HÀNG",
+    title: "Sản phẩm không còn khả dụng",
+    text: "Món này đã được mua, hoặc đang có người khác thanh toán. Mỗi món ký gửi là đồ cũ độc bản nên không có cái thứ hai giống hệt.",
+    note: "Nếu người mua kia không thanh toán kịp hạn, món này có thể quay lại sàn.",
+  },
+  [SALE_STATE.SOLD]: {
+    label: "ĐÃ BÁN",
+    title: "Món này đã có chủ",
+    text: "Mỗi sản phẩm ký gửi là một món duy nhất, bán xong là hết. Xem các món tương tự bên dưới.",
+  },
+  [SALE_STATE.ENDED]: {
+    label: "NGỪNG BÁN",
+    title: "Món này không còn bán",
+    text: "Sản phẩm đã rời sàn ReHome. Xem các món tương tự bên dưới.",
+  },
+};
+
+const askLogin = (
+  href,
+  title = "Đăng nhập để mua hàng",
+  message = "Bạn cần đăng nhập để thêm vào giỏ hoặc mua ngay.",
+) =>
+  Alert.alert(title, message, [
+    { text: "Để sau", style: "cancel" },
+    {
+      text: "Đăng nhập",
+      onPress: () => {
+        setPendingRedirect(href); // đăng nhập xong mở lại đúng món này
+        router.push("/login");
+      },
+    },
+  ]);
+
+const share = (p) =>
+  Share.share({
+    message: `${p.name} — ${formatVnd(p.currentPrice)} trên ReHome`,
+  });
+
+// BR-04 · Chi tiết sản phẩm (Guest xem được; mua cần đăng nhập)
+export default function ProductDetailScreen() {
+  const { id } = useLocalSearchParams();
+  const isAuthed = useAuthStore((s) => s.status === "authenticated");
+  const query = useProductDetail(id);
+  const product = query.data;
+  const similar = useSimilarProducts(product?.categoryId, id);
+  const cart = useCart();
+  const addToCart = useAddToCart();
+  const queryClient = useQueryClient();
+  const inCart = cartItems(cart.data).some((i) => i.product.id === id);
+  // Lượt thử đồ real-time theo gói (khách không gọi) — dòng mô tả dưới nút "Thử đồ AI real-time"
+  const liveQuota = liveQuotaView(useTryonLiveQuota({ enabled: isAuthed }).data);
+  const scrollRef = useRef(null);
+  const similarY = useRef(0);
+  const [expanded, setExpanded] = useState(false);
+  const chat = useOpenConversation();
+
+  const header = (
+    <AppHeader
+      title=""
+      onBack={goBack}
+      right={
+        <View style={styles.headerActions}>
+          {product ? (
+            <Pressable
+              onPress={() => share(product)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Chia sẻ"
+              style={({ pressed }) => [
+                styles.iconBtn,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons
+                name="share-social-outline"
+                size={20}
+                color={colors.text}
+              />
+            </Pressable>
+          ) : null}
+          <CartButton />
+        </View>
+      }
+    />
+  );
+
+  if (!product) {
+    if (query.isError && query.error.status === 404) {
+      return (
+        <Screen header={header}>
+          <EmptyState
+            icon="search-outline"
+            title="Không tìm thấy sản phẩm"
+            description="Món này có thể đã bị gỡ khỏi sàn."
+          >
+            <Button title="Về trang chủ" onPress={() => router.replace("/")} />
+          </EmptyState>
+        </Screen>
+      );
+    }
+    if (query.isError) {
+      return (
+        <Screen header={header}>
+          <ErrorBox message={query.error.message}>
+            <Button
+              title="Thử lại"
+              variant="secondary"
+              onPress={() => query.refetch()}
+            />
+          </ErrorBox>
+        </Screen>
+      );
+    }
+    return (
+      <Screen header={header}>
+        <ActivityIndicator style={styles.loading} color={colors.primary} />
+      </Screen>
+    );
+  }
+
+  const state = query.isPlaceholderData ? null : saleStateOf(product.status);
+  const info = STATE_INFO[state];
+  const gone = state === SALE_STATE.SOLD || state === SALE_STATE.ENDED;
+
+  const scrollToSimilar = () =>
+    scrollRef.current?.scrollTo({ y: similarY.current, animated: true });
+
+  const onAdd = () => {
+    if (!isAuthed) return askLogin(`/products/${id}`);
+    addToCart.mutate(id, {
+      onSuccess: () => showToast("Đã thêm vào giỏ"),
+      onError: (e) => {
+        // 409: món vừa bị người khác đặt, hoặc đã có trong giỏ (BE chưa có code để phân biệt) → tải lại món
+        if (e.status === 409) {
+          queryClient.invalidateQueries({ queryKey: shopKeys.product(id) });
+          return showToast(e.message);
+        }
+        Alert.alert("Chưa thêm được vào giỏ", e.message);
+      },
+    });
+  };
+  const onBuyNow = isAuthed
+    ? () => router.push({ pathname: "/checkout", params: { buyNow: id } })
+    : () => askLogin(`/products/${id}`);
+
+  // Nút "Chat ngay" nhỏ bên trái (hộp thư địa điểm đang giữ món, soạn sẵn câu hỏi) — giống Shopee "Chat ngay"
+  const chatButton = product.warehouseId ? (
+    <Pressable
+      onPress={() =>
+        chat.open({
+          type: CONVERSATION_TYPE.MEMBER_WAREHOUSE,
+          counterpartId: product.warehouseId,
+          draft: `Mình muốn hỏi về món "${product.name}"`,
+          from: `/products/${id}`,
+        })
+      }
+      disabled={chat.isOpening}
+      accessibilityRole="button"
+      accessibilityLabel="Nhắn ReHome về món này"
+      style={({ pressed }) => [styles.chatBtn, pressed && styles.pressed]}
+    >
+      {chat.isOpening ? (
+        <ActivityIndicator size="small" color={colors.primary} />
+      ) : (
+        <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
+      )}
+      <Text style={styles.chatText} numberOfLines={1}>
+        Chat ngay
+      </Text>
+    </Pressable>
+  ) : null;
+
+  let footer = null;
+  if (state === SALE_STATE.ON_SALE && product.isMine) {
+    // Món của chính mình: không mua được → đưa về trang quản lý món ký gửi
+    footer = (
+      <Button
+        title="Đây là món bạn ký gửi — xem chi tiết"
+        variant="secondary"
+        onPress={() => router.push(`/my-products/${id}`)}
+      />
+    );
+  } else if (state === SALE_STATE.ON_SALE) {
+    footer = (
+      <View style={styles.footerRow}>
+        {chatButton}
+        {inCart ? (
+          <Button
+            title="Xem giỏ hàng"
+            variant="secondary"
+            onPress={() => router.push("/cart")}
+            style={styles.flex}
+          />
+        ) : (
+          <Button
+            title="Thêm vào giỏ"
+            variant="secondary"
+            loading={addToCart.isPending}
+            onPress={onAdd}
+            style={styles.flex}
+          />
+        )}
+        <Button title="Mua ngay" onPress={onBuyNow} style={styles.flex} />
+      </View>
+    );
+  } else if (info && similar.data?.length) {
+    footer = <Button title="Xem món tương tự" onPress={scrollToSimilar} />;
+  }
+
+  return (
+    <Screen
+      header={header}
+      footer={footer}
+      scroll
+      padded={false}
+      scrollRef={scrollRef}
+    >
+      <PhotoCarousel
+        photos={product.photos}
+        dimmed={!!info}
+        label={info?.label}
+      />
+
+      <View style={styles.body}>
+        <View style={styles.titleBlock}>
+          <PriceTag
+            large
+            showOff
+            struck={gone}
+            currentPrice={product.currentPrice}
+            originalPrice={product.originalPrice}
+          />
+          <Text style={[styles.name, gone && styles.muted]}>
+            {product.name}
+          </Text>
+          {!info ? (
+            <View style={styles.verified}>
+              <Ionicons
+                name="shield-checkmark"
+                size={16}
+                color={colors.primary}
+              />
+              <Text style={styles.verifiedText}>
+                Đã kiểm định tại địa điểm ký gửi ReHome
+              </Text>
+            </View>
+          ) : null}
+          {/* Minh bạch với người mua: "Nổi bật" là quyền lợi gói của người ký gửi, không phải đánh giá chất lượng */}
+          {product.featured && !gone ? (
+            <View style={styles.featuredRow}>
+              <FeaturedBadge />
+              <Text style={styles.featuredText}>
+                Người ký gửi đang dùng gói thành viên
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {/* Phase 6 · BR-04: Thử đồ AI (không chiếm chân màn) */}
+        {!query.isPlaceholderData && canTryOn(product) ? (
+          <Pressable
+            onPress={() =>
+              isAuthed
+                ? router.push({
+                    pathname: "/tryon",
+                    params: { productId: id },
+                  })
+                : askLogin(
+                    `/products/${id}`,
+                    "Đăng nhập để thử đồ",
+                    "Bạn cần đăng nhập để thử đồ bằng AI và lưu ảnh vào bộ sưu tập.",
+                  )
+            }
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.tryon, pressed && styles.pressed]}
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={20}
+              color={colors.primary}
+            />
+            <View style={styles.flex}>
+              <Text style={styles.tryonTitle}>Thử đồ AI</Text>
+              <Text style={styles.muted}>
+                Ghép món này lên người mẫu để xem cách phối
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
+        {/* Thử đồ AI real-time qua camera (Decart Lucy VTON) — số lượt, số giây theo gói thành viên (BE trả) */}
+        {!query.isPlaceholderData && canTryOn(product) ? (
+          <Pressable
+            onPress={() =>
+              isAuthed
+                ? router.push(`/tryon-live/${id}`)
+                : askLogin(
+                    `/products/${id}`,
+                    "Đăng nhập để thử đồ",
+                    "Bạn cần đăng nhập để thử đồ AI real-time bằng camera.",
+                  )
+            }
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.tryon, pressed && styles.pressed]}
+          >
+            <Ionicons name="flash-outline" size={20} color={colors.primary} />
+            <View style={styles.flex}>
+              <Text style={styles.tryonTitle}>Thử đồ AI real-time</Text>
+              <Text style={styles.muted}>
+                {liveQuota
+                  ? `Mở camera, mặc thử ngay trong ${liveQuota.maxSeconds} giây · ${remainingText(liveQuota)}`
+                  : "Mở camera, mặc thử ngay trên người bạn"}
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </Pressable>
+        ) : null}
+        {info ? (
+          <View style={styles.stateBox}>
+            <Text style={styles.stateTitle}>{info.title}</Text>
+            <Text style={styles.text}>{info.text}</Text>
+          </View>
+        ) : null}
+        {info?.note ? <NoteBox>{info.note}</NoteBox> : null}
+
+        {isAuthed && state === SALE_STATE.ON_SALE && !product.isMine ? (
+          <ShippingFeeRow product={product} />
+        ) : null}
+
+        <ProductInfoTable product={product} />
+
+        {product.description ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Mô tả</Text>
+            <Text style={styles.text} numberOfLines={expanded ? undefined : 4}>
+              {product.description}
+            </Text>
+            {product.description.length > 200 ? (
+              <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8}>
+                <Text style={styles.link}>
+                  {expanded ? "Thu gọn" : "Xem thêm"}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        <MockStatusPanel productId={id} status={product.status} />
+      </View>
+
+      <View onLayout={(e) => (similarY.current = e.nativeEvent.layout.y)}>
+        <SimilarProducts products={similar.data} />
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  loading: { marginTop: spacing.xxl },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+  },
+  headerActions: { flexDirection: "row", gap: spacing.sm },
+  pressed: { opacity: 0.6 },
+  body: { padding: spacing.lg, gap: spacing.lg },
+  titleBlock: { gap: spacing.xs },
+  tryon: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  tryonTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  name: { ...textStyles.heading, color: colors.text },
+  muted: { ...textStyles.body, color: colors.textSecondary },
+  text: { ...textStyles.body, color: colors.text },
+  stateBox: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  stateTitle: { ...textStyles.heading, color: colors.text },
+  section: { gap: spacing.sm },
+  sectionTitle: { ...textStyles.heading, color: colors.text },
+  link: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+  },
+  footerRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  flex: { flex: 1 },
+  verified: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  verifiedText: {
+    ...textStyles.caption,
+    fontFamily: fonts.semibold,
+    color: colors.primary,
+  },
+  featuredRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  featuredText: { ...textStyles.caption, color: colors.textSecondary },
+  chatBtn: {
+    width: 64,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  chatText: { ...textStyles.caption, color: colors.primary },
+});

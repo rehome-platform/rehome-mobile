@@ -1,0 +1,111 @@
+// Trạng thái đơn (enum OrderStatus của BE)
+export const ORDER_STATUS = {
+  PENDING_PAYMENT: "PENDING_PAYMENT",
+  PAID: "PAID",
+  PACKING: "PACKING",
+  SHIPPING: "SHIPPING",
+  DELIVERED: "DELIVERED",
+  COMPLETED: "COMPLETED",
+  RETURNED: "RETURNED", // BE: hàng trả hợp lệ, đã hoàn tiền người mua (Phase 5)
+  CANCELLED: "CANCELLED",
+};
+export const ORDER_STATUS_LABEL = {
+  PENDING_PAYMENT: "Chờ thanh toán",
+  PAID: "Đã thanh toán",
+  PACKING: "Đang đóng gói",
+  SHIPPING: "Đang giao",
+  DELIVERED: "Đã giao",
+  COMPLETED: "Hoàn thành",
+  RETURNED: "Đã trả hàng",
+  CANCELLED: "Đã huỷ",
+};
+
+// Chip BR-10 → các trạng thái gửi BE (PHASE4_GUIDE 0.4 #1)
+export const ORDER_TABS = [
+  { key: "ALL", label: "Tất cả", statuses: [] },
+  {
+    key: "PENDING",
+    label: "Chờ thanh toán",
+    statuses: [ORDER_STATUS.PENDING_PAYMENT],
+  },
+  {
+    key: "PROCESSING",
+    label: "Đang xử lý",
+    statuses: [ORDER_STATUS.PAID, ORDER_STATUS.PACKING],
+  },
+  {
+    key: "SHIPPING",
+    label: "Đang giao",
+    statuses: [ORDER_STATUS.SHIPPING, ORDER_STATUS.DELIVERED],
+  },
+  { key: "DONE", label: "Hoàn thành", statuses: [ORDER_STATUS.COMPLETED] },
+  { key: "CANCELLED", label: "Đã huỷ", statuses: [ORDER_STATUS.CANCELLED] },
+];
+
+// Thanh 5 bước ngang ở BR-11 (orderStepOf trả chỉ số bước ĐÃ xong)
+export const ORDER_STEPS = [
+  "Đặt hàng",
+  "Thanh toán",
+  "Đóng gói",
+  "Đang giao",
+  "Hoàn thành",
+];
+
+// [CHỜ BE] Order chưa có cancelReason (PHASE4_GUIDE câu 4b) — tên mã là [GIẢ ĐỊNH]
+export const CANCEL_REASON_LABEL = {
+  BUYER_CANCELLED: "Bạn đã huỷ đơn khi ReHome chưa đóng gói.",
+  PAYMENT_EXPIRED: "Đơn hết hạn thanh toán nên tự huỷ.", // thời gian giữ hàng do Admin cấu hình — không ghi số
+  CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về địa điểm ký gửi.",
+};
+
+export const PAYMENT_METHOD = {
+  MOMO: "MOMO",
+  VNPAY: "VNPAY",
+  WALLET: "WALLET",
+};
+export const PAYMENT_METHOD_LABEL = {
+  MOMO: "MoMo",
+  VNPAY: "VNPay",
+  WALLET: "Ví ReHome",
+};
+
+// API 52: BE trả unavailableReason = tên ProductStatus của món khi món không còn ON_SALE (đọc code 19/10)
+export const CART_UNAVAILABLE_LABEL = {
+  RESERVED: "Đang có người thanh toán",
+  SOLD: "Đã bán",
+  WITHDRAWN: "Người ký gửi đã rút hàng",
+  UNCLAIMED: "Không còn bán",
+  DONATED: "Không còn bán",
+  DESTROYED: "Không còn bán",
+};
+export const unavailableLabel = (reason) =>
+  CART_UNAVAILABLE_LABEL[reason] ?? "Không còn khả dụng";
+
+export const ADDRESS_LIMIT = 5; // BR-06 — BE không giới hạn → app tự chặn
+// API 64 events[].status [CHỜ BE danh sách đủ — câu 7]. Không có trong bảng → dùng chữ BE trả (label/description)
+export const TRACKING_EVENT_LABEL = {
+  PICKED_UP: "GHN đã lấy hàng",
+  SORTED: "Đã rời trung tâm phân loại GHN",
+  DELIVERING: "Đang giao đến bạn",
+  FAILED_DELIVERY: "Giao không thành công",
+  DELIVERED: "Giao thành công",
+  RETURNING: "Đang trả hàng về địa điểm ký gửi",
+};
+
+// BR-14: chữ đi kèm số sao [GIẢ ĐỊNH]
+export const RATING_LABEL = {
+  1: "Rất tệ",
+  2: "Tệ",
+  3: "Bình thường",
+  4: "Tốt",
+  5: "Rất tốt",
+};
+
+// BR-14 · nhận xét + ảnh kèm khi đánh giá (không bắt buộc, như Shopee / Lazada)
+export const RATING_LIMITS = {
+  MAX_COMMENT: 500, // ký tự
+  MAX_IMAGES: 5,
+  // BE ebd75f2: API 67 nhận imageUrls (≤ 5, chỉ link Cloudinary của hệ thống), comment ≤ 500;
+  // ảnh upload vào ORDER_RATINGS; chi tiết đơn trả ratingImageUrls
+  IMAGES_READY: true,
+};

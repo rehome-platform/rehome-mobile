@@ -1,0 +1,17 @@
+// Khoá cache react-query của nhóm ký gửi. invalidate ["consign","forms"] → làm mới mọi danh sách form
+export const consignKeys = {
+  forms: (status) => ["consign", "forms", status ?? "ALL"],
+  pendingCount: () => ["consign", "forms", "PENDING_COUNT"],
+  draftCount: () => ["consign", "forms", "DRAFT_COUNT"],
+  form: (id) => ["consign", "form", id],
+  warehouses: (lat, lng) => ["consign", "warehouses", lat ?? null, lng ?? null],
+  receipt: (id) => ["consign", "receipt", id],
+  products: () => ["consign", "products"],
+  product: (id) => ["consign", "product", id],
+  // Chiến dịch đang nhận đồ tại 1 địa điểm ký gửi (màn Quyên góp món ký gửi)
+  donateCampaigns: (warehouseId) => [
+    "consign",
+    "donate-campaigns",
+    warehouseId,
+  ],
+};
