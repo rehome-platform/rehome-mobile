@@ -59,7 +59,8 @@ function tryonErrorMessage(e) {
     case ERROR_CODES.INCOMPLETE_OUTFIT:
       return "Bộ đồ chưa đủ: cần áo và quần, hoặc một chiếc đầm.";
     case "TIMEOUT":
-      return "Chờ quá lâu mà máy chủ AI chưa trả ảnh." + keep;
+      // Hết giờ chờ phía app nhưng máy chủ có thể vẫn đang tạo → ảnh xong sẽ tự nằm trong Bộ sưu tập
+      return "Máy chủ AI đang chậm, app đã ngừng chờ. Ảnh có thể vẫn đang được tạo — xem lại Bộ sưu tập sau vài phút trước khi thử lại, tránh tốn thêm lượt.";
     case "NETWORK":
       return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";
     case "TRYON_GENERATION_FAILED":
