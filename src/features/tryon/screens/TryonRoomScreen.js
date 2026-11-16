@@ -178,7 +178,21 @@ export default function TryonRoomScreen() {
         }
       >
         <ErrorBox message={tryonErrorMessage(job.error)}>
-          {!incomplete && job.error?.code ? (
+          {noQuota ? (
+            <>
+              <Text style={styles.errorCode}>
+                Bạn có thể đổi điểm tích lũy lấy thêm lượt, rồi bấm "Thử lại".
+              </Text>
+              <Button
+                title="Đổi điểm lấy lượt"
+                variant="secondary"
+                onPress={() =>
+                  router.push({ pathname: "/points", params: { from: "tryon" } })
+                }
+              />
+            </>
+          ) : null}
+          {!incomplete && !noQuota && job.error?.code ? (
             <Text style={styles.errorCode}>
               Mã lỗi: {job.error.code}
               {job.error.status ? ` · ${job.error.status}` : ""}

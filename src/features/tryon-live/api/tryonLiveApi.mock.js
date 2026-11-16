@@ -12,10 +12,13 @@ const DAILY_LIMIT = TRYON_LIVE_FALLBACK.DAILY_LIMIT;
 
 export async function getQuota() {
   await delay();
+  // Cùng hình dạng với BE (đã qua tryonLiveApi.real.js)
   return {
-    dailyLimit: DAILY_LIMIT,
+    limitPerDay: DAILY_LIMIT,
     usedToday,
-    remaining: Math.max(0, DAILY_LIMIT - usedToday),
+    remainingToday: Math.max(0, DAILY_LIMIT - usedToday),
+    canStart: usedToday < DAILY_LIMIT,
+    bonusCredits: 0,
     maxDurationSeconds: TRYON_LIVE_FALLBACK.MAX_DURATION_SECONDS,
   };
 }
