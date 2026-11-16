@@ -7,6 +7,12 @@ export const DONATION_STATUS_LABEL = {
   PENDING_PICKUP: "Chờ lấy",
   HANDED_OVER: "Đã bàn giao",
 };
+// enum DonationSource (BE 1a27081): DIRECT = Moderator ghi nhận tại quầy · CONSIGNED_ITEM = Member quyên góp món
+// đang ký gửi (kèm product { id, name, sku, photoUrl })
+export const DONATION_SOURCE = {
+  DIRECT: "DIRECT",
+  CONSIGNED_ITEM: "CONSIGNED_ITEM",
+};
 
 // Note quyên góp tại địa chỉ riêng (OC-08, API 154) [GIẢ ĐỊNH]
 export const DONATION_NOTE_LIMITS = { NOTE_MAX: 500, DONOR_NAME_MAX: 100 };
