@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { tryonLiveApi } from "../api/tryonLiveApi";
 import { tryonLiveKeys } from "../api/queryKeys";
 
@@ -19,6 +24,23 @@ export function useStartLiveTryon() {
   return useMutation({
     mutationFn: (productId) => tryonLiveApi.startSession(productId),
     onSettled: () => queryClient.invalidateQueries({ queryKey: tryonLiveKeys.quota }),
+  });
+}
+
+// Lịch sử video đã quay — cuộn vô hạn; trả { items, total }.
+// staleTime 0: video mới được WebView upload thẳng lên BE nên app không biết để làm mới cache
+export function useLiveTryonHistory() {
+  return useInfiniteQuery({
+    queryKey: tryonLiveKeys.history,
+    queryFn: ({ pageParam }) => tryonLiveApi.getHistory({ page: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (last) =>
+      last.page + 1 < last.totalPages ? last.page + 1 : undefined,
+    select: (data) => ({
+      items: data.pages.flatMap((p) => p.content),
+      total: data.pages[0]?.totalElements ?? 0,
+    }),
+    staleTime: 0,
   });
 }
 

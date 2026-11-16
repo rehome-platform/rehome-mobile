@@ -45,6 +45,12 @@ export async function startSession(productId) {
   };
 }
 
+// Mock không quay được video thật nên lịch sử luôn rỗng (cùng hình dạng trang với BE)
+export async function getHistory({ page = 0, size = 20 } = {}) {
+  await delay(200);
+  return { content: [], page, size, totalElements: 0, totalPages: 0 };
+}
+
 export async function completeSession() {
   await delay(150);
   return null;

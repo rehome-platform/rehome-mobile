@@ -201,6 +201,11 @@ function MemberAccount() {
           onPress={() => router.push("/tryon/collection")}
         />
         <ListItem
+          icon="videocam-outline"
+          title="Video thử đồ AI"
+          onPress={() => router.push("/tryon-live/history")}
+        />
+        <ListItem
           icon="heart-outline"
           title="Tổ chức đang theo dõi"
           onPress={() => router.push("/organizations/following")}

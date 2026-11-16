@@ -45,6 +45,7 @@ export const useTryonJobStore = create((set, get) => ({
       if (controller !== mine) return; // đã huỷ trong lúc chờ
       controller = null;
       queryClient.invalidateQueries({ queryKey: tryonKeys.images });
+      queryClient.invalidateQueries({ queryKey: tryonKeys.quota });
       set((s) => ({
         job: { ...s.job, status: J.DONE, resultId: img.id },
         hasNew: true,
@@ -63,6 +64,8 @@ export const useTryonJobStore = create((set, get) => ({
     } catch (e) {
       if (controller !== mine || mine.signal.aborted) return; // huỷ → không báo lỗi
       controller = null;
+      // Lỗi hết lượt (429) hay lỗi sau khi BE đã trừ lượt → số lượt hiển thị phải lấy lại từ BE
+      queryClient.invalidateQueries({ queryKey: tryonKeys.quota });
       set((s) => ({ job: { ...s.job, status: J.ERROR, error: e } }));
       // Trong app: khung nổi đổi sang "Chưa tạo được · Bấm để thử lại"
       if (inBackground())

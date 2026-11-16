@@ -14,6 +14,14 @@ export async function startSession(productId) {
   return unwrap(await api.post("/tryon/live/sessions", { productId }));
 }
 
+// GET /tryon/live/sessions - video đã quay xong của chính Member, mới nhất trước.
+// Trang: { content: [{ sessionId, productId, productName, productThumbnailUrl, videoUrl,
+//   actualDurationSeconds, createdAt, completedAt }], page, size, totalElements, totalPages }
+export async function getHistory({ page = 0, size = 20 } = {}) {
+  const p = unwrap(await api.get("/tryon/live/sessions", { params: { page, size } }));
+  return { ...p, content: p.content ?? [] };
+}
+
 // PATCH /tryon/live/sessions/{id}/complete - chỉ dùng khi KHÔNG có video (vd. mất kết nối giữa chừng),
 // chỉ để audit, không hoàn quota. Khi có video, trang WebView tự upload và BE tự đánh dấu COMPLETED.
 export async function completeSession(sessionId, { status, actualDurationSeconds }) {

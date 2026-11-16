@@ -7,6 +7,16 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+// AI-01 · Lượt phối đồ AI còn lại theo gói (GET /tryon/quota). enabled = false cho khách
+export function useTryonQuota({ enabled = true } = {}) {
+  return useQuery({
+    queryKey: tryonKeys.quota,
+    queryFn: tryonApi.getQuota,
+    staleTime: 0, // lượt đổi liên tục trong ngày
+    enabled,
+  });
+}
+
 // AI-02 tab Gợi ý (API 96)
 export function useSuggestions(slot, excludeId) {
   return useQuery({
