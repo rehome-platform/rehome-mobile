@@ -84,8 +84,18 @@ export default function TryonRoomScreen() {
     ? liveQuotaView({ ...quotaQuery.data, canStart: quotaQuery.data.canGenerate })
     : null;
   const outOfQuota = quotaQuery.data?.canGenerate === false;
-  const { baseId, modelType, outfit, open, setModelType, remove } =
-    useTryonDraftStore();
+  // aiPickedId / autoFill / pickSuggested: AI gợi ý phối đồ (#94) — THIẾU là màn sập trắng khi mở phòng
+  const {
+    baseId,
+    modelType,
+    outfit,
+    open,
+    setModelType,
+    remove,
+    aiPickedId,
+    autoFill,
+    pickSuggested,
+  } = useTryonDraftStore();
   const job = useTryonJobStore((s) => s.job);
   const start = useTryonJobStore((s) => s.start);
   const cancel = useTryonJobStore((s) => s.cancel);
@@ -333,7 +343,7 @@ export default function TryonRoomScreen() {
           ) : (
             <Text style={styles.caption}>
               {ready
-                ? "Mất khoảng 30 giây. Ảnh chỉ để hình dung, không phản ánh size thật trên người bạn."
+                ? "Ảnh chỉ để hình dung cách phối, không phản ánh size thật trên người bạn."
                 : `Cần đủ cả áo và quần mới tạo được ảnh. Hãy chọn thêm một chiếc ${TRYON_SLOT_LABEL[missing]?.toLowerCase() ?? "món"}.`}
             </Text>
           )}
