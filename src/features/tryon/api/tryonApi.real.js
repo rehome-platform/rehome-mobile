@@ -43,6 +43,18 @@ export async function getSuggestions({ slot, excludeProductId }) {
   return list.slice(0, SUGGESTION_COUNT).map(toSlotItem(slot));
 }
 
+// AI phối đồ: GET /tryon/outfit-suggestions?productId= — gửi ÁO trả QUẦN hợp, gửi QUẦN trả ÁO (đầm → 400).
+// BE chấm theo màu + phong cách + cùng địa điểm ký gửi rồi nhờ Gemini xếp lại; tối đa 10 món, món hợp nhất trước.
+// Không gửi toạ độ (đã chốt 16/11: không cần) → BE vẫn ưu tiên món cùng địa điểm với món đang xem.
+// Mỗi món cùng dạng thẻ như API 96 → gắn loại thử đồ = ô còn thiếu (targetSlot)
+export async function getOutfitSuggestions({ productId, targetSlot }) {
+  const list =
+    unwrap(
+      await api.get("/tryon/outfit-suggestions", { params: { productId } }),
+    ) ?? [];
+  return list.map(toSlotItem(targetSlot));
+}
+
 // BE: top / bottom / dress (null nếu không có) → items theo thứ tự hiển thị + id từng ô như mock
 const toImage = (img) => ({
   id: img.id,

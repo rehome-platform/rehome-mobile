@@ -11,8 +11,21 @@ export const CAMPAIGN_STATUS_LABEL = {
   HIDDEN: "Bị ẩn",
 };
 
-// enum ContentStatus của BE (bài viết, bình luận): REMOVED = bị gỡ (tổ chức xoá bài / Moderator ẩn bình luận)
-export const CONTENT_STATUS = { VISIBLE: "VISIBLE", REMOVED: "REMOVED" };
+// enum ContentStatus của BE (bài viết, bình luận): REMOVED = bị gỡ (tổ chức xoá bài / Moderator ẩn bình luận /
+// Moderator từ chối khi duyệt). PENDING_REVIEW (BE #274 lọc từ ngữ): bài viết dính từ cần duyệt → chỉ tổ chức
+// thấy, chờ Moderator duyệt mới công khai
+export const CONTENT_STATUS = {
+  VISIBLE: "VISIBLE",
+  PENDING_REVIEW: "PENDING_REVIEW",
+  REMOVED: "REMOVED",
+};
+// enum ContentReviewStatus (bình luận): dính từ cần duyệt thì VẪN hiện ngay, reviewStatus = PENDING_REVIEW;
+// Moderator từ chối → status REMOVED (app đã hiện "Bình luận đã bị ẩn")
+export const CONTENT_REVIEW_STATUS = {
+  PENDING_REVIEW: "PENDING_REVIEW",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED",
+};
 // Ai viết bình luận (L9: tổ chức trả lời bình luận trên bài của mình) [CHỜ BE tên field]
 export const COMMENT_AUTHOR_TYPE = {
   MEMBER: "MEMBER",

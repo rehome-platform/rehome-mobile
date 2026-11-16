@@ -3,10 +3,12 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { colors, radius, spacing, textStyles } from "@/theme";
@@ -24,7 +26,7 @@ import { TRYON_JOB_STATUS as J } from "@/constants/tryon";
 import { cartApi } from "@/features/cart/api/cartApi";
 import { cartKeys } from "@/features/cart/api/queryKeys";
 import { cartItems, useCart } from "@/features/cart/hooks/useCart";
-import { useTryonImage } from "../hooks/useTryon";
+import { useDeleteTryonImage, useTryonImage } from "../hooks/useTryon";
 import { AiBadge } from "../components/AiBadge";
 import { OutfitItemRow } from "../components/OutfitItemRow";
 
@@ -50,6 +52,7 @@ export default function TryonResultScreen() {
   const queryClient = useQueryClient();
   const jobRunning = useTryonJobStore((s) => s.job?.status === J.RUNNING);
   const start = useTryonJobStore((s) => s.start);
+  const remove = useDeleteTryonImage();
 
   // Mở đúng ảnh vừa tạo (từ thông báo tại máy / bộ sưu tập) → coi như đã xem, tắt khung nổi "đã xong"
   const doneHere = useTryonJobStore(
@@ -79,18 +82,51 @@ export default function TryonResultScreen() {
 
   if (!isAuthed) return <Redirect href="/login" />;
 
+  // Vừa tạo xong mà không ưng → xoá ngay tại đây, không phải vào Bộ sưu tập tìm lại (cùng câu hỏi với AI-06)
+  const confirmDelete = () =>
+    Alert.alert(
+      "Xoá ảnh thử đồ này?",
+      "Ảnh biến mất khỏi Bộ sưu tập, không khôi phục được. Việc này không ảnh hưởng tới sản phẩm hay bất kỳ đơn hàng nào.",
+      [
+        { text: "Giữ lại", style: "cancel" },
+        {
+          text: "Xoá ảnh",
+          style: "destructive",
+          onPress: () =>
+            remove.mutate(id, {
+              onSuccess: () => {
+                showToast("Đã xoá ảnh thử đồ");
+                goBack();
+              },
+              onError: (e) => showToast(e.message),
+            }),
+        },
+      ],
+    );
+
   const header = (
     <AppHeader
       title="Kết quả thử đồ"
       onBack={goBack}
       right={
         img ? (
-          <Button
-            title="Tạo lại"
-            variant="text"
-            disabled={jobRunning}
-            onPress={() => regenerate()}
-          />
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={confirmDelete}
+              disabled={remove.isPending}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Xoá ảnh"
+            >
+              <Ionicons name="trash-outline" size={22} color={colors.text} />
+            </Pressable>
+            <Button
+              title="Tạo lại"
+              variant="text"
+              disabled={jobRunning}
+              onPress={() => regenerate()}
+            />
+          </View>
         ) : null
       }
     />
@@ -230,6 +266,7 @@ export default function TryonResultScreen() {
 
 const styles = StyleSheet.create({
   loading: { marginTop: spacing.xxl },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   content: { gap: spacing.lg },
   footer: { gap: spacing.xs },
   photo: {

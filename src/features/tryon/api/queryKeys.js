@@ -5,4 +5,5 @@ export const tryonKeys = {
   image: (id) => ["tryon", "image", id],
   suggestions: (slot, excludeId) => ["tryon", "suggest", slot, excludeId],
   slotProducts: (slot, excludeId) => ["tryon", "slot", slot, excludeId],
+  outfitSuggestions: (productId) => ["tryon", "outfit", productId],
 };

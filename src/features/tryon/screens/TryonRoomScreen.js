@@ -36,11 +36,14 @@ import {
   buildTryonPayload,
   canTryOn,
   isOutfitComplete,
+  otherSlot,
   outfitItems,
   slotKey,
   slotOf,
 } from "../utils/tryonRules";
 import { SlotCard } from "../components/SlotCard";
+import { OutfitSuggestionStrip } from "../components/OutfitSuggestionStrip";
+import { useOutfitSuggestions } from "../hooks/useTryon";
 import { TryonWaiting } from "../components/TryonWaiting";
 
 const MODEL_CHIPS = [MODEL_TYPE.FEMALE, MODEL_TYPE.MALE].map((v) => ({
@@ -95,6 +98,19 @@ export default function TryonRoomScreen() {
   useEffect(() => {
     if (loaded && canTryOn(product)) open(product);
   }, [loaded, product?.id]);
+
+  // AI phối đồ: áo → gợi ý quần, quần → gợi ý áo (đầm đã đủ bộ thì không gợi ý). Món hợp nhất được điền sẵn
+  // vào ô còn thiếu; không ưng thì đổi trong dải gợi ý hoặc tự chọn. KHÔNG tự tạo ảnh (tốn lượt theo gói)
+  const targetSlot =
+    loaded && canTryOn(product) ? otherSlot(slotOf(product)) : null;
+  const suggestions = useOutfitSuggestions(
+    isAuthed && targetSlot ? product.id : null,
+    targetSlot,
+  );
+  useEffect(() => {
+    const best = suggestions.data?.[0];
+    if (best && baseId === product?.id) autoFill(product.id, best);
+  }, [suggestions.data, baseId, product?.id]);
 
   // Đang mở màn → xong thì tự sang kết quả (không hỏi)
   useFocusEffect(
@@ -348,11 +364,25 @@ export default function TryonRoomScreen() {
             slot={slot}
             item={outfit[slotKey(slot)]}
             locked={slot === baseSlot}
+            aiPick={
+              !!aiPickedId && outfit[slotKey(slot)]?.id === aiPickedId
+            }
+            aiLoading={slot === targetSlot && suggestions.isFetching}
             onPick={() => pickFor(slot)}
             onRemove={() => remove(slot)}
           />
         ))}
       </View>
+
+      {targetSlot ? (
+        <OutfitSuggestionStrip
+          title={`AI gợi ý ${TRYON_SLOT_LABEL[targetSlot].toLowerCase()} phối cùng`}
+          items={suggestions.data}
+          selectedId={outfit[slotKey(targetSlot)]?.id}
+          onPick={pickSuggested}
+          onMore={() => pickFor(targetSlot)}
+        />
+      ) : null}
 
       {__DEV__ && MOCK.tryon ? (
         <NoteBox>

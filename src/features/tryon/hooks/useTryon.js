@@ -27,6 +27,18 @@ export function useSuggestions(slot, excludeId) {
   });
 }
 
+// AI phối đồ: món hợp với món đang xem (áo → quần, quần → áo). Đầm đã đủ bộ → không gọi.
+// Gemini có thể mất vài giây; lỗi thì màn tự để ô trống như cũ (không chặn người dùng)
+export function useOutfitSuggestions(productId, targetSlot) {
+  return useQuery({
+    queryKey: tryonKeys.outfitSuggestions(productId),
+    queryFn: () => tryonApi.getOutfitSuggestions({ productId, targetSlot }),
+    enabled: !!productId && !!targetSlot,
+    staleTime: 5 * 60 * 1000, // mở lại phòng trong 5 phút không hỏi lại AI
+    retry: false,
+  });
+}
+
 // AI-02 tab Tất cả — cuộn vô hạn; trả { items, total }
 export function useSlotProducts(slot, excludeId) {
   return useInfiniteQuery({

@@ -8,6 +8,8 @@ const impl = MOCK.tryon ? mock : real; // API 97–99 thật; 96 tạm thay (xem
 export const tryonApi = {
   getQuota: impl.getQuota,
   getSuggestions: impl.getSuggestions,
+  getOutfitSuggestions: impl.getOutfitSuggestions, // AI phối đồ theo món đang xem
+
   getSlotProducts: impl.getSlotProducts,
   createTryonImage: impl.createTryonImage,
   getTryonImages: impl.getTryonImages,

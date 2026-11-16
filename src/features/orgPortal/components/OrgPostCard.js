@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelative } from "@/utils/format";
 import { CONTENT_STATUS } from "@/constants/community";
@@ -12,6 +12,10 @@ const COLLAPSED_LINES = 4;
 // Moderator gỡ do vi phạm (BE #250: danh sách /me/posts trả status + removalReason). Member không còn thấy bài;
 // tổ chức vẫn thấy kèm lý do, không sửa được (BE 409 POST_ALREADY_REMOVED)
 export const isPostRemoved = (p) => p?.status === CONTENT_STATUS.REMOVED;
+// Bài dính từ cần duyệt (BE #274): chỉ tổ chức thấy, Member chưa thấy, không báo người theo dõi tới khi được duyệt.
+// Vẫn sửa được (sửa xong BE kiểm lại; hết từ cần duyệt thì công khai ngay). Bị từ chối → REMOVED + lý do
+export const isPostPendingReview = (p) =>
+  p?.status === CONTENT_STATUS.PENDING_REVIEW;
 
 // active: nút Thích khi đã thích → tim đỏ, chữ đậm
 function Action({ icon, label, onPress, active = false }) {
@@ -46,8 +50,15 @@ export function OrgPostCard({
 }) {
   const [truncated, setTruncated] = useState(false);
   const removed = isPostRemoved(p);
+  const pending = isPostPendingReview(p);
   return (
-    <View style={[styles.card, removed && styles.cardRemoved]}>
+    <View
+      style={[
+        styles.card,
+        removed && styles.cardRemoved,
+        pending && styles.cardPending,
+      ]}
+    >
       <View style={styles.head}>
         <Avatar
           uri={org?.logoUrl}
@@ -86,6 +97,19 @@ export function OrgPostCard({
           </Text>
           <Text style={styles.muted}>
             Member không còn thấy bài này. Bài không sửa được.
+          </Text>
+        </View>
+      ) : null}
+
+      {pending ? (
+        <View style={styles.pendingBox}>
+          <View style={styles.removedHead}>
+            <Ionicons name="time-outline" size={16} color={tones.warning.fg} />
+            <Text style={styles.pendingTitle}>Đang chờ duyệt</Text>
+          </View>
+          <Text style={styles.muted}>
+            Bài có từ ngữ cần ReHome xem lại. Member chỉ thấy bài sau khi được
+            duyệt. Bạn có thể sửa nội dung, bài sẽ được kiểm tra lại.
           </Text>
         </View>
       ) : null}
@@ -156,6 +180,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   cardRemoved: { borderColor: colors.error },
+  cardPending: { borderColor: tones.warning.fg },
+  pendingBox: {
+    gap: 2,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.input,
+    backgroundColor: tones.warning.bg,
+  },
+  pendingTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: tones.warning.fg,
+  },
   removedBox: {
     gap: 2,
     marginHorizontal: spacing.md,
