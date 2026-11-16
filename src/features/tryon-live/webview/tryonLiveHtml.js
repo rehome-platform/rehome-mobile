@@ -182,9 +182,11 @@ export const TRYON_LIVE_HTML = `<!doctype html>
 
     function startRecording(stream, config) {
       chunks = [];
-      // VP8 nhẹ CPU hơn VP9 khi mã hoá bằng phần mềm trên điện thoại (WebRTC đang chạy cùng lúc)
-      // iOS (WKWebView) không ghi được WebM, chỉ MP4 -> để MP4 cuối danh sách cho iPhone
-      const mimeType = ["video/webm;codecs=vp8", "video/webm", "video/mp4"].find((t) =>
+      // Ưu tiên MP4 để video tải về / chia sẻ phát được trên cả iPhone lẫn Android (iOS không
+      // phát được WebM). iOS (WKWebView) chỉ ghi được MP4; WebView Android bản mới (Chrome 126+)
+      // cũng ghi được MP4. Máy nào không hỗ trợ MP4 thì rơi về WebM như trước - VP8 nhẹ CPU hơn
+      // VP9 khi mã hoá bằng phần mềm trên điện thoại (WebRTC đang chạy cùng lúc)
+      const mimeType = ["video/mp4", "video/webm;codecs=vp8", "video/webm"].find((t) =>
         MediaRecorder.isTypeSupported(t),
       );
       try {

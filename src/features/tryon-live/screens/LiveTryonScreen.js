@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCameraPermissions } from "expo-camera";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
@@ -24,8 +24,10 @@ import {
   useStartLiveTryon,
   useTryonLiveQuota,
 } from "../hooks/useTryonLive";
+import { useProductDetail } from "@/features/products/hooks/useProductDetail";
 import { TryonLiveWebview } from "../components/TryonLiveWebview";
 import { liveQuotaView, remainingText } from "../utils/liveQuota";
+import { TryonPreparing } from "../components/TryonPreparing";
 
 // Thử đồ AI real-time qua camera (Decart Lucy VTON). BE đã trừ quota + mint token ngay ở
 // POST /tryon/live/sessions (LiveTryOnServiceImpl) - màn hình này chỉ xin quyền camera, nhúng
@@ -36,10 +38,18 @@ import { liveQuotaView, remainingText } from "../utils/liveQuota";
 // 25s để chừa chỗ cho WebRTC retry vài nhịp (token-ttl-seconds BE mặc định 30s) - 15s hay bị
 // cắt ngang ngay lúc đang reconnect bình thường, nhất là lần đầu model Decart còn "lạnh".
 const CONNECT_TIMEOUT_MS = 25000;
+// Sau khi AI lên hình: giữ màn chuẩn bị thêm chừng này để hiện "100% · Bắt đầu!" rồi mờ dần (đồng hồ đếm ngược vẫn chạy)
+const READY_FLASH_MS = 950;
+
+// Lượt đã đổi bằng điểm (cộng thêm ngoài lượt của gói)
+function bonusLine(q) {
+  return q?.bonusCredits > 0 ? ` ${q.bonusCredits} lượt đã đổi bằng điểm.` : "";
+}
 
 export default function LiveTryonScreen() {
   const { productId } = useLocalSearchParams();
   const quota = useTryonLiveQuota();
+  const product = useProductDetail(productId).data; // chỉ để lấy ảnh món cho màn chuẩn bị, lỗi/chưa có thì bỏ qua
   const startSession = useStartLiveTryon();
   const completeSession = useCompleteLiveTryon();
   const [permission, requestPermission] = useCameraPermissions();
@@ -50,9 +60,11 @@ export default function LiveTryonScreen() {
   const [webReady, setWebReady] = useState(false); // WebView đã tải xong SDK Decart ("ready")
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [connectStatusText, setConnectStatusText] = useState("Đang kết nối AI...");
+  const [connectStatusText, setConnectStatusText] = useState("");
+  const [readyFlash, setReadyFlash] = useState(false); // đã 100%: màn chuẩn bị còn hiện thêm một nhịp
   const webviewRef = useRef(null);
   const countdownRef = useRef(null);
+  const readyFlashRef = useRef(null);
   const connectTimeoutRef = useRef(null);
   const sessionRef = useRef(null);
   const startedRef = useRef(false); // chặn bấm "Mở camera" 2 lần gọi startSession 2 lần
@@ -89,8 +101,25 @@ export default function LiveTryonScreen() {
     setPhase(q.canStart ? "permission" : "no-quota");
   }, [quota.data, phase]);
 
+  // Từ màn "Đổi điểm" quay lại: hỏi lại quota, có lượt rồi (vừa đổi điểm) thì cho thử tiếp ngay
+  const wentToPointsRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!wentToPointsRef.current) return;
+      wentToPointsRef.current = false;
+      quota.refetch().then((res) => {
+        if (res.data?.canStart) setPhase("permission");
+      });
+    }, [quota.refetch]),
+  );
+  const goRedeem = () => {
+    wentToPointsRef.current = true;
+    router.push({ pathname: "/points", params: { from: "tryon" } });
+  };
+
   useEffect(() => () => clearInterval(countdownRef.current), []);
   useEffect(() => () => clearTimeout(connectTimeoutRef.current), []);
+  useEffect(() => () => clearTimeout(readyFlashRef.current), []);
 
   const clearConnectTimeout = () => {
     clearTimeout(connectTimeoutRef.current);
@@ -148,7 +177,7 @@ export default function LiveTryonScreen() {
     }
     if (startedRef.current) return;
     startedRef.current = true;
-    setConnectStatusText("Đang kết nối AI...");
+    setConnectStatusText("");
     setPhase("connecting");
     connectTimeoutRef.current = setTimeout(
       () => failConnecting("Kết nối AI quá lâu, vui lòng thử lại."),
@@ -217,6 +246,9 @@ export default function LiveTryonScreen() {
     }
     if (event.type === "recording-started") {
       if (phase === "recording") return; // đã đếm ngược rồi - bỏ qua event trùng
+      setReadyFlash(true);
+      clearTimeout(readyFlashRef.current);
+      readyFlashRef.current = setTimeout(() => setReadyFlash(false), READY_FLASH_MS);
       startCountdown(session.maxDurationSeconds);
       return;
     }
@@ -277,6 +309,7 @@ export default function LiveTryonScreen() {
               onPress={() => router.push("/membership")}
             />
           ) : null}
+          <Button title="Đổi điểm lấy lượt" variant="secondary" onPress={goRedeem} style={styles.mt} />
           <Button
             title="Dùng Phối đồ AI thay thế"
             variant="secondary"
@@ -326,7 +359,7 @@ export default function LiveTryonScreen() {
           title="Thử đồ AI real-time"
           description={`Mở camera, thử món này trực tiếp tối đa ${
             q?.maxSeconds ?? 10
-          } giây. ${remainingText(q)}.`}
+          } giây. ${remainingText(q)}.${bonusLine(quota.data)}`}
         >
           <Button title="Mở camera" onPress={begin} />
           <Button title="Để sau" variant="secondary" onPress={close} style={styles.mt} />
@@ -342,6 +375,17 @@ export default function LiveTryonScreen() {
     <SafeAreaView style={styles.fill} edges={["top", "left", "right"]}>
       <TryonLiveWebview ref={webviewRef} onEvent={onEvent} />
 
+      {phase === "connecting" || readyFlash ? (
+        <TryonPreparing
+          hasSession={!!session}
+          webReady={webReady}
+          done={phase !== "connecting"}
+          statusText={connectStatusText}
+          productImage={product?.thumbnailUrl ?? product?.photos?.[0]?.url}
+          maxSeconds={session?.maxDurationSeconds ?? quota.data?.maxDurationSeconds ?? 10}
+        />
+      ) : null}
+
       {phase === "saving" ? null : (
         <Pressable
           onPress={onClosePress}
@@ -354,12 +398,10 @@ export default function LiveTryonScreen() {
         </Pressable>
       )}
 
-      {phase === "connecting" || phase === "saving" ? (
+      {phase === "saving" ? (
         <View style={styles.centerOverlay} pointerEvents="none">
           <ActivityIndicator color={colors.onPrimary} />
-          <Text style={styles.overlayText}>
-            {phase === "saving" ? "Đang lưu video..." : connectStatusText}
-          </Text>
+          <Text style={styles.overlayText}>Đang lưu video...</Text>
         </View>
       ) : null}
 

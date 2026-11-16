@@ -145,6 +145,25 @@ export async function createTryonImage(payload, { signal } = {}) {
   return toView(img);
 }
 
+// ---------- GET /tryon/quota ----------
+const MOCK_DAILY_LIMIT = 5;
+export async function getQuota() {
+  await delay(200);
+  const usedToday = images.filter((i) => dayjs(i.createdAt).isSame(dayjs(), "day")).length;
+  const remainingToday = Math.max(0, MOCK_DAILY_LIMIT - usedToday);
+  return {
+    limitPerDay: MOCK_DAILY_LIMIT,
+    usedToday,
+    remainingToday,
+    limitPerMonth: null,
+    usedThisMonth: usedToday,
+    remainingThisMonth: null,
+    canGenerate: remainingToday > 0,
+    bonusCredits: 0,
+    upsellTier: null,
+  };
+}
+
 // ---------- API 98 ----------
 export async function getTryonImages({ page = 0, size = 20 } = {}) {
   await delay();

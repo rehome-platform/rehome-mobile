@@ -12,10 +12,13 @@ const DAILY_LIMIT = TRYON_LIVE_FALLBACK.DAILY_LIMIT;
 
 export async function getQuota() {
   await delay();
+  // Cùng hình dạng với BE (đã qua tryonLiveApi.real.js)
   return {
-    dailyLimit: DAILY_LIMIT,
+    limitPerDay: DAILY_LIMIT,
     usedToday,
-    remaining: Math.max(0, DAILY_LIMIT - usedToday),
+    remainingToday: Math.max(0, DAILY_LIMIT - usedToday),
+    canStart: usedToday < DAILY_LIMIT,
+    bonusCredits: 0,
     maxDurationSeconds: TRYON_LIVE_FALLBACK.MAX_DURATION_SECONDS,
   };
 }
@@ -40,6 +43,12 @@ export async function startSession(productId) {
     maxDurationSeconds: TRYON_LIVE_FALLBACK.MAX_DURATION_SECONDS,
     remainingToday: Math.max(0, DAILY_LIMIT - usedToday),
   };
+}
+
+// Mock không quay được video thật nên lịch sử luôn rỗng (cùng hình dạng trang với BE)
+export async function getHistory({ page = 0, size = 20 } = {}) {
+  await delay(200);
+  return { content: [], page, size, totalElements: 0, totalPages: 0 };
 }
 
 export async function completeSession() {

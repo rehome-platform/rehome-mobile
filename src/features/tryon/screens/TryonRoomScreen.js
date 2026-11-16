@@ -28,7 +28,9 @@ import {
   TRYON_SLOT_LABEL,
 } from "@/constants/tryon";
 import { useProductDetail } from "@/features/products/hooks/useProductDetail";
+import { liveQuotaView, remainingText } from "@/features/tryon-live/utils/liveQuota";
 import { tryonApi } from "../api/tryonApi";
+import { useTryonQuota } from "../hooks/useTryon";
 import { useTryonDraftStore } from "../store/tryonDraftStore";
 import {
   buildTryonPayload,
@@ -76,17 +78,14 @@ export default function TryonRoomScreen() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useProductDetail(productId);
   const product = query.data;
-  const {
-    baseId,
-    modelType,
-    outfit,
-    open,
-    setModelType,
-    remove,
-    aiPickedId,
-    autoFill,
-    pickSuggested,
-  } = useTryonDraftStore();
+  // Lượt phối đồ AI còn lại theo gói (khách không gọi). Lỗi/đang tải → null: không chặn gì, BE vẫn là nơi quyết định
+  const quotaQuery = useTryonQuota({ enabled: isAuthed });
+  const quota = quotaQuery.data
+    ? liveQuotaView({ ...quotaQuery.data, canStart: quotaQuery.data.canGenerate })
+    : null;
+  const outOfQuota = quotaQuery.data?.canGenerate === false;
+  const { baseId, modelType, outfit, open, setModelType, remove } =
+    useTryonDraftStore();
   const job = useTryonJobStore((s) => s.job);
   const start = useTryonJobStore((s) => s.start);
   const cancel = useTryonJobStore((s) => s.cancel);
@@ -117,8 +116,10 @@ export default function TryonRoomScreen() {
   useFocusEffect(
     useCallback(() => {
       setWatching(true);
+      // Quay lại phòng (vd. từ bộ sưu tập / đổi điểm) → lấy lại số lượt mới nhất
+      if (isAuthed) quotaQuery.refetch();
       return () => setWatching(false);
-    }, []),
+    }, [isAuthed]),
   );
   useEffect(() => {
     if (job?.status === J.DONE && useTryonJobStore.getState().watching) {
@@ -203,7 +204,21 @@ export default function TryonRoomScreen() {
         }
       >
         <ErrorBox message={tryonErrorMessage(job.error)}>
-          {!incomplete && job.error?.code ? (
+          {noQuota ? (
+            <>
+              <Text style={styles.errorCode}>
+                Bạn có thể đổi điểm tích lũy lấy thêm lượt, rồi bấm "Thử lại".
+              </Text>
+              <Button
+                title="Đổi điểm lấy lượt"
+                variant="secondary"
+                onPress={() =>
+                  router.push({ pathname: "/points", params: { from: "tryon" } })
+                }
+              />
+            </>
+          ) : null}
+          {!incomplete && !noQuota && job.error?.code ? (
             <Text style={styles.errorCode}>
               Mã lỗi: {job.error.code}
               {job.error.status ? ` · ${job.error.status}` : ""}
@@ -280,12 +295,48 @@ export default function TryonRoomScreen() {
       contentStyle={styles.content}
       footer={
         <View style={styles.footer}>
-          <Button title="Tạo ảnh thử đồ" disabled={!ready} onPress={create} />
-          <Text style={styles.caption}>
-            {ready
-              ? "Ảnh chỉ để hình dung cách phối, không phản ánh size thật trên người bạn."
-              : `Cần đủ cả áo và quần mới tạo được ảnh. Hãy chọn thêm một chiếc ${TRYON_SLOT_LABEL[missing]?.toLowerCase() ?? "món"}.`}
-          </Text>
+          {quota ? (
+            <Text style={[styles.quota, outOfQuota && styles.quotaOut]}>
+              {remainingText(quota)}
+              {quotaQuery.data.bonusCredits > 0
+                ? ` · ${quotaQuery.data.bonusCredits} lượt đã đổi bằng điểm`
+                : ""}
+            </Text>
+          ) : null}
+          <Button
+            title="Tạo ảnh thử đồ"
+            disabled={!ready || outOfQuota}
+            onPress={create}
+          />
+          {outOfQuota ? (
+            <>
+              <Text style={styles.caption}>
+                Bạn đã hết lượt phối đồ AI. {quota?.resetText ?? ""} Có thể đổi điểm hoặc nâng cấp gói để có thêm lượt.
+              </Text>
+              <View style={styles.footerRow}>
+                <Button
+                  title="Đổi điểm lấy lượt"
+                  variant="text"
+                  onPress={() =>
+                    router.push({ pathname: "/points", params: { from: "tryon" } })
+                  }
+                  style={styles.flex1}
+                />
+                <Button
+                  title="Xem gói thành viên"
+                  variant="text"
+                  onPress={() => router.push("/membership")}
+                  style={styles.flex1}
+                />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.caption}>
+              {ready
+                ? "Mất khoảng 30 giây. Ảnh chỉ để hình dung, không phản ánh size thật trên người bạn."
+                : `Cần đủ cả áo và quần mới tạo được ảnh. Hãy chọn thêm một chiếc ${TRYON_SLOT_LABEL[missing]?.toLowerCase() ?? "món"}.`}
+            </Text>
+          )}
         </View>
       }
     >
@@ -361,6 +412,8 @@ const styles = StyleSheet.create({
   errorCode: { ...textStyles.caption, color: colors.textSecondary },
   flex2: { flex: 2 },
   muted: { ...textStyles.body, color: colors.textSecondary },
+  quota: { ...textStyles.label, color: colors.primary, textAlign: "center" },
+  quotaOut: { color: colors.error },
   caption: {
     ...textStyles.caption,
     color: colors.textSecondary,

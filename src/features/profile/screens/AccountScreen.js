@@ -11,6 +11,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { ORDER_TABS } from "@/constants/order";
 import { useOrderCount } from "@/features/orders/hooks/useOrders";
 import { WalletCard } from "@/features/wallet/components/WalletCard";
+import { PointsCard } from "@/features/points/components/PointsCard";
 import { RETURN_TABS } from "@/constants/returns";
 import { useReturnCount } from "@/features/returns/hooks/useReturns";
 import { useTryonJobStore } from "@/stores/tryonJobStore";
@@ -135,6 +136,7 @@ function MemberAccount() {
         />
       </Pressable>
       <WalletCard />
+      <PointsCard />
 
       <ListGroup>
         <ListItem
@@ -197,6 +199,11 @@ function MemberAccount() {
           title="Ảnh thử đồ đã lưu"
           badge={hasNewTryon ? "Mới" : undefined}
           onPress={() => router.push("/tryon/collection")}
+        />
+        <ListItem
+          icon="videocam-outline"
+          title="Video thử đồ AI"
+          onPress={() => router.push("/tryon-live/history")}
         />
         <ListItem
           icon="heart-outline"

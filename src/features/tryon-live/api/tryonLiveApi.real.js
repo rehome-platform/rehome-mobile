@@ -1,13 +1,25 @@
 import { api, unwrap } from "@/lib/api/client";
 
-// GET /tryon/live/quota
+// GET /tryon/live/quota. BE trả theo gói thành viên:
+//   { tier, tierName, limitPerDay (null = không giới hạn), usedToday, remainingToday, limitPerMonth, ...,
+//     maxSeconds, canStart (true cả khi hết quota gói mà còn lượt đã đổi bằng điểm), bonusCredits, upsellTier }
+// Màn hình dùng chung tên `maxDurationSeconds` với phiên (POST /sessions) nên đổi tên ở đây, giống mock.
 export async function getQuota() {
-  return unwrap(await api.get("/tryon/live/quota"));
+  const q = unwrap(await api.get("/tryon/live/quota"));
+  return { ...q, maxDurationSeconds: q.maxSeconds };
 }
 
 // POST /tryon/live/sessions - trừ quota ngay tại BE, trả client token Decart cho WebView dùng
 export async function startSession(productId) {
   return unwrap(await api.post("/tryon/live/sessions", { productId }));
+}
+
+// GET /tryon/live/sessions - video đã quay xong của chính Member, mới nhất trước.
+// Trang: { content: [{ sessionId, productId, productName, productThumbnailUrl, videoUrl,
+//   actualDurationSeconds, createdAt, completedAt }], page, size, totalElements, totalPages }
+export async function getHistory({ page = 0, size = 20 } = {}) {
+  const p = unwrap(await api.get("/tryon/live/sessions", { params: { page, size } }));
+  return { ...p, content: p.content ?? [] };
 }
 
 // PATCH /tryon/live/sessions/{id}/complete - chỉ dùng khi KHÔNG có video (vd. mất kết nối giữa chừng),

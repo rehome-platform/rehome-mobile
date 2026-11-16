@@ -16,6 +16,13 @@ const toSlotItem = (slot) => (p) => ({
   status: p.status ?? PRODUCT_STATUS.ON_SALE,
 });
 
+// GET /tryon/quota — hạn mức phối đồ AI (ảnh) theo gói, cùng dạng với /tryon/live/quota:
+// { tier, tierName, limitPerDay, usedToday, remainingToday, limitPerMonth, usedThisMonth,
+//   remainingThisMonth, canGenerate (true cả khi hết lượt gói mà còn lượt đổi điểm), bonusCredits, upsellTier }
+export async function getQuota() {
+  return unwrap(await api.get("/tryon/quota"));
+}
+
 // AI-02 tab Tất cả — GET /products?tryonSlot=, mới lên sàn trước
 export async function getSlotProducts({ slot, page = 0, size = 20 }) {
   const p = unwrap(
