@@ -149,7 +149,12 @@ export function useSendMessage(id) {
         list.map((m) => (m.id === tempId ? msg : m)),
       ),
     onError: (e, { tempId }) => {
-      if (e?.code === ERROR_CODES.MESSAGE_RATE_LIMITED) showToast(e.message);
+      // Gửi quá nhanh / tin có từ ngữ bị cấm (BE #274, không lưu tin) → báo lý do; tin hiện "Chưa gửi được"
+      if (
+        e?.code === ERROR_CODES.MESSAGE_RATE_LIMITED ||
+        e?.code === ERROR_CODES.CONTENT_VIOLATION
+      )
+        showToast(e.message);
       patchMessages(qc, id, (list) =>
         list.map((m) =>
           m.id === tempId ? { ...m, pending: false, failed: true } : m,

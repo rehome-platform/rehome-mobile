@@ -2,7 +2,11 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts, spacing, textStyles } from "@/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelative } from "@/utils/format";
-import { COMMENT_AUTHOR_TYPE, CONTENT_STATUS } from "@/constants/community";
+import {
+  COMMENT_AUTHOR_TYPE,
+  CONTENT_REVIEW_STATUS,
+  CONTENT_STATUS,
+} from "@/constants/community";
 
 // Một bình luận (CD-02). Của mình → tên "Bạn". Câu trả lời (parentId) thụt vào 1 cấp.
 // Bị Moderator ẩn (REMOVED, content = null) → chữ mờ, không trả lời được. onReply có → hiện "Trả lời"
@@ -30,6 +34,14 @@ export function CommentItem({ comment: c, onReply }) {
         ) : (
           <Text style={styles.text}>{c.content}</Text>
         )}
+        {/* BE #274: bình luận có từ cần xem lại vẫn hiện ngay, Moderator duyệt sau. Chỉ người viết thấy dòng này */}
+        {!removed &&
+        c.isMine &&
+        c.reviewStatus === CONTENT_REVIEW_STATUS.PENDING_REVIEW ? (
+          <Text style={styles.pending}>
+            Đang chờ ReHome xem lại — có thể bị ẩn nếu vi phạm
+          </Text>
+        ) : null}
         {onReply && !removed ? (
           <Text
             style={styles.replyLink}
@@ -73,6 +85,7 @@ const styles = StyleSheet.create({
   },
   time: { ...textStyles.caption, color: colors.textSecondary },
   text: { ...textStyles.body, color: colors.text },
+  pending: { ...textStyles.caption, fontStyle: "italic", color: colors.textSecondary },
   replyLink: {
     alignSelf: "flex-start",
     marginTop: spacing.xs,

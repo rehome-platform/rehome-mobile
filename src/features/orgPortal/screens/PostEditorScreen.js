@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { showToast } from "@/utils/toast";
+import { CONTENT_STATUS } from "@/constants/community";
 import { postSchema } from "@/features/orgPortal/schemas";
 import {
   useCreatePost,
@@ -51,7 +52,16 @@ function PostEditor({ title, submitTitle, defaultValues, mutation, done }) {
 
   const onSubmit = handleSubmit((values) =>
     mutation.mutate(values, {
-      onSuccess: () => {
+      onSuccess: (res) => {
+        // BE #274: bài có từ cần duyệt → PENDING_REVIEW, Member chưa thấy. Nói rõ để tổ chức không tưởng đã đăng
+        if (res?.status === CONTENT_STATUS.PENDING_REVIEW) {
+          Alert.alert(
+            "Bài viết đang chờ duyệt",
+            "Bài có từ ngữ cần ReHome xem lại. Member sẽ thấy bài sau khi được duyệt; bạn vẫn sửa được nội dung trong lúc chờ.",
+            [{ text: "Đã hiểu", onPress: leave }],
+          );
+          return;
+        }
         showToast(done);
         leave();
       },
