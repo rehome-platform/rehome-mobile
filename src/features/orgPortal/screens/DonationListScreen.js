@@ -1,12 +1,16 @@
+import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Linking,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -17,7 +21,13 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { NoteBox } from "@/components/ui/NoteBox";
-import { DONATION_STATUS, DONATION_STATUS_LABEL } from "@/constants/donation";
+import {
+  DONATION_SOURCE,
+  DONATION_STATUS,
+  DONATION_STATUS_LABEL,
+} from "@/constants/donation";
+import { PhotoViewer } from "@/components/ui/PhotoViewer";
+import { parseDonationNote } from "@/features/orgPortal/utils/donationNote";
 import {
   campaignTitleOf,
   mapsUrl,
@@ -30,8 +40,16 @@ const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/org/campaigns");
 const fmt = (t, pattern = "DD/MM · HH:mm") => dayjs(t).format(pattern);
 
-function DonationCard({ donation: d }) {
+// Một lượt quyên góp:
+// - Món ký gửi (Member quyên góp món đang ký gửi): ảnh món + "Món ký gửi · SKU" + tên món (BE product)
+// - Quyên góp tại quầy: ảnh hiện vật web Moderator chụp — nằm NHÚNG trong ghi chú (markdown) → tách ra hiện ảnh thật
+// Bấm ảnh → xem phóng to
+function DonationCard({ donation: d, onOpenPhotos }) {
   const handedOver = d.status === DONATION_STATUS.HANDED_OVER;
+  const consigned =
+    d.source === DONATION_SOURCE.CONSIGNED_ITEM || !!d.product;
+  const { text, photos } = parseDonationNote(d.note);
+  const productPhoto = d.product?.photoUrl;
   return (
     <View style={styles.card}>
       <View style={styles.cardHead}>
@@ -45,7 +63,50 @@ function DonationCard({ donation: d }) {
           {DONATION_STATUS_LABEL[d.status]?.toUpperCase()}
         </Text>
       </View>
-      {d.note ? <Text style={styles.note}>"{d.note}"</Text> : null}
+
+      {consigned ? (
+        <View style={styles.product}>
+          <Pressable
+            onPress={() => productPhoto && onOpenPhotos([productPhoto], 0)}
+            disabled={!productPhoto}
+            accessibilityRole="imagebutton"
+            accessibilityLabel="Xem ảnh món"
+            style={styles.productPhoto}
+          >
+            {productPhoto ? (
+              <Image source={{ uri: productPhoto }} style={StyleSheet.absoluteFill} />
+            ) : (
+              <Ionicons name="shirt-outline" size={24} color={colors.textSecondary} />
+            )}
+          </Pressable>
+          <View style={styles.flex}>
+            <Text style={styles.consignedTag}>
+              MÓN KÝ GỬI{d.product?.sku ? ` · SKU ${d.product.sku}` : ""}
+            </Text>
+            <Text style={styles.productName} numberOfLines={2}>
+              {d.product?.name ?? d.productName ?? "Món ký gửi"}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
+      {text ? <Text style={styles.note}>"{text}"</Text> : null}
+
+      {photos.length ? (
+        <View style={styles.photos}>
+          {photos.map((url, i) => (
+            <Pressable
+              key={`${url}-${i}`}
+              onPress={() => onOpenPhotos(photos, i)}
+              accessibilityRole="imagebutton"
+              accessibilityLabel={`Ảnh hiện vật ${i + 1}`}
+              style={styles.photo}
+            >
+              <Image source={{ uri: url }} style={StyleSheet.absoluteFill} />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       <Text style={styles.meta}>
         Ghi nhận {fmt(d.createdAt)}
         {d.recordedBy ? ` bởi ${d.recordedBy}` : ""}
@@ -70,6 +131,8 @@ export default function DonationListScreen() {
 
   const warehouse = campaign.data?.warehouses.find((w) => w.id === warehouseId);
   const donations = query.data ?? [];
+  // Ảnh đang xem phóng to: { photos, index } | null
+  const [viewer, setViewer] = useState(null);
 
   let empty;
   if (query.isPending) {
@@ -124,13 +187,18 @@ export default function DonationListScreen() {
       <FlatList
         data={donations}
         keyExtractor={(d) => d.id}
-        renderItem={({ item }) => <DonationCard donation={item} />}
+        renderItem={({ item }) => (
+          <DonationCard
+            donation={item}
+            onOpenPhotos={(photos, index) => setViewer({ photos, index })}
+          />
+        )}
         ItemSeparatorComponent={() => <View style={styles.gap} />}
         ListHeaderComponent={
           donations.length ? (
             <View style={styles.listHead}>
               <Text style={styles.listTitle}>
-                GHI NHẬN TẠI QUẦY · {donations.length} ĐƠN
+                LƯỢT QUYÊN GÓP · {donations.length}
               </Text>
               <Text style={styles.muted}>mới nhất ở trên</Text>
             </View>
@@ -153,6 +221,11 @@ export default function DonationListScreen() {
             colors={[colors.primary]}
           />
         }
+      />
+      <PhotoViewer
+        photos={viewer?.photos ?? []}
+        index={viewer?.index ?? null}
+        onClose={() => setViewer(null)}
       />
     </Screen>
   );
@@ -214,6 +287,27 @@ const styles = StyleSheet.create({
   },
   chipDone: { borderColor: colors.neutral, color: colors.textSecondary },
   note: { ...textStyles.body, color: colors.text },
+  flex: { flex: 1 },
+  product: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  productPhoto: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: radius.input,
+    backgroundColor: colors.neutral,
+  },
+  consignedTag: { ...textStyles.label, fontFamily: fonts.semibold, color: colors.primary },
+  productName: { ...textStyles.body, fontFamily: fonts.semibold, color: colors.text },
+  photos: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  photo: {
+    width: 64,
+    height: 64,
+    overflow: "hidden",
+    borderRadius: radius.input,
+    backgroundColor: colors.neutral,
+  },
   meta: { ...textStyles.caption, color: colors.textSecondary },
   footNote: { marginTop: spacing.lg },
 });
