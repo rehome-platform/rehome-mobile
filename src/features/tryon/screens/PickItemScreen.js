@@ -20,7 +20,7 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { TRYON_SLOT_LABEL } from "@/constants/tryon";
 import { ProductCard } from "@/features/products/components/ProductCard";
 import { useProductDetail } from "@/features/products/hooks/useProductDetail";
-import { useSlotProducts, useSuggestions } from "../hooks/useTryon";
+import { useOutfitSuggestions, useSlotProducts } from "../hooks/useTryon";
 import { useTryonDraftStore } from "../store/tryonDraftStore";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
@@ -31,7 +31,8 @@ export default function PickItemScreen() {
   const { width } = useWindowDimensions();
   const cardWidth = (width - spacing.lg * 2 - spacing.md) / 2;
   const base = useProductDetail(excludeId);
-  const suggest = useSuggestions(slot, excludeId);
+  // Tab Gợi ý: AI phối đồ theo món đang xem (cùng nguồn với dải gợi ý ở phòng thử đồ → mở ra là có ngay)
+  const suggest = useOutfitSuggestions(excludeId, slot);
   const all = useSlotProducts(slot, excludeId);
   const pick = useTryonDraftStore((s) => s.pick);
   const [tab, setTab] = useState("SUGGEST");
@@ -39,7 +40,9 @@ export default function PickItemScreen() {
   const label = TRYON_SLOT_LABEL[slot]?.toLowerCase() ?? "món";
 
   const suggestions = suggest.data ?? [];
-  const noSuggestion = suggest.isSuccess && suggestions.length === 0;
+  // Không có gợi ý, hoặc AI lỗi / chậm quá → coi như không có, mở tab Tất cả để người dùng tự chọn
+  const noSuggestion =
+    (suggest.isSuccess && suggestions.length === 0) || suggest.isError;
 
   // Gợi ý rỗng → tự mở tab Tất cả (PHASE6_GUIDE AI-02)
   useEffect(() => {
@@ -84,8 +87,8 @@ export default function PickItemScreen() {
     <View style={styles.headerBlock}>
       {tab === "SUGGEST" ? (
         <Text style={styles.caption}>
-          Hệ thống chọn theo tông màu và kiểu dáng hợp với món bạn đang xem. Bạn
-          vẫn đổi sang tab Tất cả để tự chọn.
+          AI chọn theo màu sắc và phong cách hợp với món bạn đang xem, ưu tiên
+          món cùng địa điểm ký gửi. Bạn vẫn đổi sang tab Tất cả để tự chọn.
         </Text>
       ) : noSuggestion ? (
         <NoteBox>

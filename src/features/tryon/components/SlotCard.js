@@ -1,20 +1,40 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Button } from "@/components/ui/Button";
 import { formatVnd } from "@/utils/money";
 import { TRYON_SLOT_LABEL } from "@/constants/tryon";
 
-// Một ô của bộ đồ (AI-01): trống → "Chọn …"; món đang xem → khoá; món đã chọn → ✕ + "Đổi món khác"
-export function SlotCard({ slot, item, locked, onPick, onRemove }) {
+// Một ô của bộ đồ (AI-01): trống → "Chọn …"; món đang xem → khoá; món đã chọn → ✕ + "Đổi món khác".
+// aiPick: món do AI gợi ý tự điền (nhãn "AI gợi ý" để người dùng biết không phải họ chọn).
+// aiLoading: ô trống trong lúc AI đang tìm món hợp
+export function SlotCard({ slot, item, locked, aiPick, aiLoading, onPick, onRemove }) {
   const label = TRYON_SLOT_LABEL[slot];
   if (!item) {
     return (
       <View style={[styles.card, styles.empty]}>
         <Text style={styles.slot}>SLOT {label.toUpperCase()}</Text>
         <View style={styles.emptyBody}>
-          <Ionicons name="add" size={28} color={colors.textSecondary} />
-          <Text style={styles.muted}>Chưa chọn</Text>
+          {aiLoading ? (
+            <>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={[styles.muted, styles.center]}>
+                AI đang tìm {label.toLowerCase()} hợp…
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="add" size={28} color={colors.textSecondary} />
+              <Text style={styles.muted}>Chưa chọn</Text>
+            </>
+          )}
         </View>
         <Button
           title={`Chọn ${label.toLowerCase()}`}
@@ -58,6 +78,12 @@ export function SlotCard({ slot, item, locked, onPick, onRemove }) {
         {item.name}
       </Text>
       <Text style={styles.muted}>{formatVnd(item.currentPrice)}</Text>
+      {aiPick && !locked ? (
+        <View style={styles.aiTag}>
+          <Ionicons name="sparkles" size={12} color={colors.primary} />
+          <Text style={styles.aiTagText}>AI gợi ý</Text>
+        </View>
+      ) : null}
       {locked ? (
         <Text style={styles.tag}>MÓN BẠN ĐANG XEM</Text>
       ) : (
@@ -119,4 +145,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   btn: { minHeight: 36, paddingHorizontal: spacing.sm },
+  center: { textAlign: "center" },
+  aiTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.highlight,
+  },
+  aiTagText: { ...textStyles.label, fontFamily: fonts.semibold, color: colors.primary },
 });

@@ -89,6 +89,11 @@ export async function getSuggestions({ slot, excludeProductId }) {
   return mockOnSaleBySlot(slot, excludeProductId).slice(0, 6);
 }
 
+// AI phối đồ (bản thật: GET /tryon/outfit-suggestions) — mock dùng lại gợi ý theo ô
+export async function getOutfitSuggestions({ productId, targetSlot }) {
+  return getSuggestions({ slot: targetSlot, excludeProductId: productId });
+}
+
 // Tab "Tất cả" (PHASE6_GUIDE 0.5 A7) — bản thật dùng API 49
 export async function getSlotProducts({
   slot,
