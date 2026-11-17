@@ -15,7 +15,6 @@ import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
-import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import {
   INVALID_RETURN_CHOICE as C,
@@ -75,7 +74,7 @@ export default function PickupChoiceScreen() {
   const left = useSecondsLeft(
     r?.pickupDeadline ? toDate(r.pickupDeadline).valueOf() : 0,
   );
-  const [choice, setChoice] = useState(C.WAREHOUSE_PICKUP); // chỉ lựa chọn này dùng được (0.4 #8)
+  const [choice, setChoice] = useState(C.WAREHOUSE_PICKUP); // lựa chọn duy nhất (lead chốt 18/11)
   const choose = useReturnMutation((c) =>
     returnsApi.chooseInvalidReturn(id, c),
   );
@@ -181,7 +180,7 @@ export default function PickupChoiceScreen() {
       ) : (
         <>
           <View style={styles.gapSm}>
-            <Text style={styles.heading}>Bạn muốn nhận lại bằng cách nào?</Text>
+            <Text style={styles.heading}>Cách nhận lại hàng</Text>
             <Text style={styles.muted}>
               Món này vẫn là của bạn. ReHome giữ hộ tới {fmt(r.pickupDeadline)}.
             </Text>
@@ -217,20 +216,8 @@ export default function PickupChoiceScreen() {
             ) : null}
           </OptionCard>
 
-          {/* [CHỜ BE câu 9 + LEAD] chưa có API trả phí gửi lại → mờ (0.4 #8) */}
-          <OptionCard
-            title="ReHome gửi lại cho bạn"
-            desc="Giao về địa chỉ cũ trong 2–3 ngày. Bạn trả phí vận chuyển."
-            tag="Sắp có"
-            disabled
-          >
-            <View style={styles.feeRow}>
-              <Text style={styles.muted}>Phí gửi lại</Text>
-              <Text style={styles.strong}>
-                {r.shipBackFee != null ? formatVnd(r.shipBackFee) : "—"}
-              </Text>
-            </View>
-          </OptionCard>
+          {/* Lead chốt 18/11: KHÔNG làm "ReHome gửi lại" (trả phí ship) trong phạm vi đồ án → chỉ còn đến lấy.
+              BE vẫn nhận SHIP_BACK nhưng chỉ lưu lựa chọn, không thu phí / tạo vận đơn → app không cho chọn */}
 
           <View style={styles.warn}>
             <Text style={styles.strong}>
@@ -331,7 +318,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.background,
   },
-  feeRow: { flexDirection: "row", justifyContent: "space-between" },
   box: {
     gap: spacing.xs,
     padding: spacing.md,

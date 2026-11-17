@@ -1,3 +1,11 @@
+// [CHỜ BE — sửa / huỷ biên nhận, lead chốt 18/11] ConsignmentReceipt.status. BE chưa trả status →
+// suy từ confirmedAt như cũ; VOIDED = đã huỷ (giữ làm chứng cứ), ReHome lập biên nhận mới thay
+export const RECEIPT_STATUS = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  VOIDED: "VOIDED",
+};
+
 // Theo enum BE (đã đối chiếu entity 17/10): ConsignmentFormStatus, ProductStatus, EndOfTermChoice
 export const FORM_STATUS = {
   DRAFT: "DRAFT", // nháp ("Lưu món" ở Ký gửi món mới), chưa chọn kho, chưa gửi duyệt

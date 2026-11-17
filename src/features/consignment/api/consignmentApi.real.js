@@ -141,9 +141,15 @@ export async function downloadReceiptPdf(receipt) {
   }
 }
 
-// API 20 → { id, confirmedAt, pdfAvailable }
-export async function confirmReceipt(id) {
-  return unwrap(await api.post(`/consignment-receipts/${id}/confirm`));
+// API 20 → { id, confirmedAt, pdfAvailable }. version = bản Member đang xem: Moderator vừa sửa (lệch) →
+// 409 RECEIPT_CHANGED, không xác nhận. [CHỜ BE] BE chưa có version thì không gửi body, chạy như cũ
+export async function confirmReceipt(id, version) {
+  return unwrap(
+    await api.post(
+      `/consignment-receipts/${id}/confirm`,
+      version != null ? { version } : undefined,
+    ),
+  );
 }
 
 // API 21 — pendingDecision: true = chỉ hàng đang chờ chọn cách xử lý cuối kỳ
