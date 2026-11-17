@@ -21,7 +21,8 @@ export const ACTIVE_WITHDRAWAL_STATUSES = [
   WITHDRAWAL_STATUS.PENDING_PICKUP,
 ];
 
-// enum WithdrawalFeePaymentMethod của BE (65d8475): chọn ĐÚNG 1 cách, không chia ví + MoMo (đã bỏ MIXED)
+// enum WithdrawalFeePaymentMethod của BE (65d8475): chọn ĐÚNG 1 cách (đã bỏ MIXED).
+// MOMO chỉ giữ để hiện đúng yêu cầu cũ — không cho chọn nữa (bỏ MoMo 17/11)
 export const FEE_PAYMENT_METHOD = {
   WALLET: "WALLET",
   MOMO: "MOMO",

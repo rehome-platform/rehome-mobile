@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { MOCK } from "@/config/env";
 import {
+  DEFAULT_GATEWAY,
   ORDER_STATUS,
   PAYMENT_METHOD,
   PAYMENT_METHOD_LABEL,
@@ -104,9 +105,9 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const [paying, setPaying] = useState(false);
   const [checking, setChecking] = useState(false); // chỉ quay vòng khi người dùng bấm "Kiểm tra lại"
   const storeMethod = useCheckoutStore((s) => s.paymentMethod);
-  // Mở từ checkout → theo lựa chọn ở BR-08; mở từ Đơn hàng → MoMo, đổi được ngay tại đây
+  // Mở từ checkout → theo lựa chọn ở BR-08; mở từ Đơn hàng → VNPay (đã bỏ MoMo 17/11), đổi được ngay tại đây
   const [method, setMethod] = useState(
-    fromStore ? storeMethod : PAYMENT_METHOD.MOMO,
+    fromStore ? storeMethod : DEFAULT_GATEWAY,
   );
   const [paidBy, setPaidBy] = useState(null); // hiện "Đã thanh toán bằng Ví ReHome" ở màn kết quả
   const [gateway, setGateway] = useState(null); // MOMO / VNPAY đã mở → nhờ BE hỏi lại cổng đó khi kiểm tra
@@ -267,7 +268,7 @@ function PaymentView({ initialOrders, fromStore = false }) {
     } catch (e) {
       showToast(e.message);
       if (e.code === ERROR_CODES.INSUFFICIENT_BALANCE)
-        setMethod(PAYMENT_METHOD.MOMO); // số dư vừa đổi
+        setMethod(DEFAULT_GATEWAY); // số dư vừa đổi → trả qua VNPay
     } finally {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       setPaying(false);
@@ -376,8 +377,8 @@ function PaymentView({ initialOrders, fromStore = false }) {
       </View>
 
       <NoteBox>
-        Trả xong trên trang MoMo/VNPay, bấm Back để quay lại ReHome. Màn hình
-        chưa đổi? Bấm "Kiểm tra lại".
+        Trả xong trên trang VNPay, bấm Back để quay lại ReHome. Màn hình chưa
+        đổi? Bấm "Kiểm tra lại".
       </NoteBox>
 
       {__DEV__ && MOCK.payment ? (
@@ -385,12 +386,12 @@ function PaymentView({ initialOrders, fromStore = false }) {
           <View style={styles.mock}>
             <Text style={styles.mockTitle}>Mock (chỉ bản dev)</Text>
             <Button
-              title="MoMo thành công"
+              title="Cổng thanh toán: thành công"
               variant="text"
               onPress={() => mockPay(true)}
             />
             <Button
-              title="MoMo thất bại"
+              title="Cổng thanh toán: thất bại"
               variant="text"
               onPress={() => mockPay(false)}
             />

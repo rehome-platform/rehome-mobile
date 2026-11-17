@@ -17,11 +17,11 @@ export const MOCK = {
   productDetail: false, // API 50 GET /products/{id} — đã có (BE 868d933)
   cart: false, // API 51–53 thật — đi CÙNG MOCK.products (id món phải là id thật)
   orders: false, // API 59 POST /orders thật (BE 868d933)
-  payment: false, // Ví (POST /orders/pay) + MoMo/VNPay sandbox thật (BE 868d933)
+  payment: false, // Ví (POST /orders/pay) + VNPay sandbox thật (BE 868d933). Đã bỏ MoMo 17/11
   orderList: false, // API 62–67 thật: danh sách, chi tiết, theo dõi, huỷ, xác nhận, đánh giá (BE 868d933)
   wallet: false, // API 73–78 + /wallet/config thật (BE 868d933)
   returns: false, // BE 51c2027: ReturnRequestController (Phase 5)
-  withdrawals: false, // API 90–95 thật: rút lại hàng + hàng xuống cấp (BE 65d8475). Phí: WALLET | MOMO | VNPAY
+  withdrawals: false, // API 90–95 thật: rút lại hàng + hàng xuống cấp (BE 65d8475). Phí: WALLET | VNPAY
   tryon: false, // API 96–99 thật: gợi ý, lọc /products?tryonSlot, GET /tryon/images/{id}
   community: false, // API 100–109 thật (BE edff4ae): tổ chức, chiến dịch, bảng tin, thích, bình luận, theo dõi, báo cáo
   chat: false, // API 110–113 thật, cả Member và Tổ chức: tin cuối, isMine, GET /conversations/{id}

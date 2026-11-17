@@ -54,7 +54,7 @@ const STEPS = (warehouse, fee) => [
     ? [
         [
           `Trả phí ${formatVnd(fee)} sau khi được duyệt`,
-          "Bằng ví ReHome, MoMo hoặc VNPay — trả trước hạn ghi trong yêu cầu",
+          "Bằng ví ReHome hoặc VNPay — trả trước hạn ghi trong yêu cầu",
         ],
       ]
     : []),
@@ -111,7 +111,7 @@ async function loadProduct(productId) {
 }
 
 // KG-13 / KG-14 · Rút lại hàng ký gửi (/withdrawals/new?productId=). Phí (nếu có) trả bằng ĐÚNG 1 cách:
-// Ví ReHome (trừ ngay) · MoMo / VNPay (mở trang thanh toán, quay lại app thì hỏi BE feePaid)
+// Ví ReHome (trừ ngay) · VNPay (mở trang thanh toán, quay lại app thì hỏi BE feePaid). Đã bỏ MoMo 17/11
 export default function WithdrawalNewScreen() {
   const { productId } = useLocalSearchParams();
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
