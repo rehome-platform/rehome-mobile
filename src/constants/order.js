@@ -58,8 +58,10 @@ export const CANCEL_REASON_LABEL = {
   CARRIER_FAILED: "GHN không giao được, kiện hàng đã trả về địa điểm ký gửi.",
 };
 
+// 17/11: BỎ MoMo (sandbox MoMo không còn hỗ trợ) — chỉ còn VNPay + Ví ReHome để TRẢ TIỀN.
+// Giữ MOMO trong enum + nhãn CHỈ để hiện đúng đơn / giao dịch cũ đã trả bằng MoMo (chi tiết đơn, lịch sử mua gói)
 export const PAYMENT_METHOD = {
-  MOMO: "MOMO",
+  MOMO: "MOMO", // chỉ đọc dữ liệu cũ — không cho chọn
   VNPAY: "VNPAY",
   WALLET: "WALLET",
 };
@@ -68,6 +70,8 @@ export const PAYMENT_METHOD_LABEL = {
   VNPAY: "VNPay",
   WALLET: "Ví ReHome",
 };
+// Cổng thanh toán mặc định khi không trả bằng ví (ví thiếu tiền, mở đơn từ danh sách…)
+export const DEFAULT_GATEWAY = PAYMENT_METHOD.VNPAY;
 
 // API 52: BE trả unavailableReason = tên ProductStatus của món khi món không còn ON_SALE (đọc code 19/10)
 export const CART_UNAVAILABLE_LABEL = {

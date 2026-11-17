@@ -24,7 +24,11 @@ import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
 import { formatVnd } from "@/utils/money";
 import { ERROR_CODES } from "@/constants/errorCodes";
-import { PAYMENT_METHOD, PAYMENT_METHOD_LABEL } from "@/constants/order";
+import {
+  DEFAULT_GATEWAY,
+  PAYMENT_METHOD,
+  PAYMENT_METHOD_LABEL,
+} from "@/constants/order";
 import {
   BILLING_CYCLE,
   BILLING_CYCLE_LABEL,
@@ -116,7 +120,7 @@ export default function SubscribeScreen() {
 function SubscribeBody({ plan, cycle, price, me }) {
   const queryClient = useQueryClient();
   const wallet = useWallet();
-  const [method, setMethod] = useState(PAYMENT_METHOD.WALLET); // không đủ số dư → PaymentMethodPicker tự đổi sang MoMo
+  const [method, setMethod] = useState(PAYMENT_METHOD.WALLET); // không đủ số dư → PaymentMethodPicker tự đổi sang VNPay
   const [phase, setPhase] = useState("FORM");
   const [result, setResult] = useState(null); // response subscribe (thành công / chờ cổng)
   const [failure, setFailure] = useState(null); // ApiError
@@ -208,11 +212,11 @@ function SubscribeBody({ plan, cycle, price, me }) {
       if (res.payUrl) await Linking.openURL(res.payUrl);
     } catch (e) {
       if (e.code === ERROR_CODES.INSUFFICIENT_BALANCE) {
-        // Số dư vừa đổi (vd đang khoá cho yêu cầu rút) → chuyển MoMo, ở lại màn
-        setMethod(PAYMENT_METHOD.MOMO);
+        // Số dư vừa đổi (vd đang khoá cho yêu cầu rút) → chuyển VNPay, ở lại màn (đã bỏ MoMo 17/11)
+        setMethod(DEFAULT_GATEWAY);
         setPhase("FORM");
         wallet.refetch();
-        return showToast("Ví ReHome không đủ số dư, chọn MoMo hoặc VNPay");
+        return showToast("Ví ReHome không đủ số dư, hãy trả qua VNPay");
       }
       setFailure(e);
       setPhase("FAILED");

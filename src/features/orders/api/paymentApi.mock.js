@@ -1,14 +1,14 @@
-// Mock API 60 [CHỜ BE]. MOMO: chưa có MoMo thật → không có payUrl, BR-09 dùng nút Mock.
+// Mock API 60. Cổng (VNPay): không có payUrl thật → BR-09 dùng nút Mock. (Đã bỏ MoMo 17/11)
 // WALLET: trừ ví + đơn PAID ngay trong một lần gọi (như contract API 60)
 import { ApiError } from "@/lib/api/errors";
-import { PAYMENT_METHOD } from "@/constants/order";
+import { DEFAULT_GATEWAY, PAYMENT_METHOD } from "@/constants/order";
 import { mockPayWithWallet } from "@/features/wallet/api/walletApi.mock";
 import { mockMarkPaid, mockPendingOrders } from "./ordersApi.mock";
 
 const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms));
 
 // Nhận MẢNG orderIds (PHASE3_GUIDE 0.4 #6) — màn hình không cần biết BE trả gộp hay từng đơn
-export async function startPayment({ orderIds, method = PAYMENT_METHOD.MOMO }) {
+export async function startPayment({ orderIds, method = DEFAULT_GATEWAY }) {
   await delay();
   if (!orderIds?.length) {
     throw new ApiError({
