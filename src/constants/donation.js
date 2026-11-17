@@ -2,10 +2,14 @@
 export const DONATION_STATUS = {
   PENDING_PICKUP: "PENDING_PICKUP", // đồ đang nằm ở kho, chờ tổ chức tới lấy
   HANDED_OVER: "HANDED_OVER", // đã bàn giao cho tổ chức
+  // [CHỜ BE — đặc tả 17/11] chiến dịch bị ẩn / tổ chức bị khoá → ReHome tạm giữ, Moderator chuyển sang chiến dịch khác.
+  // Không bàn giao được cho tổ chức cũ
+  ON_HOLD: "ON_HOLD",
 };
 export const DONATION_STATUS_LABEL = {
   PENDING_PICKUP: "Chờ lấy",
   HANDED_OVER: "Đã bàn giao",
+  ON_HOLD: "Tạm giữ",
 };
 // enum DonationSource (BE 1a27081): DIRECT = Moderator ghi nhận tại quầy · CONSIGNED_ITEM = Member quyên góp món
 // đang ký gửi (kèm product { id, name, sku, photoUrl })

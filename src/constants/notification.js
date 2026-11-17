@@ -14,7 +14,10 @@ export const NOTIFICATION_TYPE = {
   VIOLATION_WARNING: "VIOLATION_WARNING", // tổ chức: bị cảnh cáo; targetType POST / CAMPAIGN / ORGANIZATION → mở đúng nội dung
   VIOLATION_REPORT_HANDLED: "VIOLATION_REPORT_HANDLED", // Member: báo cáo đã được xử lý (không có đích, chỉ đọc)
   // BE 1a27081 → e812dda
-  DONATION_HANDED_OVER: "DONATION_HANDED_OVER", // Member: món ký gửi đã quyên góp được bàn giao (PRODUCT) · tổ chức: đã nhận n lượt (CAMPAIGN)
+  DONATION_HANDED_OVER: "DONATION_HANDED_OVER",
+  // [CHỜ BE — đặc tả 17/11] Member có món ký gửi đã quyên góp (targetType PRODUCT → mở trang món):
+  DONATION_ON_HOLD: "DONATION_ON_HOLD", // chiến dịch tạm ngừng, ReHome tạm giữ món chờ chuyển
+  DONATION_REASSIGNED: "DONATION_REASSIGNED", // đã chuyển món sang chiến dịch khác // Member: món ký gửi đã quyên góp được bàn giao (PRODUCT) · tổ chức: đã nhận n lượt (CAMPAIGN)
   WITHDRAWAL_APPROVED: "WITHDRAWAL_APPROVED", // Member: yêu cầu rút hàng được duyệt (WITHDRAWAL)
   WITHDRAWAL_REJECTED: "WITHDRAWAL_REJECTED", // Member: yêu cầu rút hàng bị từ chối (WITHDRAWAL)
   MEMBERSHIP_EVENT: "MEMBERSHIP_EVENT", // Member: gói thành viên mua / sắp hết / hết hạn (không có đích)
@@ -36,6 +39,8 @@ export const NOTIFICATION_ICON = {
   VIOLATION_WARNING: "warning-outline",
   VIOLATION_REPORT_HANDLED: "flag-outline",
   DONATION_HANDED_OVER: "gift-outline",
+  DONATION_ON_HOLD: "pause-circle-outline",
+  DONATION_REASSIGNED: "swap-horizontal-outline",
   WITHDRAWAL_APPROVED: "checkmark-circle-outline",
   WITHDRAWAL_REJECTED: "close-circle-outline",
   MEMBERSHIP_EVENT: "ribbon-outline",
