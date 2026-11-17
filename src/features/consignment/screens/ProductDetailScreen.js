@@ -11,7 +11,8 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
+import { DONATION_STATUS } from "@/constants/donation";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -308,24 +309,49 @@ function AwaitingBody({ product }) {
   );
 }
 
-// Đã quyên góp: BE trả donation { campaignTitle, organizationName, status PENDING_PICKUP | HANDED_OVER, handedOverAt }
+// Đã quyên góp: BE trả donation { campaignTitle, organizationName, status PENDING_PICKUP | ON_HOLD | HANDED_OVER,
+// handedOverAt, reassignedFromCampaignTitle }.
+// ON_HOLD [CHỜ BE — đặc tả 17/11]: chiến dịch tạm ngừng nhận đồ → ReHome tạm giữ món, Moderator chuyển sang chiến dịch
+// khác. Câu chữ TRUNG TÍNH (không nói "bị báo cáo / vi phạm"). Đã chuyển → campaignTitle là chiến dịch MỚI
 function DonationBox({ donation: d }) {
-  const handedOver = d.status === "HANDED_OVER";
+  const handedOver = d.status === DONATION_STATUS.HANDED_OVER;
+  const onHold = d.status === DONATION_STATUS.ON_HOLD;
   return (
-    <View style={styles.infoBox}>
+    <View style={[styles.infoBox, onHold && styles.infoBoxHold]}>
       <Text style={styles.boxTitle}>
-        {handedOver ? "Đã bàn giao cho tổ chức" : "Đã quyên góp"}
-      </Text>
-      <Text style={styles.body}>
-        Quyên góp cho chiến dịch{" "}
-        <Text style={styles.bold}>{d.campaignTitle}</Text>
-        {d.organizationName ? ` của ${d.organizationName}` : ""}.
-      </Text>
-      <Text style={styles.body}>
         {handedOver
-          ? `ReHome đã bàn giao món cho tổ chức${d.handedOverAt ? ` ngày ${fmtDate(d.handedOverAt)}` : ""}. Cảm ơn bạn!`
-          : "Món đang ở địa điểm ký gửi, chờ tổ chức đến nhận. Bạn sẽ nhận thông báo khi đã bàn giao."}
+          ? "Đã bàn giao cho tổ chức"
+          : onHold
+            ? "Đang chờ chuyển sang chiến dịch khác"
+            : "Đã quyên góp"}
       </Text>
+      {onHold ? (
+        <Text style={styles.body}>
+          Chiến dịch <Text style={styles.bold}>{d.campaignTitle}</Text> tạm
+          ngừng nhận đồ. Món của bạn vẫn được ReHome giữ tại địa điểm ký gửi và
+          sẽ được chuyển tới một chiến dịch phù hợp khác. Bạn sẽ nhận thông báo
+          khi chuyển xong.
+        </Text>
+      ) : (
+        <Text style={styles.body}>
+          Quyên góp cho chiến dịch{" "}
+          <Text style={styles.bold}>{d.campaignTitle}</Text>
+          {d.organizationName ? ` của ${d.organizationName}` : ""}.
+        </Text>
+      )}
+      {!onHold && d.reassignedFromCampaignTitle ? (
+        <Text style={styles.caption}>
+          ReHome đã chuyển món từ chiến dịch "{d.reassignedFromCampaignTitle}"
+          sang chiến dịch này.
+        </Text>
+      ) : null}
+      {onHold ? null : (
+        <Text style={styles.body}>
+          {handedOver
+            ? `ReHome đã bàn giao món cho tổ chức${d.handedOverAt ? ` ngày ${fmtDate(d.handedOverAt)}` : ""}. Cảm ơn bạn!`
+            : "Món đang ở địa điểm ký gửi, chờ tổ chức đến nhận. Bạn sẽ nhận thông báo khi đã bàn giao."}
+        </Text>
+      )}
     </View>
   );
 }
@@ -664,6 +690,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
   },
+  infoBoxHold: { backgroundColor: tones.warning.bg },
   attention: {
     gap: spacing.sm,
     padding: spacing.md,

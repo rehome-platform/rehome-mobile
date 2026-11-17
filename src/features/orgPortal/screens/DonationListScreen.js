@@ -14,7 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
+import { isCampaignHidden } from "@/features/orgPortal/utils/campaignRules";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -46,6 +47,8 @@ const fmt = (t, pattern = "DD/MM · HH:mm") => dayjs(t).format(pattern);
 // Bấm ảnh → xem phóng to
 function DonationCard({ donation: d, onOpenPhotos }) {
   const handedOver = d.status === DONATION_STATUS.HANDED_OVER;
+  // [CHỜ BE — đặc tả 17/11] chiến dịch bị ẩn / tổ chức bị khoá → ReHome tạm giữ lượt này, tổ chức KHÔNG đến lấy được
+  const onHold = d.status === DONATION_STATUS.ON_HOLD;
   const consigned =
     d.source === DONATION_SOURCE.CONSIGNED_ITEM || !!d.product;
   const { text, photos } = parseDonationNote(d.note);
@@ -59,10 +62,31 @@ function DonationCard({ donation: d, onOpenPhotos }) {
         >
           {d.isAnonymous ? "Ẩn danh" : d.donorName}
         </Text>
-        <Text style={[styles.chip, handedOver && styles.chipDone]}>
+        <Text
+          style={[
+            styles.chip,
+            handedOver && styles.chipDone,
+            onHold && styles.chipHold,
+          ]}
+        >
           {DONATION_STATUS_LABEL[d.status]?.toUpperCase()}
         </Text>
       </View>
+
+      {onHold ? (
+        <Text style={styles.holdNote}>
+          ReHome đang tạm giữ lượt này{d.holdReason ? ` (${d.holdReason})` : ""},
+          bạn chưa đến lấy được. Nhân viên ReHome sẽ quyết định chuyển lượt
+          này.
+        </Text>
+      ) : null}
+      {/* Lượt được Moderator chuyển từ chiến dịch khác sang chiến dịch của bạn */}
+      {!onHold && d.reassignedFromCampaignTitle ? (
+        <Text style={styles.meta}>
+          Chuyển từ chiến dịch khác
+          {d.reassignedAt ? ` ngày ${fmt(d.reassignedAt, "DD/MM")}` : ""}
+        </Text>
+      ) : null}
 
       {consigned ? (
         <View style={styles.product}>
@@ -184,6 +208,14 @@ export default function DonationListScreen() {
         ) : null}
       </View>
 
+      {/* Chiến dịch bị ẩn: các lượt chờ lấy đã chuyển sang "Tạm giữ" [CHỜ BE — đặc tả 17/11] */}
+      {isCampaignHidden(campaign.data) ? (
+        <Text style={styles.hiddenBanner}>
+          Chiến dịch đang tạm ngừng nhận đồ. Các lượt chờ lấy được ReHome tạm
+          giữ và có thể được chuyển sang chiến dịch khác.
+        </Text>
+      ) : null}
+
       <FlatList
         data={donations}
         keyExtractor={(d) => d.id}
@@ -286,6 +318,23 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   chipDone: { borderColor: colors.neutral, color: colors.textSecondary },
+  chipHold: { borderColor: tones.warning.fg, color: tones.warning.fg },
+  holdNote: {
+    padding: spacing.sm,
+    borderRadius: radius.input,
+    backgroundColor: tones.warning.bg,
+    ...textStyles.caption,
+    color: colors.text,
+  },
+  hiddenBanner: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.input,
+    backgroundColor: tones.warning.bg,
+    ...textStyles.caption,
+    color: colors.text,
+  },
   note: { ...textStyles.body, color: colors.text },
   flex: { flex: 1 },
   product: { flexDirection: "row", alignItems: "center", gap: spacing.md },
