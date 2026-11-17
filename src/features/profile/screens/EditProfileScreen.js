@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { uploadFile } from "@/lib/api/upload";
 import { UPLOAD_FOLDER } from "@/constants/upload";
+import { ERROR_CODES } from "@/constants/errorCodes";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -57,12 +58,15 @@ export default function EditProfileScreen() {
       leave();
     },
     onError: (e) => {
-      // [CHỜ BE] trùng SĐT hiện trả 500 (BE chưa kiểm tra) → câu dễ hiểu, gắn vào ô SĐT
-      if (e.status >= 500) {
+      // BE: trùng SĐT → 409 PHONE_TAKEN → gắn vào ô SĐT
+      if (e.code === ERROR_CODES.PHONE_TAKEN) {
         return setError("phone", {
-          message:
-            "Không lưu được. Số điện thoại có thể đã dùng cho tài khoản khác.",
+          message: "Số điện thoại này đã được dùng cho tài khoản khác.",
         });
+      }
+      // Họ tên có từ ngữ bị cấm (lọc nội dung BE #274)
+      if (e.code === ERROR_CODES.CONTENT_VIOLATION) {
+        return setError("fullName", { message: e.message });
       }
       setFormError(e.message);
     },

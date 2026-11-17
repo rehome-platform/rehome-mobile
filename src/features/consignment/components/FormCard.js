@@ -13,6 +13,14 @@ const leftText = (n) =>
 
 // Dòng phụ theo trạng thái. Thiếu field (BE chưa trả) → không hiện dòng đó
 function Footer({ form }) {
+  if (form.awaitingListing) {
+    return (
+      <Text style={styles.sub}>
+        Đã nhận hàng. ReHome đang nhập kho và đăng bán, món sẽ có giá và kỳ ký
+        gửi khi lên sàn.
+      </Text>
+    );
+  }
   if (form.status === FORM_STATUS.PENDING && form.createdAt) {
     return (
       <Text style={styles.sub}>

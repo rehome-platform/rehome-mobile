@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { ROLES } from "@/constants/roles";
+import { ERROR_CODES } from "@/constants/errorCodes";
 import { authApi } from "@/features/auth/api/authApi";
 import { registerSchema } from "@/features/auth/schemas";
 
@@ -62,16 +63,20 @@ export default function RegisterScreen() {
       });
     },
     onError: (e) => {
+      // BE: trùng SĐT → 409 PHONE_TAKEN (phải xét TRƯỚC — cũng là 409 như trùng email)
+      if (e.code === ERROR_CODES.PHONE_TAKEN) {
+        return setError("phone", {
+          message: "Số điện thoại này đã được dùng cho tài khoản khác.",
+        });
+      }
       if (e.status === 409) {
         return setError("email", {
           message: "Email này đã có tài khoản. Đăng nhập hoặc dùng email khác.",
         });
       }
-      // [CHỜ BE] trùng SĐT hiện trả 500 kèm message kỹ thuật → hiện câu dễ hiểu
-      if (e.status >= 500 && e.status !== 503) {
-        return setFormError(
-          "Không tạo được tài khoản. Nếu số điện thoại đã dùng cho tài khoản khác, hãy thử số khác.",
-        );
+      // Họ tên có từ ngữ bị cấm (lọc nội dung BE #274)
+      if (e.code === ERROR_CODES.CONTENT_VIOLATION) {
+        return setError("fullName", { message: e.message });
       }
       setFormError(e.message); // 503 không gửi được mail, mất mạng, lỗi khác
     },

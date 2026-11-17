@@ -14,6 +14,9 @@ const TONE = {
 // form: BE giữ INSPECTING cả sau khi lập biên nhận → có biên nhận chưa xác nhận thì hiện "Chờ xác nhận biên nhận"
 // (CẦN BẠN làm → warning) thay vì "Đang kiểm định"
 export function StatusBadge({ form }) {
+  // Đã xác nhận biên nhận, ReHome chưa nhập kho (useMyConsignItems gắn cờ) → chưa có sản phẩm trên sàn
+  if (form.awaitingListing)
+    return <StatusChip label="Chờ lên sàn" tone="info" />;
   if (form.receiptId && !form.receiptConfirmed)
     return <StatusChip label="Chờ xác nhận biên nhận" tone="warning" />;
   if (form.receiptConfirmed)
