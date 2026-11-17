@@ -75,7 +75,8 @@ function buildTimeline(form) {
       form.receiptConfirmed
         ? {
             title: "Kiểm định & nhận hàng",
-            desc: "Hàng đã được nhận và đang đăng bán",
+            // Xác nhận biên nhận ≠ đã lên sàn: còn bước ReHome nhập kho (tạo sản phẩm, gắn mã SKU)
+            desc: "Hàng đã được nhận. Lên sàn sau khi ReHome nhập kho",
             state: "done",
           }
         : {
@@ -108,7 +109,8 @@ function ApprovedTodo({ form }) {
       <View style={styles.todo}>
         <Text style={styles.todoTitle}>Đã xác nhận biên nhận</Text>
         <Text style={styles.todoText}>
-          Hàng đã được nhận và đang đăng bán. Theo dõi ở mục Sản phẩm ký gửi.
+          Hàng đã được nhận. ReHome nhập kho xong thì món lên sàn — theo dõi ở
+          tab Đang bán của mục Ký gửi.
         </Text>
       </View>
     );

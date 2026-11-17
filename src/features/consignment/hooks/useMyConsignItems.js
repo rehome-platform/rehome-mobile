@@ -18,12 +18,42 @@ const NEEDS_ACTION_VIEWS = [
   V.DEGRADED_DECISION,
 ];
 
-// Yêu cầu → tab. Đã xác nhận biên nhận thì món đã thành SẢN PHẨM → không hiện yêu cầu nữa (tránh trùng)
-function stageOfForm(form) {
+// Yêu cầu → tab.
+// Đã xác nhận biên nhận: BE giữ form ở INSPECTING mãi; SẢN PHẨM chỉ có sau khi Moderator nhập kho.
+// - đã có sản phẩm → ẩn form (sản phẩm hiện thay, tránh trùng)
+// - CHƯA có sản phẩm → "Chờ lên sàn" ở tab Đang bán (trước đây ẩn luôn → món "biến mất" tới lúc nhập kho)
+function stageOfForm(form, listed) {
   if (form.status === F.PENDING) return G.PENDING;
-  if (form.status === F.APPROVED || form.status === F.INSPECTING)
-    return form.receiptConfirmed ? null : G.BRING;
+  if (form.status === F.APPROVED || form.status === F.INSPECTING) {
+    if (!form.receiptConfirmed) return G.BRING;
+    return listed(form) ? null : G.SELLING;
+  }
   return G.ENDED; // REJECTED, EXPIRED, CANCELLED
+}
+
+const nameKey = (name, warehouse) =>
+  `${(name ?? "").trim().toLowerCase()}|${(warehouse ?? "").trim().toLowerCase()}`;
+
+// Form này đã thành sản phẩm chưa. Nối form ↔ sản phẩm:
+// 1. form.productId — [CHỜ BE] đã xin thêm vào danh sách form (null tới khi nhập kho); có thì dùng thẳng
+// 2. sản phẩm có receiptId = biên nhận của form (đúng cho mọi sản phẩm CHƯA ký gửi lại)
+// 3. sản phẩm đã KÝ GỬI LẠI: receiptId đổi sang biên nhận mới, mất dấu biên nhận gốc → nối theo tên + địa điểm,
+//    CHỈ với các sản phẩm này (tránh nhận nhầm 2 món trùng tên ở cùng địa điểm khi món thứ hai chưa nhập kho)
+function makeListed(products) {
+  const receiptIds = new Set(products.map((p) => p.receiptId).filter(Boolean));
+  const reconsignedKeys = new Set(
+    products
+      .filter(
+        (p) =>
+          p.endOfTermDecision?.newReceiptId &&
+          p.endOfTermDecision.newReceiptId === p.receiptId,
+      )
+      .map((p) => nameKey(p.name, p.warehouseName)),
+  );
+  return (form) =>
+    !!form.productId ||
+    receiptIds.has(form.receiptId) ||
+    reconsignedKeys.has(nameKey(form.productName, form.warehouseName));
 }
 
 function stageOfProduct(product, view) {
@@ -45,14 +75,17 @@ export function useMyConsignItems() {
 
   const stages = useMemo(() => {
     const out = Object.fromEntries(Object.values(G).map((g) => [g, []]));
+    const listed = makeListed(products.data?.content ?? []);
 
     for (const f of forms.data?.content ?? []) {
-      const g = stageOfForm(f);
+      const g = stageOfForm(f, listed);
       if (g)
         out[g].push({
           kind: "form",
           key: `form-${f.id}`,
-          data: f,
+          // Đã xác nhận biên nhận, chờ nhập kho → thẻ hiện "Chờ lên sàn"
+          data:
+            g === G.SELLING ? { ...f, awaitingListing: true } : f,
           // mang đồ tới / xác nhận biên nhận. BE giữ INSPECTING cả khi đã có biên nhận →
           // dựa vào receiptId (danh sách chưa trả receiptId / receiptConfirmed — đã xin BE)
           needsAction:
