@@ -10,6 +10,7 @@
 // "stop", hoặc Decart cắt phiên / rớt mạng giữa chừng) -> dừng recorder + disconnect -> báo
 // "saving" -> upload thẳng tới BE (multipart, kèm bearer token) -> báo "done" kèm videoUrl.
 //
+// RN gửi vào: start {…} | stop (dừng + lưu phần đã quay) | abort (dừng, KHÔNG lưu - vd. BE báo hết lượt).
 // Message gửi về RN: ready | status {state} | recording-started | saving | done {videoUrl} |
 // error {code, message} | log {…} (chỉ để debug). "done"/"error" chỉ gửi tối đa 1 lần.
 const DECART_SDK_URL = "https://cdn.jsdelivr.net/npm/@decartai/sdk@0.2.14/+esm";
@@ -45,6 +46,7 @@ export const TRYON_LIVE_HTML = `<!doctype html>
     let recordingStarted = false;
     let finishing = false; // finish() chỉ chạy 1 lần
     let reported = false; // đã gửi "done" hoặc "error" cho RN
+    let aborted = false; // RN huỷ phiên (vd. BE báo hết lượt lúc lên hình) -> dừng, KHÔNG upload video
 
     function post(type, payload) {
       const msg = JSON.stringify({ type, ...payload });
@@ -230,6 +232,7 @@ export const TRYON_LIVE_HTML = `<!doctype html>
     async function finish(config) {
       if (finishing) return;
       finishing = true;
+      if (aborted) return;
       if (chunks.length === 0) {
         fail("NO_RECORDING", "Chưa quay được video nào.");
         return;
@@ -275,6 +278,11 @@ export const TRYON_LIVE_HTML = `<!doctype html>
         const data = JSON.parse(raw);
         if (data.type === "start") start(data);
         if (data.type === "stop") stop();
+        if (data.type === "abort") {
+          aborted = true;
+          reported = true; // RN tự xử lý, không cần "error" / "done" nữa
+          stop();
+        }
       } catch (e) {
         // bỏ qua message không phải JSON hợp lệ
       }

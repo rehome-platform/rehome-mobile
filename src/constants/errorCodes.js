@@ -34,6 +34,7 @@ export const ERROR_CODES = {
   CAMPAIGN_WAREHOUSE_HAS_PENDING: "WAREHOUSE_HAS_PENDING_PICKUP", // sửa chiến dịch: bỏ kho còn lượt chờ lấy (409) — BE 2c9533b
   CAMPAIGN_WAREHOUSE_INVALID: "INVALID_WAREHOUSE_IDS", // mã mobile tự đặt: BE chỉ trả 400 "warehouseIds không hợp lệ." (kho không còn / mã kho cũ)
   TRYON_LIVE_QUOTA_EXCEEDED: "TRYON_LIVE_QUOTA_EXCEEDED", // thử đồ AI real-time: hết lượt theo gói (429)
+  TRYON_LIVE_UNCONFIRMED_LIMIT: "TRYON_LIVE_UNCONFIRMED_LIMIT", // mở quá nhiều phiên chưa lên hình trong ngày (429)
   TRYON_IMAGE_QUOTA_EXCEEDED: "TRYON_IMAGE_QUOTA_EXCEEDED", // phối đồ AI (ảnh): hết lượt hôm nay theo gói (429)
   // Điểm tích lũy (POST /points/redeem)
   POINTS_NOT_ENOUGH: "POINTS_NOT_ENOUGH", // không đủ điểm để đổi (409)

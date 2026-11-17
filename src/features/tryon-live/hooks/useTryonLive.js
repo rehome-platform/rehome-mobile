@@ -18,11 +18,23 @@ export function useTryonLiveQuota({ enabled = true } = {}) {
   });
 }
 
-// Trừ quota ở BE + mint client token Decart cho WebView
+// Mở phiên: BE kiểm còn lượt + mint client token Decart cho WebView (chưa trừ lượt)
 export function useStartLiveTryon() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (productId) => tryonLiveApi.startSession(productId),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: tryonLiveKeys.quota }),
+  });
+}
+
+// Khung hình AI đầu tiên đã hiện → BE trừ lượt. Mạng chập chờn thì thử lại 1 lần
+// (lỗi có mã từ BE như hết lượt thì không thử lại)
+export function useMarkLiveTryonStarted() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId) => tryonLiveApi.markStarted(sessionId),
+    retry: (count, e) =>
+      count < 1 && (e?.code === "NETWORK" || e?.code === "TIMEOUT"),
     onSettled: () => queryClient.invalidateQueries({ queryKey: tryonLiveKeys.quota }),
   });
 }

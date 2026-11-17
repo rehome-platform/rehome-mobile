@@ -9,9 +9,17 @@ export async function getQuota() {
   return { ...q, maxDurationSeconds: q.maxSeconds };
 }
 
-// POST /tryon/live/sessions - trừ quota ngay tại BE, trả client token Decart cho WebView dùng
+// POST /tryon/live/sessions - CHƯA trừ lượt, chỉ kiểm còn lượt + trả client token Decart cho WebView.
+// 429 TRYON_LIVE_UNCONFIRMED_LIMIT: hôm nay mở quá nhiều phiên mà chưa lên hình (chống lạm dụng)
 export async function startSession(productId) {
   return unwrap(await api.post("/tryon/live/sessions", { productId }));
+}
+
+// PATCH /tryon/live/sessions/{id}/started - báo khung hình AI đầu tiên đã hiện → BE TRỪ LƯỢT tại đây
+// (phiên lỗi trước khi lên hình không mất lượt). Gọi lại nhiều lần vẫn an toàn.
+// 429 TRYON_LIVE_QUOTA_EXCEEDED: lượt vừa hết (vd. dùng ở máy khác cùng lúc)
+export async function markStarted(sessionId) {
+  return unwrap(await api.patch(`/tryon/live/sessions/${sessionId}/started`));
 }
 
 // GET /tryon/live/sessions - video đã quay xong của chính Member, mới nhất trước.

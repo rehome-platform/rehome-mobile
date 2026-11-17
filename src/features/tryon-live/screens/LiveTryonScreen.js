@@ -21,6 +21,7 @@ import { ERROR_CODES } from "@/constants/errorCodes";
 import { TRYON_LIVE_STATUS } from "@/constants/tryonLive";
 import {
   useCompleteLiveTryon,
+  useMarkLiveTryonStarted,
   useStartLiveTryon,
   useTryonLiveQuota,
 } from "../hooks/useTryonLive";
@@ -29,10 +30,11 @@ import { TryonLiveWebview } from "../components/TryonLiveWebview";
 import { liveQuotaView, remainingText } from "../utils/liveQuota";
 import { TryonPreparing } from "../components/TryonPreparing";
 
-// Thử đồ AI real-time qua camera (Decart Lucy VTON). BE đã trừ quota + mint token ngay ở
-// POST /tryon/live/sessions (LiveTryOnServiceImpl) - màn hình này chỉ xin quyền camera, nhúng
-// WebView chạy SDK Decart (tryonLiveHtml.js), đếm ngược cho người dùng thấy, rồi điều hướng
-// sang màn kết quả khi WebView báo "done".
+// Thử đồ AI real-time qua camera (Decart Lucy VTON). POST /tryon/live/sessions chỉ kiểm lượt +
+// mint token; BE TRỪ LƯỢT khi app báo khung hình AI đầu tiên đã hiện (PATCH .../started, gọi lúc
+// WebView báo "recording-started") → kết nối lỗi trước khi lên hình thì không mất lượt.
+// Màn hình này xin quyền camera, nhúng WebView chạy SDK Decart (tryonLiveHtml.js), đếm ngược,
+// rồi điều hướng sang màn kết quả khi WebView báo "done".
 // Toàn bộ bước "connecting" (gọi BE mint token + WebView mở camera/kết nối Decart WebRTC) phải
 // xong trong khoảng này, không thì coi như treo -> tự chuyển "error" thay vì xoay vô hạn.
 // 25s để chừa chỗ cho WebRTC retry vài nhịp (token-ttl-seconds BE mặc định 30s) - 15s hay bị
@@ -52,6 +54,7 @@ export default function LiveTryonScreen() {
   const product = useProductDetail(productId).data; // chỉ để lấy ảnh món cho màn chuẩn bị, lỗi/chưa có thì bỏ qua
   const startSession = useStartLiveTryon();
   const completeSession = useCompleteLiveTryon();
+  const markStarted = useMarkLiveTryonStarted();
   const [permission, requestPermission] = useCameraPermissions();
 
   // checking | permission | permission-denied | connecting | recording | saving | no-quota | error
@@ -194,6 +197,12 @@ export default function LiveTryonScreen() {
         if (e.code === ERROR_CODES.TRYON_LIVE_QUOTA_EXCEEDED) {
           quota.refetch(); // lấy lại số lượt thật để màn "hết lượt" ghi đúng
           setPhase("no-quota");
+        } else if (e.code === ERROR_CODES.TRYON_LIVE_UNCONFIRMED_LIMIT) {
+          // BE chống lạm dụng: hôm nay đã mở nhiều phiên mà AI chưa lên hình lần nào
+          setErrorMessage(
+            "Hôm nay bạn đã mở thử đồ nhiều lần nhưng AI chưa lên hình. Kiểm tra kết nối mạng rồi thử lại vào ngày mai nhé. Lượt thử đồ của bạn không bị trừ.",
+          );
+          setPhase("error");
         } else {
           setErrorMessage(e.message);
           setPhase("error");
@@ -217,6 +226,30 @@ export default function LiveTryonScreen() {
       });
     }, 1000);
   };
+
+  // AI đã lên hình → báo BE để trừ lượt. BE báo vừa hết lượt (vd. vừa dùng ở máy khác) → huỷ ngay,
+  // không lưu video. Lỗi khác (mạng sau 1 lần thử lại, phiên không tìm thấy...) → cho quay tiếp,
+  // không làm hỏng lượt người dùng đang thấy hình.
+  const confirmFirstFrame = (sessionId) =>
+    markStarted.mutate(sessionId, {
+      onError: (e) => {
+        if (e.code !== ERROR_CODES.TRYON_LIVE_QUOTA_EXCEEDED || endedRef.current)
+          return;
+        endedRef.current = true;
+        clearInterval(countdownRef.current);
+        clearTimeout(readyFlashRef.current);
+        setReadyFlash(false);
+        webviewRef.current?.abort();
+        completeSession.mutate({
+          sessionId,
+          status: TRYON_LIVE_STATUS.FAILED,
+          actualDurationSeconds: 0,
+        });
+        startedRef.current = false;
+        quota.refetch();
+        setPhase("no-quota");
+      },
+    });
 
   const onEvent = (event) => {
     if (event.type === "log") {
@@ -250,6 +283,7 @@ export default function LiveTryonScreen() {
       clearTimeout(readyFlashRef.current);
       readyFlashRef.current = setTimeout(() => setReadyFlash(false), READY_FLASH_MS);
       startCountdown(session.maxDurationSeconds);
+      confirmFirstFrame(session.sessionId);
       return;
     }
     if (event.type === "done") {
