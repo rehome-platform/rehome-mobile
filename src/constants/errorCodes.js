@@ -47,6 +47,7 @@ export const ERROR_CODES = {
   // không lộ từ bị chặn → hiện thẳng message, giữ nguyên nội dung người dùng đã nhập để họ sửa
   CONTENT_VIOLATION: "CONTENT_VIOLATION",
   PHONE_TAKEN: "PHONE_TAKEN", // đăng ký / sửa hồ sơ: SĐT đã thuộc tài khoản khác (409)
+  RECEIPT_CHANGED: "RECEIPT_CHANGED", // [CHỜ BE] xác nhận biên nhận: Moderator vừa sửa, version lệch (409)
   POST_ALREADY_REMOVED: "POST_ALREADY_REMOVED", // sửa bài đã bị Moderator gỡ (409) — BE #250; message BE đã là câu tiếng Việt
   // Quyên góp món ký gửi (đặc tả gửi BE 11/11 — [CHỜ BE] chốt tên mã)
   PRODUCT_NOT_DONATABLE: "PRODUCT_NOT_DONATABLE", // món không ở trạng thái được quyên góp (409)

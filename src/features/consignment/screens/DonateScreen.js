@@ -28,14 +28,15 @@ import { consignmentApi } from "../api/consignmentApi";
 import { consignKeys } from "../api/queryKeys";
 import { DONATE_ENABLED, donateApi } from "../api/donateApi";
 
-// Câu riêng theo trường hợp (đặc tả 11/11), tiền đền giữ nguyên. Phí rút hàng đã trả: BE 1a27081 đang HOÀN vào ví,
-// đặc tả ghi "không hoàn" — [CHỜ LEAD chốt] nên tạm không nhắc tới phí, chốt xong thì thêm câu đúng vào WITHDRAWAL
+// Câu riêng theo trường hợp (đặc tả 11/11), tiền đền giữ nguyên.
+// Phí rút hàng đã trả: lead chốt 18/11 HOÀN vào ví (BE refundDonationFee — hoàn vào ví kể cả khi trả bằng VNPay,
+// chỉ khi đã trả phí). App không biết chắc đã trả hay chưa nên ghi "nếu"
 const CASE_NOTE = {
   [DONATE_CASE.ON_SALE]: "Món được gỡ khỏi sàn ngay, không ai mua được nữa.",
   [DONATE_CASE.END_OF_TERM]:
     "Thay cho việc chọn Nhận lại / Ký gửi lại ở cuối kỳ. Bạn không phải đến lấy hàng.",
   [DONATE_CASE.WITHDRAWAL]:
-    "Yêu cầu rút hàng được đóng lại, bạn không phải đến lấy.",
+    "Yêu cầu rút hàng được đóng lại, bạn không phải đến lấy. Nếu bạn đã trả phí rút hàng, ReHome hoàn lại số tiền đó vào ví của bạn.",
   [DONATE_CASE.TAKE_BACK]:
     "Thay cho việc đến địa điểm ký gửi nhận lại hàng. Bạn không phải đi lại.",
   [DONATE_CASE.DEGRADED]:

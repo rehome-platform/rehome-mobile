@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -26,6 +26,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
 import { formatVnd } from "@/utils/money";
+import { ERROR_CODES } from "@/constants/errorCodes";
+import { RECEIPT_STATUS } from "@/constants/consignment";
 import {
   commissionRates,
   formatRate,
@@ -40,6 +42,10 @@ import { ReceiptConfirmModal } from "@/features/consignment/components/ReceiptCo
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
 const fmtDate = (d) => dayjs(d).format("DD/MM/YYYY");
+const fmtTime = (d) => dayjs(d).format("HH:mm DD/MM/YYYY");
+
+// [CHỜ BE] Biên nhận đã huỷ: BE trả status VOIDED (kèm voidedAt). Chưa có status thì coi như chưa huỷ
+const isVoided = (r) => r.status === RECEIPT_STATUS.VOIDED || !!r.voidedAt;
 
 // "Áo khoác jean Levi's — Levi's, size M" (thiếu phần nào thì bỏ phần đó)
 const productLine = (r) =>
@@ -258,10 +264,62 @@ export default function ReceiptScreen() {
     );
   }
 
+  // Đã huỷ phải xét TRƯỚC confirmedAt: bản bị huỷ là bản đã xác nhận
+  if (isVoided(query.data))
+    return <VoidedReceipt receipt={query.data} header={header} />;
   return query.data.confirmedAt ? (
     <ConfirmedReceipt receipt={query.data} header={header} />
   ) : (
     <PendingReceipt receipt={query.data} header={header} />
+  );
+}
+
+// Biên nhận đã bị Moderator huỷ (đã xác nhận nhưng chưa nhập kho, lead chốt 18/11): không còn hiệu lực,
+// giữ để đối chiếu. ReHome lập bản mới (giữ nguyên mức phí) → Member xác nhận lại bản mới
+function VoidedReceipt({ receipt, header }) {
+  const nextId = receipt.replacedByReceiptId;
+  return (
+    <Screen
+      header={header}
+      padded={false}
+      footer={
+        nextId ? (
+          <Button
+            title="Xem biên nhận mới"
+            onPress={() => router.replace(`/receipts/${nextId}`)}
+          />
+        ) : null
+      }
+    >
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.voided}>
+          <View style={styles.voidedHead}>
+            <Ionicons name="close-circle" size={20} color={colors.error} />
+            <Text style={styles.voidedTitle}>Biên nhận đã bị huỷ</Text>
+          </View>
+          {receipt.voidedAt ? (
+            <Text style={styles.body}>Huỷ lúc {fmtTime(receipt.voidedAt)}</Text>
+          ) : null}
+          {receipt.voidReason ? (
+            <Text style={styles.body}>
+              Lý do: <Text style={styles.bold}>{receipt.voidReason}</Text>
+            </Text>
+          ) : null}
+          <Text style={styles.body}>
+            {nextId
+              ? "ReHome đã lập biên nhận mới thay cho bản này. Mở biên nhận mới để xem và xác nhận lại."
+              : "ReHome sẽ lập biên nhận mới thay cho bản này, các mức phí giữ nguyên. Bạn sẽ nhận được thông báo để xác nhận lại."}
+          </Text>
+        </View>
+
+        <ReceiptHeading receipt={receipt} />
+        <FullTerms receipt={receipt} />
+
+        <Text style={styles.small}>
+          Biên nhận này không còn hiệu lực, chỉ được lưu lại để đối chiếu.
+        </Text>
+      </ScrollView>
+    </Screen>
   );
 }
 
@@ -272,8 +330,14 @@ function PendingReceipt({ receipt, header }) {
   const [agreeError, setAgreeError] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Moderator vừa sửa (bản mới tải về) → bỏ tick "đã đọc và đồng ý", bắt đọc lại
+  useEffect(() => {
+    setAgreed(false);
+  }, [receipt.version, receipt.agreedPrice, receipt.conditionNote]);
+
   const confirm = useMutation({
-    mutationFn: () => consignmentApi.confirmReceipt(receipt.id),
+    // gửi kèm version đang xem → BE chặn nếu vừa bị sửa (RECEIPT_CHANGED)
+    mutationFn: () => consignmentApi.confirmReceipt(receipt.id, receipt.version),
     onSuccess: (data) => {
       // Cập nhật ngay màn này sang "Đã xác nhận", và làm mới form + sản phẩm
       queryClient.setQueryData(consignKeys.receipt(receipt.id), (old) => ({
@@ -288,6 +352,16 @@ function PendingReceipt({ receipt, header }) {
     },
     onError: (e) => {
       setShowConfirm(false);
+      // Moderator vừa sửa biên nhận lúc bạn đang xem → tải bản mới, bắt đọc lại (không xác nhận nhầm bản cũ)
+      if (e.code === ERROR_CODES.RECEIPT_CHANGED) {
+        queryClient.invalidateQueries({
+          queryKey: consignKeys.receipt(receipt.id),
+        });
+        return Alert.alert(
+          "Biên nhận vừa được cập nhật",
+          "ReHome vừa sửa biên nhận này. Bạn xem lại nội dung mới rồi xác nhận nhé.",
+        );
+      }
       if (e.status === 409) {
         // Đã xác nhận ở nơi khác → tải lại để hiện bản Đã xác nhận
         queryClient.invalidateQueries({
@@ -332,6 +406,28 @@ function PendingReceipt({ receipt, header }) {
           </Text>
         </View>
         <ReceiptHeading receipt={receipt} />
+        {receipt.editedAt ? (
+          <NoteBox>
+            {`ReHome đã cập nhật biên nhận lúc ${fmtTime(receipt.editedAt)}${
+              receipt.editReason ? `. Lý do: ${receipt.editReason}` : ""
+            }. Bạn kiểm tra lại giá và ghi chú trước khi xác nhận.`}
+          </NoteBox>
+        ) : null}
+        {receipt.previousReceiptId ? (
+          <NoteBox>
+            Biên nhận này thay cho biên nhận đã huỷ trước đó, các mức phí giữ
+            nguyên như bản cũ.{" "}
+            <Text
+              style={styles.link}
+              accessibilityRole="link"
+              onPress={() =>
+                router.push(`/receipts/${receipt.previousReceiptId}`)
+              }
+            >
+              Xem bản đã huỷ
+            </Text>
+          </NoteBox>
+        ) : null}
         {receipt.previousPrice ? (
           <NoteBox>
             {`Ký gửi lại: ReHome đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
@@ -520,4 +616,19 @@ const styles = StyleSheet.create({
   },
   small: { ...textStyles.caption, color: colors.textSecondary },
   left: { textAlign: "left" },
+  link: { fontFamily: fonts.semibold, color: colors.primary },
+  voided: {
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.error,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  voidedHead: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  voidedTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.error,
+  },
 });

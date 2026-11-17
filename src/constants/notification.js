@@ -22,6 +22,9 @@ export const NOTIFICATION_TYPE = {
   WITHDRAWAL_REJECTED: "WITHDRAWAL_REJECTED", // Member: yêu cầu rút hàng bị từ chối (WITHDRAWAL)
   MEMBERSHIP_EVENT: "MEMBERSHIP_EVENT", // Member: gói thành viên mua / sắp hết / hết hạn (không có đích)
   VOUCHER_ISSUED: "VOUCHER_ISSUED", // Member: nhận voucher mới (không có đích)
+  // [CHỜ BE — sửa / huỷ biên nhận, lead chốt 18/11] targetType CONSIGNMENT_RECEIPT → mở biên nhận
+  RECEIPT_UPDATED: "RECEIPT_UPDATED", // Moderator sửa biên nhận chưa xác nhận
+  RECEIPT_VOIDED: "RECEIPT_VOIDED", // Moderator huỷ biên nhận đã xác nhận (chưa nhập kho) → chờ bản mới
 };
 
 // Icon theo loại (Ionicons)
@@ -45,6 +48,8 @@ export const NOTIFICATION_ICON = {
   WITHDRAWAL_REJECTED: "close-circle-outline",
   MEMBERSHIP_EVENT: "ribbon-outline",
   VOUCHER_ISSUED: "pricetag-outline",
+  RECEIPT_UPDATED: "create-outline",
+  RECEIPT_VOIDED: "document-text-outline",
 };
 
 // Đích để mở màn khi bấm (targetType của BE). BE hiện dùng CAMPAIGN, POST, ORGANIZATION, LEGAL_CHANGE,
@@ -55,6 +60,7 @@ export const NOTIFICATION_TARGET = {
   WITHDRAWAL: "WITHDRAWAL",
   PRODUCT: "PRODUCT", // sản phẩm ký gửi của mình
   CONSIGNMENT_FORM: "CONSIGNMENT_FORM",
+  CONSIGNMENT_RECEIPT: "CONSIGNMENT_RECEIPT", // [CHỜ BE] biên nhận vừa được sửa / huỷ
   PAYOUT: "PAYOUT",
   WALLET: "WALLET",
   CAMPAIGN: "CAMPAIGN",

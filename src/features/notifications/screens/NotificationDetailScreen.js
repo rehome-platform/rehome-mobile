@@ -26,6 +26,7 @@ const TARGET_LABEL = {
   [T.WITHDRAWAL]: "Xem yêu cầu rút hàng",
   [T.PRODUCT]: "Xem món ký gửi",
   [T.CONSIGNMENT_FORM]: "Xem yêu cầu ký gửi",
+  [T.CONSIGNMENT_RECEIPT]: "Xem biên nhận",
   [T.PAYOUT]: "Xem yêu cầu rút tiền",
   [T.WALLET]: "Mở ví ReHome",
   [T.CAMPAIGN]: "Xem chiến dịch",
