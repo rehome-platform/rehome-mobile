@@ -28,7 +28,7 @@ import {
   DONATION_STATUS_LABEL,
 } from "@/constants/donation";
 import { PhotoViewer } from "@/components/ui/PhotoViewer";
-import { parseDonationNote } from "@/features/orgPortal/utils/donationNote";
+import { donationContent } from "@/features/orgPortal/utils/donationNote";
 import {
   campaignTitleOf,
   mapsUrl,
@@ -51,7 +51,7 @@ function DonationCard({ donation: d, onOpenPhotos }) {
   const onHold = d.status === DONATION_STATUS.ON_HOLD;
   const consigned =
     d.source === DONATION_SOURCE.CONSIGNED_ITEM || !!d.product;
-  const { text, photos } = parseDonationNote(d.note);
+  const { text, photos } = donationContent(d);
   const productPhoto = d.product?.photoUrl;
   return (
     <View style={styles.card}>
