@@ -17,6 +17,8 @@ export const TryonLiveWebview = forwardRef(function TryonLiveWebview(
       webviewRef.current?.postMessage(JSON.stringify({ type: "start", ...config })),
     // Dừng sớm (nút Đóng) - trang vẫn tự upload phần đã quay được rồi mới báo "done"/"error"
     stop: () => webviewRef.current?.postMessage(JSON.stringify({ type: "stop" })),
+    // Huỷ hẳn: tắt camera + ngắt Decart, KHÔNG upload video, không báo gì về nữa
+    abort: () => webviewRef.current?.postMessage(JSON.stringify({ type: "abort" })),
   }));
 
   return (

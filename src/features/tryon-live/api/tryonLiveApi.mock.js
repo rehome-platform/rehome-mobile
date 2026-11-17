@@ -51,6 +51,11 @@ export async function getHistory({ page = 0, size = 20 } = {}) {
   return { content: [], page, size, totalElements: 0, totalPages: 0 };
 }
 
+export async function markStarted() {
+  await delay(150);
+  return null;
+}
+
 export async function completeSession() {
   await delay(150);
   return null;
