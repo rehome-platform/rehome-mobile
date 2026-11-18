@@ -2,7 +2,11 @@ import { AppState } from "react-native";
 import { create } from "zustand";
 import { queryClient } from "@/lib/query/queryClient";
 import { notifyLocal } from "@/lib/push/push";
-import { TRYON_JOB_STATUS as J, TRYON_LIMITS } from "@/constants/tryon";
+import {
+  TRYON_JOB_STATUS as J,
+  TRYON_LIMITS,
+  isTryonBusy,
+} from "@/constants/tryon";
 import { tryonApi } from "@/features/tryon/api/tryonApi";
 import { tryonKeys } from "@/features/tryon/api/queryKeys";
 
@@ -25,7 +29,8 @@ export const useTryonJobStore = create((set, get) => ({
   clear: () => set({ job: null }),
 
   start: async (payload, items) => {
-    if (get().job?.status === J.RUNNING) return;
+    // Khoá NGAY (trước khi gọi BE): bấm 2 lần / lượt cũ đang dừng mà chưa xong → bỏ qua
+    if (isTryonBusy(get().job)) return;
     const mine = new AbortController();
     controller = mine;
     set({
@@ -42,10 +47,15 @@ export const useTryonJobStore = create((set, get) => ({
       const img = await tryonApi.createTryonImage(payload, {
         signal: mine.signal,
       });
-      if (controller !== mine) return; // đã huỷ trong lúc chờ
+      if (controller !== mine) return; // đăng xuất trong lúc chờ
       controller = null;
       queryClient.invalidateQueries({ queryKey: tryonKeys.images });
       queryClient.invalidateQueries({ queryKey: tryonKeys.quota });
+      // Đã bấm Huỷ: máy chủ vẫn tạo xong → ảnh nằm trong bộ sưu tập, không chuyển màn / không báo; mở khoá
+      if (get().job?.status === J.CANCELLING) {
+        set({ job: null, hasNew: true });
+        return;
+      }
       set((s) => ({
         job: { ...s.job, status: J.DONE, resultId: img.id },
         hasNew: true,
@@ -62,10 +72,15 @@ export const useTryonJobStore = create((set, get) => ({
           data: { type: "TRYON_DONE", tryonImageId: img.id },
         });
     } catch (e) {
-      if (controller !== mine || mine.signal.aborted) return; // huỷ → không báo lỗi
+      if (controller !== mine || mine.signal.aborted) return; // đăng xuất → không báo lỗi
       controller = null;
       // Lỗi hết lượt (429) hay lỗi sau khi BE đã trừ lượt → số lượt hiển thị phải lấy lại từ BE
       queryClient.invalidateQueries({ queryKey: tryonKeys.quota });
+      // Đã bấm Huỷ: lượt lỗi thì thôi, không báo; mở khoá
+      if (get().job?.status === J.CANCELLING) {
+        set({ job: null });
+        return;
+      }
       set((s) => ({ job: { ...s.job, status: J.ERROR, error: e } }));
       // Trong app: khung nổi đổi sang "Chưa tạo được · Bấm để thử lại"
       if (inBackground())
@@ -77,11 +92,12 @@ export const useTryonJobStore = create((set, get) => ({
     }
   },
 
-  // Huỷ phía app (không dừng được model trên máy chủ — 0.5 A4)
+  // Huỷ phía app. KHÔNG ngắt request: máy chủ không dừng được model (0.5 A4), ngắt thì app mở khoá sớm
+  // trong khi máy chủ vẫn chạy → người dùng tạo tiếp = 2 lượt song song. Giữ request, chỉ đánh dấu
+  // "đang dừng" (vẫn khoá); request xong / lỗi thì bỏ kết quả và mở khoá (xem start)
   cancel: () => {
-    controller?.abort();
-    controller = null;
-    set({ job: null });
+    if (get().job?.status !== J.RUNNING) return;
+    set((s) => ({ job: { ...s.job, status: J.CANCELLING } }));
   },
 
   // Đăng xuất

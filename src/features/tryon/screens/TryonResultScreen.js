@@ -22,7 +22,7 @@ import { useTryonJobStore } from "@/stores/tryonJobStore";
 import { formatVnd } from "@/utils/money";
 import { showToast } from "@/utils/toast";
 import { PRODUCT_STATUS } from "@/constants/consignment";
-import { TRYON_JOB_STATUS as J } from "@/constants/tryon";
+import { TRYON_JOB_STATUS as J, isTryonBusy } from "@/constants/tryon";
 import { cartApi } from "@/features/cart/api/cartApi";
 import { cartKeys } from "@/features/cart/api/queryKeys";
 import { cartItems, useCart } from "@/features/cart/hooks/useCart";
@@ -50,7 +50,8 @@ export default function TryonResultScreen() {
   const img = query.data;
   const cart = useCart();
   const queryClient = useQueryClient();
-  const jobRunning = useTryonJobStore((s) => s.job?.status === J.RUNNING);
+  // Đang tạo hoặc đang dừng lượt trước (đã bấm Huỷ, máy chủ chưa xong) → khoá "Tạo lại"
+  const jobRunning = useTryonJobStore((s) => isTryonBusy(s.job));
   const start = useTryonJobStore((s) => s.start);
   const remove = useDeleteTryonImage();
 

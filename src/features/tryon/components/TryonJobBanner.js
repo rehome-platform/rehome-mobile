@@ -21,7 +21,8 @@ export function TryonJobBanner() {
   const insets = useSafeAreaInsets();
   const { percent } = useTryonProgress(job);
 
-  if (!job || watching) return null;
+  // Đã bấm Huỷ → người dùng không cần theo dõi nữa (vẫn khoá tạo ảnh mới tới khi máy chủ xong, xem store)
+  if (!job || watching || job.status === J.CANCELLING) return null;
 
   const running = job.status === J.RUNNING;
   const done = job.status === J.DONE;
