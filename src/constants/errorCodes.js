@@ -7,7 +7,7 @@ export const ERROR_CODES = {
   NEW_PASSWORD_SAME_AS_OLD: "NEW_PASSWORD_SAME_AS_OLD", // đổi mật khẩu: mới trùng cũ
   GOOGLE_ACCOUNT_CONFLICT: "GOOGLE_ACCOUNT_CONFLICT", // email đã gắn với tài khoản Google khác
   TOO_MANY_PENDING_FORMS: "TOO_MANY_PENDING_FORMS", // ký gửi: đã có 5 form chờ duyệt (API 15, 409)
-  FORM_NOT_EDITABLE: "FORM_NOT_EDITABLE", // ký gửi: form không còn Chờ duyệt (API 18, 409)
+  FORM_NOT_EDITABLE: "CONSIGNMENT_FORM_NOT_PENDING", // ký gửi: form không còn Chờ duyệt (API 18, 409) — tên mã BE thật
   BELOW_FLOOR_PRICE: "BELOW_FLOOR_PRICE", // giảm giá: thấp hơn giá sàn (API 23, 409)
   PRICE_CHANGE_LIMIT_REACHED: "PRICE_CHANGE_LIMIT_REACHED", // giảm giá: hôm nay đã đổi rồi (API 23, 409)
   DECISION_EXPIRED: "DECISION_EXPIRED", // cuối kỳ: quá hạn 30 ngày chọn cách xử lý (API 24, 409)
@@ -21,13 +21,13 @@ export const ERROR_CODES = {
   CANNOT_CHANGE_ADDRESS_AFTER_PACKING: "CANNOT_CHANGE_ADDRESS_AFTER_PACKING", // 409: kho đã đóng gói
   ADDRESS_ALREADY_CHANGED: "ADDRESS_ALREADY_CHANGED", // 409: mỗi đơn chỉ đổi 1 lần
   SHIPPING_FEE_INCREASED: "SHIPPING_FEE_INCREASED", // 409: đơn đã trả tiền mà địa chỉ mới phí ship cao hơn
-  ORDER_NOT_DELIVERED: "ORDER_NOT_DELIVERED", // xác nhận nhận hàng khi đơn chưa giao (API 66, 409) [GIẢ ĐỊNH tên mã]
+  ORDER_NOT_DELIVERED: "ORDER_NOT_DELIVERED_YET", // xác nhận nhận hàng khi đơn chưa giao (API 66, 409) — tên mã BE thật
   BELOW_MIN_PAYOUT: "BELOW_MIN_PAYOUT", // rút tiền: dưới mức tối thiểu (API 76, 409) — BE đang để trong message [CHỜ BE]
   INSUFFICIENT_BALANCE: "INSUFFICIENT_BALANCE", // rút tiền / trả bằng ví: không đủ số dư khả dụng (409)
   DAILY_PAYOUT_LIMIT_REACHED: "DAILY_PAYOUT_LIMIT_REACHED", // rút tiền: hết lượt trong ngày (409)
   RETURN_WINDOW_EXPIRED: "RETURN_WINDOW_EXPIRED", // trả hàng: quá 3 ngày kể từ lúc giao (API 79, 409) — contract để trong message [CHỜ BE]
-  RETURN_ALREADY_EXISTS: "RETURN_ALREADY_EXISTS", // trả hàng: đơn đã có yêu cầu (API 79, 409) [GIẢ ĐỊNH tên mã]
-  RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) [GIẢ ĐỊNH tên mã]
+  RETURN_ALREADY_EXISTS: "RETURN_REQUEST_EXISTS", // trả hàng: đơn đã có yêu cầu (API 79, 409) — tên mã BE thật
+  RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) — khớp BE
   PRODUCT_ALREADY_ORDERED: "PRODUCT_ALREADY_ORDERED", // rút hàng: món vừa có người đặt (API 90, 409) — contract để trong message [CHỜ BE]
   INCOMPLETE_OUTFIT: "INCOMPLETE_OUTFIT", // thử đồ: chưa đủ Áo + Quần hoặc Đầm (API 97, 409) — contract để trong message [CHỜ BE]
   CAMPAIGN_LIMIT_REACHED: "CAMPAIGN_LIMIT_REACHED", // chiến dịch: đã có đủ chiến dịch đang mở (409) — BE 2c9533b

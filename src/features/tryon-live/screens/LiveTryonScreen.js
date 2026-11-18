@@ -313,6 +313,26 @@ export default function LiveTryonScreen() {
     }
   };
 
+  // Không tải được số lượt (mất mạng / máy chủ lỗi): trước đây phase kẹt ở "checking" → xoay mãi
+  if (phase === "checking" && quota.isError && !quota.data) {
+    return (
+      <Screen>
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Chưa tải được lượt thử đồ"
+          description={quota.error?.message}
+        >
+          <Button
+            title="Thử lại"
+            loading={quota.isFetching}
+            onPress={() => quota.refetch()}
+          />
+          <Button title="Đóng" variant="secondary" onPress={close} style={styles.mt} />
+        </EmptyState>
+      </Screen>
+    );
+  }
+
   if (phase === "checking" || quota.isLoading) {
     return (
       <Screen style={styles.dark}>

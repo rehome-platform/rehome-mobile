@@ -54,6 +54,16 @@ export function WarehousePicker({
     );
   }
 
+  // Admin chưa mở / đã ẩn hết địa điểm → nói rõ thay vì để trống trơn
+  if (!warehouses.data?.length) {
+    return (
+      <NoteBox>
+        Hiện chưa có địa điểm ký gửi nào đang nhận đồ. Bạn quay lại sau hoặc
+        liên hệ ReHome nhé.
+      </NoteBox>
+    );
+  }
+
   const selectedIds = multiple ? (value ?? []) : [value];
   const toggle = (w) => {
     if (!multiple) return onChange(w.id, w);

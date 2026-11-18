@@ -8,6 +8,7 @@ import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import {
   NOTIFICATION_ICON,
@@ -63,6 +64,15 @@ export default function NotificationDetailScreen({
       <Screen header={header}>
         {query.isPending ? (
           <ActivityIndicator style={styles.loading} color={colors.primary} />
+        ) : query.isError ? (
+          // Lỗi tải (mất mạng / máy chủ) ≠ "không tìm thấy" → báo đúng lỗi + thử lại
+          <ErrorBox message={query.error.message}>
+            <Button
+              title="Thử lại"
+              variant="secondary"
+              onPress={() => query.refetch()}
+            />
+          </ErrorBox>
         ) : (
           <EmptyState
             icon="notifications-off-outline"
