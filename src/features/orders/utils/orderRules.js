@@ -17,9 +17,11 @@ export const canChangeAddress = (o) =>
 export const canConfirm = (o) => o.status === S.DELIVERED; // [CHỜ BE] có cho SHIPPING không (câu 9)
 export const canRate = (o) =>
   o.status === S.COMPLETED && o.serviceRating == null; // API 67
+// Có vận đơn GHN → xem được hành trình ở mọi bước SAU khi gửi đi: đang giao, đã giao, hoàn thành, và
+// đơn bị huỷ do giao thất bại (vẫn có mã). BE trả /orders/{id}/tracking ở mọi trạng thái
 export const canTrack = (o) =>
-  !!o.ghnTrackingCode &&
-  [S.SHIPPING, S.DELIVERED, S.COMPLETED].includes(o.status);
+  !!o?.ghnTrackingCode &&
+  [S.SHIPPING, S.DELIVERED, S.COMPLETED, S.CANCELLED].includes(o.status);
 
 // Đơn huỷ có hoàn tiền (đã từng trả) — đơn huỷ vì hết hạn thanh toán thì không
 export const wasRefunded = (o) =>

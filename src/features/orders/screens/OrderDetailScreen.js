@@ -39,6 +39,7 @@ import {
   canConfirm,
   canPay,
   canRate,
+  canTrack,
   formatTimeLeft,
   orderStepOf,
   wasRefunded,
@@ -410,6 +411,22 @@ export default function OrderDetailScreen() {
             hàng trong thời hạn trả hàng (hiện trên đơn sau khi giao).
           </InfoBox>
         </>
+      ) : null}
+
+      {/* Đã giao / hoàn thành / huỷ do giao thất bại: trước đây mất hẳn phần hành trình → vẫn xem lại được */}
+      {!shipping && canTrack(order) ? (
+        <View style={styles.codeBox}>
+          <View style={styles.flex}>
+            <Text style={styles.muted}>Mã vận đơn GHN</Text>
+            <Text style={styles.code}>{order.ghnTrackingCode}</Text>
+          </View>
+          <Button
+            title="Xem hành trình"
+            variant="secondary"
+            onPress={() => router.push(`/orders/${order.id}/tracking`)}
+            style={styles.smallBtn}
+          />
+        </View>
       ) : null}
 
       {order.status === S.DELIVERED ? (
