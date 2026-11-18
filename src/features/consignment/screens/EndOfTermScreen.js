@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
@@ -73,7 +74,7 @@ export default function EndOfTermScreen() {
 
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -82,7 +83,7 @@ export default function EndOfTermScreen() {
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ErrorBox message={query.error.message}>
           <Button
             title="Thử lại"
@@ -101,7 +102,7 @@ export default function EndOfTermScreen() {
   if (view === PRODUCT_VIEW.PICKUP) {
     // Vừa chọn nhận lại (hoặc đã chọn từ trước) → hướng dẫn lấy hàng
     return (
-      <Screen
+      <Screen onRefresh={refreshActive}
         header={header}
         contentStyle={styles.content}
         footer={
@@ -114,7 +115,7 @@ export default function EndOfTermScreen() {
   }
   if (view !== PRODUCT_VIEW.AWAITING_DECISION) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <EmptyState
           icon="checkmark-done-outline"
           title="Không cần xử lý"
@@ -191,7 +192,7 @@ function EndOfTermBody({ product, header, initialChoice }) {
   };
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       padded={false}

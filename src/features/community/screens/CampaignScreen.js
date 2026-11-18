@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -90,14 +91,14 @@ export default function CampaignScreen() {
 
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.error.status === 404 ? (
           // 404: không tồn tại, hoặc bị ẩn do vi phạm (BE ee01f91 trả 404 cho Member/Guest)
           <EmptyState
@@ -155,7 +156,7 @@ export default function CampaignScreen() {
   ) : null;
 
   return (
-    <Screen scroll padded={false} header={header} footer={footer}>
+    <Screen onRefresh={refreshActive} scroll padded={false} header={header} footer={footer}>
       <View style={styles.cover}>
         {c.coverUrl ? (
           <Image source={{ uri: c.coverUrl }} style={StyleSheet.absoluteFill} />

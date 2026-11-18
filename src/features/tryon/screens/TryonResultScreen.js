@@ -13,6 +13,7 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -135,14 +136,14 @@ export default function TryonResultScreen() {
 
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.error.status === 404 ? (
           <EmptyState icon="image-outline" title="Ảnh thử đồ không còn nữa" />
         ) : (
@@ -221,7 +222,7 @@ export default function TryonResultScreen() {
   }
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

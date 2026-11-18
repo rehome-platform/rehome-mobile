@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -38,7 +39,7 @@ export default function ProfileScreen() {
   });
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={
         <AppHeader

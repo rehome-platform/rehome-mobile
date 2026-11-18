@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { ListItem } from "@/components/ui/ListItem";
+import { usePullToRefresh } from "@/components/ui/usePullToRefresh";
 import { useAuthStore } from "@/stores/authStore";
 import { useMyFollowing } from "../hooks/useCommunity";
 
@@ -17,6 +18,7 @@ const goBack = () =>
 export default function FollowingScreen() {
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
   const query = useMyFollowing();
+  const refreshControl = usePullToRefresh();
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -67,6 +69,7 @@ export default function FollowingScreen() {
         ItemSeparatorComponent={() => <View style={styles.sep} />}
         ListEmptyComponent={empty}
         contentContainerStyle={styles.list}
+        refreshControl={refreshControl}
       />
     </Screen>
   );

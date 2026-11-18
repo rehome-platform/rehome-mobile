@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { MoreMenuButton } from "@/components/ui/MoreMenuButton";
+import { usePullToRefresh } from "@/components/ui/usePullToRefresh";
+import { refreshActive } from "@/lib/query/refresh";
 import { useAuthStore } from "@/stores/authStore";
 import { askLogin } from "@/utils/askLogin";
 import { formatRelative } from "@/utils/format";
@@ -52,6 +54,7 @@ export default function PostDetailScreen() {
   const inputRef = useRef(null);
   const p = query.data;
   const here = `/posts/${id}`;
+  const refreshControl = usePullToRefresh(); // kéo xuống: tải lại bài + bình luận mới
 
   const needLogin = () =>
     askLogin(
@@ -92,14 +95,14 @@ export default function PostDetailScreen() {
 
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen header={header} onRefresh={refreshActive}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen header={header} onRefresh={refreshActive}>
         {query.error.status === 404 ? (
           // 404: tổ chức đã xoá, hoặc Moderator gỡ do vi phạm (BE ee01f91)
           <EmptyState
@@ -252,6 +255,7 @@ export default function PostDetailScreen() {
     <Screen header={header} padded={false} footer={composer}>
       <FlatList
         ref={listRef}
+        refreshControl={refreshControl}
         data={comments.data ?? []}
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (

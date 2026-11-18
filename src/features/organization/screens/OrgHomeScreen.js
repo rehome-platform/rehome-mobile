@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
@@ -197,7 +198,7 @@ export default function OrgHomeScreen() {
   if (status === ORG_STATUS.VERIFIED) return <Redirect href="/org/campaigns" />;
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={<AppHeader title="Tổ chức" />}
       contentStyle={styles.content}

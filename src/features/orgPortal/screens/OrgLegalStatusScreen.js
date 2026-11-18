@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -97,7 +98,7 @@ export default function OrgLegalStatusScreen() {
 
   if (!r) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {request.isPending ? (
           <ActivityIndicator style={styles.loading} color={colors.primary} />
         ) : (
@@ -129,7 +130,7 @@ export default function OrgLegalStatusScreen() {
     ) : null;
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

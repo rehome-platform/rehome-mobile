@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { MOCK } from "@/config/env";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -85,14 +86,14 @@ export default function DegradedCaseScreen() {
   const header = <AppHeader title="Hàng của bạn bị hỏng" onBack={goBack} />;
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.error.status === 404 || query.error.status === 403 ? (
           <EmptyState icon="cube-outline" title="Không tìm thấy ca hàng hỏng" />
         ) : (
@@ -187,7 +188,7 @@ export default function DegradedCaseScreen() {
   }
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

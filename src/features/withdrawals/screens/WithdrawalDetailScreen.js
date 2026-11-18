@@ -11,6 +11,7 @@ import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { MOCK } from "@/config/env";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -127,14 +128,14 @@ export default function WithdrawalDetailScreen() {
   const header = <AppHeader title="Yêu cầu rút hàng" onBack={goBack} />;
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.error.status === 404 || query.error.status === 403 ? (
           <EmptyState
             icon="cube-outline"
@@ -214,7 +215,7 @@ export default function WithdrawalDetailScreen() {
   }
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

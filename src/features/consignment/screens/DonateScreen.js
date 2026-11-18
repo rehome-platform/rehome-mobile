@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -97,7 +98,7 @@ export default function DonateScreen() {
   const header = <AppHeader title="Quyên góp món ký gửi" onBack={goBack} />;
   if (!DONATE_ENABLED) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <EmptyState
           icon="gift-outline"
           title="Sắp có"
@@ -110,7 +111,7 @@ export default function DonateScreen() {
   }
   if (product.isPending || (warehouseId && campaigns.isPending)) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
@@ -118,7 +119,7 @@ export default function DonateScreen() {
   const loadError = product.error ?? campaigns.error;
   if (loadError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ErrorBox message={loadError.message}>
           <Button
             title="Thử lại"
@@ -137,7 +138,7 @@ export default function DonateScreen() {
   const donateCase = donateCaseOf(p);
   if (!donateCase) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <EmptyState
           icon="gift-outline"
           title="Món này hiện không quyên góp được"
@@ -177,7 +178,7 @@ export default function DonateScreen() {
   };
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       contentStyle={styles.content}

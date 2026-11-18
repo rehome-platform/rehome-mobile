@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { NoteBox } from "@/components/ui/NoteBox";
@@ -144,7 +145,7 @@ export default function ProductDetailScreen() {
   if (!product) {
     if (query.isError && query.error.status === 404) {
       return (
-        <Screen header={header}>
+        <Screen onRefresh={refreshActive} header={header}>
           <EmptyState
             icon="search-outline"
             title="Không tìm thấy sản phẩm"
@@ -157,7 +158,7 @@ export default function ProductDetailScreen() {
     }
     if (query.isError) {
       return (
-        <Screen header={header}>
+        <Screen onRefresh={refreshActive} header={header}>
           <ErrorBox message={query.error.message}>
             <Button
               title="Thử lại"
@@ -169,7 +170,7 @@ export default function ProductDetailScreen() {
       );
     }
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
@@ -265,7 +266,7 @@ export default function ProductDetailScreen() {
   }
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       header={header}
       footer={footer}
       scroll

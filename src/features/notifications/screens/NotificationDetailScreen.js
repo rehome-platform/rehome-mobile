@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -61,7 +62,7 @@ export default function NotificationDetailScreen({
 
   if (!n) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.isPending ? (
           <ActivityIndicator style={styles.loading} color={colors.primary} />
         ) : query.isError ? (
@@ -86,7 +87,7 @@ export default function NotificationDetailScreen({
 
   const href = notificationRoute(n, viewer);
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={

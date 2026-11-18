@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { NoteBox } from "@/components/ui/NoteBox";
+import { usePullToRefresh } from "@/components/ui/usePullToRefresh";
 import { useAuthStore } from "@/stores/authStore";
 import { getCoords } from "@/utils/location";
 import { useNearbyOrganizations } from "../hooks/useCommunity";
@@ -93,6 +94,13 @@ export default function NearbyOrgsScreen() {
     if (isAuthed) locate();
   }, [isAuthed]);
 
+  // Kéo xuống: lấy lại vị trí (có thể đã đi chỗ khác) rồi tải lại danh sách
+  const refreshNearby = useCallback(
+    () => Promise.all([locate(), query.refetch()]),
+    [locate, query.refetch],
+  );
+  const refreshControl = usePullToRefresh(refreshNearby);
+
   if (!isAuthed) return <Redirect href="/login" />;
 
   const list = query.data ?? [];
@@ -118,7 +126,7 @@ export default function NearbyOrgsScreen() {
   // Chưa có toạ độ: đang lấy / bị từ chối / GPS lỗi
   if (!coords) {
     return (
-      <Screen header={header} contentStyle={styles.content}>
+      <Screen header={header} contentStyle={styles.content} onRefresh={locate}>
         {locating ? (
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} />
@@ -192,6 +200,7 @@ export default function NearbyOrgsScreen() {
         ListEmptyComponent={empty}
         ListFooterComponent={mockPanel}
         contentContainerStyle={styles.list}
+        refreshControl={refreshControl}
       />
     </Screen>
   );
