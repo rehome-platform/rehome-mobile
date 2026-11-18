@@ -18,6 +18,10 @@ import {
 } from "@/features/orgPortal/hooks/usePosts";
 import { PostForm } from "@/features/orgPortal/components/PostForm";
 import { isPostRemoved } from "@/features/orgPortal/components/OrgPostCard";
+import {
+  handleContentViolation,
+  isContentViolation,
+} from "@/features/orgPortal/utils/contentViolation";
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/org/posts");
@@ -34,6 +38,7 @@ function PostEditor({ title, submitTitle, defaultValues, mutation, done }) {
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors, isDirty },
   } = useForm({ resolver: zodResolver(postSchema), defaultValues });
   const content = useWatch({ control, name: "content" });
@@ -65,6 +70,8 @@ function PostEditor({ title, submitTitle, defaultValues, mutation, done }) {
         showToast(done);
         leave();
       },
+      // Từ ngữ vi phạm → không đăng, tô đỏ ô nội dung, giữ nguyên để sửa
+      onError: (e) => handleContentViolation(e, setError, ["content"]),
     }),
   );
 
@@ -93,7 +100,9 @@ function PostEditor({ title, submitTitle, defaultValues, mutation, done }) {
       }
       contentStyle={styles.content}
     >
-      {mutation.isError ? <ErrorBox message={mutation.error.message} /> : null}
+      {mutation.isError && !isContentViolation(mutation.error) ? (
+        <ErrorBox message={mutation.error.message} />
+      ) : null}
       <PostForm control={control} errors={errors} />
     </Screen>
   );

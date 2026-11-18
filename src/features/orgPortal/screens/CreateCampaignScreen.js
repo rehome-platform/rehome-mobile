@@ -22,6 +22,10 @@ import {
 import { useCreateCampaign } from "@/features/orgPortal/hooks/useCampaignMutations";
 import { usePruneWarehouses } from "@/features/orgPortal/hooks/usePruneWarehouses";
 import { CampaignForm } from "@/features/orgPortal/components/CampaignForm";
+import {
+  handleContentViolation,
+  isContentViolation,
+} from "@/features/orgPortal/utils/contentViolation";
 
 const schema = makeCampaignSchema();
 const leave = () =>
@@ -38,6 +42,7 @@ export default function CreateCampaignScreen() {
     reset,
     getValues,
     setValue,
+    setError,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(schema),
@@ -113,6 +118,9 @@ export default function CreateCampaignScreen() {
         leave();
       },
       onError: (e) => {
+        // Từ ngữ vi phạm → không đăng, tô đỏ tiêu đề + mô tả, giữ nội dung để sửa
+        if (handleContentViolation(e, setError, ["title", "description"]))
+          return;
         if (e.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID)
           pruneWarehouses().catch(() => {});
         if (e.code === ERROR_CODES.CAMPAIGN_LIMIT_REACHED)
@@ -148,7 +156,8 @@ export default function CreateCampaignScreen() {
       contentStyle={styles.content}
     >
       {create.isError &&
-      create.error.code !== ERROR_CODES.CAMPAIGN_LIMIT_REACHED ? (
+      create.error.code !== ERROR_CODES.CAMPAIGN_LIMIT_REACHED &&
+      !isContentViolation(create.error) ? (
         <ErrorBox message={create.error.message} />
       ) : null}
       <CampaignForm
