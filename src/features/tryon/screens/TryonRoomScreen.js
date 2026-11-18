@@ -7,7 +7,7 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radius, spacing, textStyles } from "@/theme";
+import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { MOCK } from "@/config/env";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -147,7 +147,7 @@ export default function TryonRoomScreen() {
     const confirmCancel = () =>
       Alert.alert(
         "Huỷ tạo ảnh?",
-        "Nếu máy chủ đã tạo xong, ảnh vẫn có trong bộ sưu tập của bạn.",
+        "Máy chủ AI không dừng giữa chừng được: bạn cần chờ lượt này kết thúc mới tạo ảnh mới được. Nếu ảnh vẫn tạo xong, ảnh sẽ có trong bộ sưu tập của bạn.",
         [
           { text: "Chờ tiếp", style: "cancel" },
           { text: "Huỷ", style: "destructive", onPress: cancel },
@@ -175,6 +175,30 @@ export default function TryonRoomScreen() {
         }
       >
         <TryonWaiting job={job} />
+      </Screen>
+    );
+  }
+
+  // ----- Đã bấm Huỷ, máy chủ vẫn đang tạo: VẪN KHOÁ tới khi lượt này xong / lỗi (tránh 2 lượt song song) -----
+  if (job?.status === J.CANCELLING) {
+    return (
+      <Screen
+        scroll
+        header={<AppHeader title="Đang dừng" onBack={goBack} />}
+        footer={
+          <Button title="Quay lại" variant="secondary" onPress={goBack} />
+        }
+      >
+        <View style={styles.stopping}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.stoppingTitle}>
+            Đang chờ máy chủ dừng lượt vừa rồi…
+          </Text>
+          <Text style={styles.caption}>
+            Máy chủ AI không dừng giữa chừng được. Khi lượt này kết thúc, bạn tạo
+            ảnh mới được ngay. Nếu ảnh vẫn tạo xong, ảnh sẽ nằm trong Bộ sưu tập.
+          </Text>
+        </View>
       </Screen>
     );
   }
@@ -416,6 +440,13 @@ export default function TryonRoomScreen() {
 
 const styles = StyleSheet.create({
   loading: { marginTop: spacing.xxl },
+  stopping: { alignItems: "center", gap: spacing.md, paddingTop: spacing.xxl },
+  stoppingTitle: {
+    ...textStyles.body,
+    fontFamily: fonts.semibold,
+    color: colors.text,
+    textAlign: "center",
+  },
   content: { gap: spacing.lg },
   footer: { gap: spacing.xs },
   footerRow: { flexDirection: "row", gap: spacing.md },

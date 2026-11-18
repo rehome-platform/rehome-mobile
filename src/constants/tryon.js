@@ -19,6 +19,14 @@ export const TRYON_LIMITS = {
 // Trạng thái việc tạo ảnh trong app (tryonJobStore) — không phải của BE
 export const TRYON_JOB_STATUS = {
   RUNNING: "RUNNING",
+  // Người dùng bấm Huỷ: app bỏ kết quả nhưng máy chủ vẫn đang tạo (không dừng được model) →
+  // VẪN KHOÁ tạo ảnh mới tới khi lượt này xong / lỗi, tránh 2 lượt chạy song song (tốn 2 lượt)
+  CANCELLING: "CANCELLING",
   DONE: "DONE",
   ERROR: "ERROR",
 };
+
+// Đang có lượt chiếm máy chủ (đang tạo hoặc đang dừng) → khoá mọi nút tạo ảnh
+export const isTryonBusy = (job) =>
+  job?.status === TRYON_JOB_STATUS.RUNNING ||
+  job?.status === TRYON_JOB_STATUS.CANCELLING;
