@@ -1,6 +1,34 @@
 import { formatVnd } from "@/utils/money";
 import { formatRate } from "@/utils/consignment";
 
+// ===== Điều khoản do Admin soạn (BE ReceiptClauseTemplate) =====
+// BE chụp các điều khoản dạng đoạn văn vào TỪNG biên nhận lúc lập (receipt.clauses: [{displayOrder, title, body}],
+// số liệu đã điền sẵn) → Admin thêm / sửa / tắt điều khoản chỉ áp dụng cho biên nhận lập SAU đó.
+// Cấu trúc khi có clauses: Điều 1–3 (bảng) + Điều 4 Hàng vô thừa nhận dựng cứng trong app, các điều Admin soạn nối tiếp
+// từ Điều 5. App TỰ ĐÁNH SỐ theo thứ tự (bỏ "ĐIỀU n —" Admin gõ trong tiêu đề) để thêm / xoá / đổi thứ tự không lệch số.
+// Không có clauses (biên nhận lập trước khi có tính năng) → dùng bản cũ otherClauses bên dưới (Vô thừa nhận là Điều 8).
+export const FIXED_CLAUSE_COUNT = 4;
+const stripNumber = (title) =>
+  (title ?? "").replace(/^\s*điều\s+\d+\s*[—–\-:.]\s*/i, "").trim();
+
+export const snapshotClauses = (r) => {
+  const list = Array.isArray(r?.clauses)
+    ? r.clauses.filter((c) => c?.title || c?.body)
+    : [];
+  if (!list.length) return null;
+  return [...list]
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+    .map((c, i) => {
+      const no = FIXED_CLAUSE_COUNT + 1 + i;
+      const name = stripNumber(c.title);
+      return {
+        no,
+        title: name ? `ĐIỀU ${no} — ${name.toUpperCase()}` : `ĐIỀU ${no}`,
+        body: c.body ?? "",
+      };
+    });
+};
+
 // Điều 4–7, 9, 10 của biên nhận ký gửi — NGUYÊN VĂN mẫu biên nhận (Tài liệu tổng quan mục 12, docs/OVERVIEW.md của BE).
 // Điều 1–3 và 8 có bảng / nhấn mạnh nên dựng thẳng trong ReceiptScreen. no = số điều → ReceiptScreen xếp đúng 1 → 10.
 // Điều chỉnh có chủ đích so với mẫu (ghi lại để đối chiếu khi bảo vệ):
