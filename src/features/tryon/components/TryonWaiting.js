@@ -26,7 +26,9 @@ export function TryonWaiting({ job }) {
         </View>
         {/* Không ghi cứng "mất x giây": thời gian tuỳ máy chủ AI đông / vắng. Có số đo thật thì nói theo số đó */}
         <Text style={styles.muted}>
-          {slow
+          {job.recovering
+            ? "Kết nối bị gián đoạn, ReHome đang kiểm tra ảnh trên máy chủ. Ảnh tạo xong sẽ tự hiện, bạn không cần bấm lại. "
+            : slow
             ? "Máy chủ AI đang đông nên lâu hơn mọi lần. "
             : typicalSec
               ? `Lần gần đây mất khoảng ${typicalSec} giây. `
