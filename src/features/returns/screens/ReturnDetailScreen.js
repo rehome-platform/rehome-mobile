@@ -10,6 +10,7 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -95,14 +96,14 @@ export default function ReturnDetailScreen() {
   );
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (query.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         {query.error.status === 404 || query.error.status === 403 ? (
           <EmptyState
             icon="return-down-back-outline"
@@ -191,7 +192,7 @@ export default function ReturnDetailScreen() {
     [R.PENDING, R.APPROVED].includes(r.status) && r.shippingAddressDetail;
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

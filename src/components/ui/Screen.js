@@ -1,6 +1,8 @@
+import { useCallback, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   View,
@@ -16,10 +18,25 @@ export function Screen({
   scrollRef, // ref của ScrollView (cuộn lên đầu khi có lỗi…)
   padded = true, // true: nội dung cách mép 16
   edges = ["top", "bottom"], // cạnh nào cần tránh tai thỏ / thanh điều hướng
+  // Kéo xuống để tải lại: hàm trả Promise (vd. () => query.refetch()). Có thì màn luôn cuộn được để kéo,
+  // kể cả lúc đang báo lỗi / trống. Vòng xoay chỉ hiện khi NGƯỜI DÙNG kéo (app tự tải lại ngầm thì không nháy)
+  onRefresh,
   style,
   contentStyle,
 }) {
-  const content = scroll ? (
+  const [pulling, setPulling] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setPulling(true);
+    try {
+      await onRefresh?.();
+    } catch {
+      // lỗi tải lại do từng màn tự hiện (ErrorBox / toast)
+    } finally {
+      setPulling(false);
+    }
+  }, [onRefresh]);
+
+  const content = scroll || onRefresh ? (
     <ScrollView
       ref={scrollRef}
       contentContainerStyle={[
@@ -29,6 +46,16 @@ export function Screen({
       ]}
       keyboardShouldPersistTaps="handled" // bấm nút khi bàn phím đang mở vẫn ăn ngay
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        onRefresh ? (
+          <RefreshControl
+            refreshing={pulling}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        ) : undefined
+      }
     >
       {children}
     </ScrollView>

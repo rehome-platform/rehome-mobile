@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -37,7 +38,7 @@ export default function AccountScreen() {
 
 function GuestAccount() {
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       edges={["top"]}
       header={<AppHeader title="Cá nhân" />}
@@ -89,7 +90,7 @@ function MemberAccount() {
     ]);
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       edges={["top"]}
       header={

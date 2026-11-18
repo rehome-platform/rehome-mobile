@@ -10,6 +10,7 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
@@ -39,14 +40,14 @@ export default function TrackingScreen() {
   const header = <AppHeader title="Theo dõi vận chuyển" onBack={goBack} />;
   if (tracking.isPending || order.isPending) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
   }
   if (tracking.isError) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ErrorBox message={tracking.error.message}>
           <Button
             title="Thử lại"
@@ -87,7 +88,7 @@ export default function TrackingScreen() {
   );
 
   return (
-    <Screen
+    <Screen onRefresh={refreshActive}
       scroll
       header={header}
       footer={footer}

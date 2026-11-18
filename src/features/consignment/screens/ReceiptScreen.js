@@ -17,6 +17,8 @@ import dayjs from "dayjs";
 import * as Sharing from "expo-sharing";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { usePullToRefresh } from "@/components/ui/usePullToRefresh";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -232,7 +234,7 @@ export default function ReceiptScreen() {
 
   if (query.isPending) {
     return (
-      <Screen header={header}>
+      <Screen header={header} onRefresh={refreshActive}>
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </View>
@@ -242,7 +244,7 @@ export default function ReceiptScreen() {
   if (query.isError) {
     const notFound = query.error.status === 403 || query.error.status === 404;
     return (
-      <Screen header={header}>
+      <Screen header={header} onRefresh={refreshActive}>
         {notFound ? (
           <EmptyState
             icon="document-outline"
@@ -277,6 +279,7 @@ export default function ReceiptScreen() {
 // Biên nhận đã bị Moderator huỷ (đã xác nhận nhưng chưa nhập kho, lead chốt 18/11): không còn hiệu lực,
 // giữ để đối chiếu. ReHome lập bản mới (giữ nguyên mức phí) → Member xác nhận lại bản mới
 function VoidedReceipt({ receipt, header }) {
+  const refreshControl = usePullToRefresh();
   const nextId = receipt.replacedByReceiptId;
   return (
     <Screen
@@ -291,7 +294,10 @@ function VoidedReceipt({ receipt, header }) {
         ) : null
       }
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={refreshControl}
+      >
         <View style={styles.voided}>
           <View style={styles.voidedHead}>
             <Ionicons name="close-circle" size={20} color={colors.error} />
@@ -325,6 +331,8 @@ function VoidedReceipt({ receipt, header }) {
 
 // KG-06 Chờ xác nhận + KG-07
 function PendingReceipt({ receipt, header }) {
+  // Kéo xuống: lấy bản mới nhất (Moderator vừa sửa / huỷ biên nhận)
+  const refreshControl = usePullToRefresh();
   const queryClient = useQueryClient();
   const [agreed, setAgreed] = useState(false);
   const [agreeError, setAgreeError] = useState(null);
@@ -399,7 +407,10 @@ function PendingReceipt({ receipt, header }) {
         </View>
       }
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={refreshControl}
+      >
         <View style={styles.banner}>
           <Text style={styles.bannerText}>
             Đọc kỹ trước khi xác nhận. Bấm xác nhận là hàng được đăng bán ngay.
@@ -452,6 +463,7 @@ function PendingReceipt({ receipt, header }) {
 
 // KG-06 Đã xác nhận
 function ConfirmedReceipt({ receipt, header }) {
+  const refreshControl = usePullToRefresh();
   const memberCode = useAuthStore((s) => s.user?.memberCode);
   const rates = commissionRates(receipt);
   const endDate = dayjs(receipt.confirmedAt).add(totalTermDays(receipt), "day");
@@ -491,7 +503,10 @@ function ConfirmedReceipt({ receipt, header }) {
         />
       }
     >
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={refreshControl}
+      >
         <View style={styles.confirmedRow}>
           <Text style={[styles.muted, styles.left, styles.flex]}>
             Xác nhận lúc {dayjs(receipt.confirmedAt).format("HH:mm DD/MM/YYYY")}

@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
+import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
@@ -61,7 +62,7 @@ export default function PlansScreen() {
   const header = <AppHeader title="Gói thành viên" onBack={goBack} />;
   if (plans.isPending || (isAuthed && mine.isPending)) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ActivityIndicator style={styles.loading} color={colors.primary} />
       </Screen>
     );
@@ -69,7 +70,7 @@ export default function PlansScreen() {
   const error = plans.error ?? mine.error;
   if (error) {
     return (
-      <Screen header={header}>
+      <Screen onRefresh={refreshActive} header={header}>
         <ErrorBox message={error.message}>
           <Button
             title="Thử lại"
@@ -95,7 +96,7 @@ export default function PlansScreen() {
   };
 
   return (
-    <Screen scroll header={header} contentStyle={styles.content}>
+    <Screen onRefresh={refreshActive} scroll header={header} contentStyle={styles.content}>
       {isAuthed ? (
         <StatusCard me={me} balance={wallet.data?.availableBalance} />
       ) : null}
