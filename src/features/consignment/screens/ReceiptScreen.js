@@ -35,7 +35,10 @@ import {
 } from "@/utils/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
 import { consignKeys } from "@/features/consignment/api/queryKeys";
-import { otherClauses } from "@/features/consignment/receiptTerms";
+import {
+  otherClauses,
+  snapshotClauses,
+} from "@/features/consignment/receiptTerms";
 import { KeyValueTable } from "@/features/consignment/components/KeyValueTable";
 import { ReceiptConfirmModal } from "@/features/consignment/components/ReceiptConfirmModal";
 
@@ -70,6 +73,7 @@ function ReceiptClauses({ receipt }) {
   const rates = commissionRates(receipt);
   const days = totalTermDays(receipt);
   const L = receipt.termLengthDays;
+  const adminClauses = snapshotClauses(receipt);
   return (
     <>
       <Clause title="ĐIỀU 1 — HÀNG HOÁ">
@@ -130,28 +134,47 @@ function ReceiptClauses({ receipt }) {
           {receipt.freeWithdrawalWindowDays} ngày rút hàng không mất phí.
         </Text>
       </Clause>
-      {otherClauses(receipt)
-        .filter((c) => c.no < 8)
-        .map((c) => (
-          <FoldClause key={c.no} clause={c} />
-        ))}
-
-      <View style={styles.important}>
-        <Text style={styles.clauseTitle}>ĐIỀU 8 — HÀNG VÔ THỪA NHẬN</Text>
-        <Text style={styles.body}>
-          {/* Hạn chọn cuối kỳ do Admin cấu hình (end_of_term_decision_days), biên nhận chưa lưu số này → không ghi số */}
-          Hết {days} ngày, bạn chọn nhận lại hàng hoặc ký gửi lại{" "}
-          <Text style={styles.bold}>trước hạn ReHome thông báo</Text> trên ứng
-          dụng. Quá hạn mà không phản hồi, hàng được xem là vô thừa nhận:{" "}
-          <Text style={styles.bold}>bạn mất quyền sở hữu</Text>.
-        </Text>
-      </View>
-      {otherClauses(receipt)
-        .filter((c) => c.no > 8)
-        .map((c) => (
-          <FoldClause key={c.no} clause={c} />
-        ))}
+      {adminClauses ? (
+        // Biên nhận có điều khoản Admin soạn (chụp lúc lập): Vô thừa nhận là Điều 4, các điều Admin từ Điều 5
+        <>
+          <OwnershipClause no={4} days={days} />
+          {adminClauses.map((c) => (
+            <FoldClause key={c.no} clause={c} />
+          ))}
+        </>
+      ) : (
+        // Biên nhận lập trước khi có điều khoản do Admin soạn: giữ bản cũ (Vô thừa nhận là Điều 8)
+        <>
+          {otherClauses(receipt)
+            .filter((c) => c.no < 8)
+            .map((c) => (
+              <FoldClause key={c.no} clause={c} />
+            ))}
+          <OwnershipClause no={8} days={days} />
+          {otherClauses(receipt)
+            .filter((c) => c.no > 8)
+            .map((c) => (
+              <FoldClause key={c.no} clause={c} />
+            ))}
+        </>
+      )}
     </>
+  );
+}
+
+// Hàng vô thừa nhận: khung nhấn mạnh (mất quyền sở hữu). Số điều tuỳ biên nhận mới / cũ
+function OwnershipClause({ no, days }) {
+  return (
+    <View style={styles.important}>
+      <Text style={styles.clauseTitle}>ĐIỀU {no} — HÀNG VÔ THỪA NHẬN</Text>
+      <Text style={styles.body}>
+        {/* Hạn chọn cuối kỳ do Admin cấu hình (end_of_term_decision_days), biên nhận chưa lưu số này → không ghi số */}
+        Hết {days} ngày, bạn chọn nhận lại hàng hoặc ký gửi lại{" "}
+        <Text style={styles.bold}>trước hạn ReHome thông báo</Text> trên ứng
+        dụng. Quá hạn mà không phản hồi, hàng được xem là vô thừa nhận:{" "}
+        <Text style={styles.bold}>bạn mất quyền sở hữu</Text>.
+      </Text>
+    </View>
   );
 }
 

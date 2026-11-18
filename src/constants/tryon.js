@@ -11,7 +11,14 @@ export const MODEL_TYPE_LABEL = { FEMALE: "Nữ", MALE: "Nam" };
 // Thời gian tạo ảnh KHÔNG cố định (tuỳ máy chủ AI đông / vắng) → thanh % ước lượng theo thời gian THẬT của các lần
 // tạo gần đây trên máy này (tryonJobStore.recentDurations). DEFAULT_EXPECTED_MS chỉ dùng cho lần đầu, chưa có số đo
 export const TRYON_LIMITS = {
-  REQUEST_TIMEOUT_MS: 300000,
+  // BE chờ AI tối đa 300 giây (tryon.ai.read-timeout-seconds) RỒI còn tải ảnh lên kho + lưu → app phải chờ LÂU HƠN BE.
+  // Trước để bằng 300 giây: AI chậm thì app hết giờ trước, báo lỗi trong khi máy chủ vẫn tạo xong ảnh
+  REQUEST_TIMEOUT_MS: 360000,
+  // Mất kết nối / hết giờ chờ: máy chủ có thể vẫn tạo xong → hỏi bộ sưu tập mỗi 5 giây, tối đa 2 phút
+  RECOVER_POLL_MS: 5000,
+  RECOVER_MAX_MS: 120000,
+  // Lệch giờ điện thoại ↔ máy chủ: ảnh tạo sau (lúc bấm − 60 giây) vẫn coi là của lượt này
+  RECOVER_CLOCK_SKEW_MS: 60000,
   DEFAULT_EXPECTED_MS: 60000,
   RECENT_SAMPLES: 5, // lấy trung bình 5 lần thành công gần nhất
 };
