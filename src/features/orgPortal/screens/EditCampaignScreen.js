@@ -23,6 +23,10 @@ import {
 import { useUpdateCampaign } from "@/features/orgPortal/hooks/useCampaignMutations";
 import { usePruneWarehouses } from "@/features/orgPortal/hooks/usePruneWarehouses";
 import { CampaignForm } from "@/features/orgPortal/components/CampaignForm";
+import {
+  handleContentViolation,
+  isContentViolation,
+} from "@/features/orgPortal/utils/contentViolation";
 
 const leave = () =>
   router.canGoBack() ? router.back() : router.replace("/org/campaigns");
@@ -37,6 +41,7 @@ function EditForm({ campaign }) {
     handleSubmit,
     getValues,
     setValue,
+    setError,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(
@@ -61,6 +66,9 @@ function EditForm({ campaign }) {
         leave();
       },
       onError: (e) => {
+        // Từ ngữ vi phạm → không lưu, tô đỏ tiêu đề + mô tả, giữ nội dung để sửa
+        if (handleContentViolation(e, setError, ["title", "description"]))
+          return;
         if (e.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_INVALID)
           pruneWarehouses().catch(() => {});
       },
@@ -90,7 +98,7 @@ function EditForm({ campaign }) {
       }
       contentStyle={styles.content}
     >
-      {update.isError ? (
+      {update.isError && !isContentViolation(update.error) ? (
         <ErrorBox
           message={
             update.error.code === ERROR_CODES.CAMPAIGN_WAREHOUSE_HAS_PENDING
