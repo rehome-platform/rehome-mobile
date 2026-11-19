@@ -14,7 +14,8 @@ export const TRYON_LIMITS = {
   // BE chờ AI tối đa 300 giây (tryon.ai.read-timeout-seconds) RỒI còn tải ảnh lên kho + lưu → app phải chờ LÂU HƠN BE.
   // Trước để bằng 300 giây: AI chậm thì app hết giờ trước, báo lỗi trong khi máy chủ vẫn tạo xong ảnh
   REQUEST_TIMEOUT_MS: 360000,
-  // Mất kết nối / hết giờ chờ: máy chủ có thể vẫn tạo xong → hỏi bộ sưu tập mỗi 5 giây, tối đa 2 phút
+  // Mất kết nối / hết giờ chờ / BE báo đang tạo (409): máy chủ có thể vẫn tạo xong → hỏi bộ sưu tập mỗi 5 giây.
+  // Hỏi tới mốc (lúc bấm + REQUEST_TIMEOUT_MS) — lượt đang chạy chưa thể quá mốc này; rớt sát/sau mốc thì vẫn hỏi thêm 2 phút
   RECOVER_POLL_MS: 5000,
   RECOVER_MAX_MS: 120000,
   // Lệch giờ điện thoại ↔ máy chủ: ảnh tạo sau (lúc bấm − 60 giây) vẫn coi là của lượt này
