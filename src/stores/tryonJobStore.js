@@ -9,6 +9,7 @@ import {
 } from "@/constants/tryon";
 import { tryonApi } from "@/features/tryon/api/tryonApi";
 import { tryonKeys } from "@/features/tryon/api/queryKeys";
+import { ERROR_CODES } from "@/constants/errorCodes";
 
 // Việc tạo ảnh thử đồ chạy NGOÀI màn hình (PHASE6_GUIDE 0.5 A3): rời AI-03 vẫn chạy tiếp.
 // Báo tiến độ / kết quả bằng khung nổi TryonJobBanner (gắn ở layout gốc, hiện trên mọi màn trừ phòng thử đồ).
@@ -31,7 +32,12 @@ const matchesPayload = (img, p) =>
 // isActive() = false (đăng xuất) → dừng
 async function recoverCreatedImage(payload, startedAt, isActive) {
   const since = startedAt - TRYON_LIMITS.RECOVER_CLOCK_SKEW_MS;
-  const deadline = Date.now() + TRYON_LIMITS.RECOVER_MAX_MS;
+  // Kết nối rớt sớm (vd giây thứ 10) thì máy chủ còn chạy tới vài phút → hỏi tới mốc hết giờ của request,
+  // không chỉ 2 phút kể từ lúc rớt
+  const deadline = Math.max(
+    startedAt + TRYON_LIMITS.REQUEST_TIMEOUT_MS,
+    Date.now() + TRYON_LIMITS.RECOVER_MAX_MS,
+  );
   while (isActive() && Date.now() < deadline) {
     try {
       const page = await tryonApi.getTryonImages({ page: 0, size: 5 });
@@ -51,8 +57,12 @@ async function recoverCreatedImage(payload, startedAt, isActive) {
 
 // Lỗi mà máy chủ CÓ THỂ vẫn tạo xong ảnh: không tới được / không nhận được trả lời (status 0: mất mạng, hết giờ),
 // hoặc cổng trung gian cắt kết nối (502 không có mã của BE, 504). Lỗi có mã của BE (hết lượt, thiếu món, AI lỗi 502
-// có code) là BE đã trả lời rõ → không tìm
+// có code) là BE đã trả lời rõ → không tìm.
+// 409 TRYON_IN_PROGRESS: BE đang tạo ảnh của lượt trước (thường do Android tự gửi lại request khi kết nối bị cắt —
+// request gửi lại bị chặn, request đầu vẫn chạy) → coi như đang chạy, chờ ảnh trong bộ sưu tập. Không thấy ảnh đúng
+// bộ đồ này (vd lượt đang chạy là bộ khác) → báo lỗi bằng câu của BE "Bạn đang có một ảnh thử đồ đang tạo…"
 const mayStillBeCreated = (e) =>
+  e?.code === ERROR_CODES.TRYON_IN_PROGRESS ||
   e?.status === 0 ||
   e?.status === 504 ||
   (e?.status === 502 && String(e?.code ?? "").startsWith("HTTP_"));

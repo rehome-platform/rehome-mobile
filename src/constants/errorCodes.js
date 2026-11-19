@@ -36,6 +36,7 @@ export const ERROR_CODES = {
   TRYON_LIVE_QUOTA_EXCEEDED: "TRYON_LIVE_QUOTA_EXCEEDED", // thử đồ AI real-time: hết lượt theo gói (429)
   TRYON_LIVE_UNCONFIRMED_LIMIT: "TRYON_LIVE_UNCONFIRMED_LIMIT", // mở quá nhiều phiên chưa lên hình trong ngày (429)
   TRYON_IMAGE_QUOTA_EXCEEDED: "TRYON_IMAGE_QUOTA_EXCEEDED", // phối đồ AI (ảnh): hết lượt hôm nay theo gói (429)
+  TRYON_IN_PROGRESS: "TRYON_IN_PROGRESS", // phối đồ AI (ảnh): đang có một lượt tạo ảnh chạy (409) — BE b7afc37
   // Điểm tích lũy (POST /points/redeem)
   POINTS_NOT_ENOUGH: "POINTS_NOT_ENOUGH", // không đủ điểm để đổi (409)
   POINTS_REDEEM_UNAVAILABLE: "POINTS_REDEEM_UNAVAILABLE", // Admin đang đóng quy đổi loại này (409)
