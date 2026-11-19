@@ -8,6 +8,7 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
+import { GoogleLogo } from "@/components/brand/GoogleLogo";
 import { TextField } from "@/components/ui/TextField";
 import { Divider } from "@/components/ui/Divider";
 import { authApi } from "@/features/auth/api/authApi";
@@ -221,9 +222,11 @@ export default function LoginScreen() {
 
       <Button title="Đăng nhập" onPress={onSubmit} loading={login.isPending} />
       <Divider label="hoặc" />
+      {/* Nền trắng viền xám + chữ G 4 màu: đúng hướng dẫn thương hiệu nút "Đăng nhập bằng Google" */}
       <Button
         title="Đăng nhập bằng Google"
-        variant="secondary"
+        variant="neutral"
+        icon={<GoogleLogo size={20} />}
         onPress={onGoogle}
         loading={google.isPending}
       />

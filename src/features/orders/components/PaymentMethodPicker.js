@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, textStyles } from "@/theme";
 import { RadioCard } from "@/components/ui/RadioCard";
+import { VnpayLogo } from "@/components/brand/VnpayLogo";
 import { DEFAULT_GATEWAY, PAYMENT_METHOD } from "@/constants/order";
 import { formatVnd } from "@/utils/money";
 import { useWallet } from "@/features/wallet/hooks/useWallet";
@@ -44,10 +46,14 @@ export function PaymentMethodPicker({
         description="Thẻ ATM / Internet Banking / QR ngân hàng — mở trang VNPay để trả, xong quay lại ReHome"
         selected={value === PAYMENT_METHOD.VNPAY}
         onPress={() => onChange(PAYMENT_METHOD.VNPAY)}
+        logo={<VnpayLogo />}
       />
       <RadioCard
         title="Ví ReHome"
         description={walletDesc}
+        logo={
+          <Ionicons name="wallet-outline" size={22} color={colors.primary} />
+        }
         selected={value === PAYMENT_METHOD.WALLET}
         onPress={walletOk ? () => onChange(PAYMENT_METHOD.WALLET) : undefined}
         style={!walletOk && styles.off}
