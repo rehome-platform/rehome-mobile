@@ -1,4 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { colors, fonts, radius, spacing } from "@/theme";
 
 // Mỗi kiểu nút: màu nền/viền, màu chữ, màu vòng quay loading
@@ -40,6 +46,7 @@ export function Button({
   variant = "primary",
   loading = false,
   disabled = false,
+  icon, // phần tử đứng trước chữ (vd. <GoogleLogo />)
   style,
 }) {
   const v = VARIANTS[variant];
@@ -61,6 +68,11 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator color={v.spinner} />
+      ) : icon ? (
+        <View style={styles.row}>
+          {icon}
+          <Text style={[styles.text, v.text]}>{title}</Text>
+        </View>
       ) : (
         <Text style={[styles.text, v.text]}>{title}</Text>
       )}
@@ -77,6 +89,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   text: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 24 },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
 });
