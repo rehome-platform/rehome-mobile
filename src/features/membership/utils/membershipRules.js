@@ -100,14 +100,19 @@ export function benefitLines(plan) {
 
 const lowerFirst = (s = "") => (s ? s[0].toLowerCase() + s.slice(1) : s);
 
+// Số tiền gọn cho cuống vé: 15000 → "15K", 12500 → "12.500"
+export function shortVnd(amount) {
+  const value = Number(amount) || 0;
+  return value >= 1000 && value % 1000 === 0
+    ? `${formatNumber(value / 1000)}K`
+    : formatNumber(value);
+}
+
 // Ô trái của thẻ voucher: "15K" / "10%"
 export function voucherHeadline(v) {
   if (v.discountKind === DISCOUNT_KIND.PERCENT)
     return `${Math.round(Number(v.discountValue) * 100)}%`;
-  const value = Number(v.discountValue) || 0;
-  return value >= 1000 && value % 1000 === 0
-    ? `${formatNumber(value / 1000)}K`
-    : formatNumber(value);
+  return shortVnd(v.discountValue);
 }
 
 // Điều kiện + mức trần: "Đơn từ 200.000 đ · tối đa 50.000 đ"

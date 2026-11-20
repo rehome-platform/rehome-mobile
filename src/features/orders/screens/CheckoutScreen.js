@@ -367,25 +367,60 @@ export default function CheckoutScreen() {
       {/* Mã giảm giá (gói thành viên) — một mã cho cả lần đặt */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>MÃ GIẢM GIÁ</Text>
+        {/* Đã chọn mã → khung xanh + số tiền giảm nổi bật bên phải; chưa chọn mà có mã dùng được → nền xanh nhạt
+            + nhãn cam "N mã" mời bấm; không có mã → dòng xám thường */}
         <Pressable
           onPress={() => setVoucherSheet(true)}
           disabled={!address}
           accessibilityRole="button"
-          style={({ pressed }) => [styles.voucherRow, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.voucherRow,
+            (selectedVoucher || usableVouchers.length > 0) && styles.voucherRowOn,
+            selectedVoucher && styles.voucherRowApplied,
+            pressed && styles.pressed,
+          ]}
         >
-          <Ionicons name="pricetags-outline" size={20} color={colors.primary} />
-          <Text
-            style={[styles.voucherText, !selectedVoucher && styles.muted]}
-            numberOfLines={1}
-          >
-            {selectedVoucher
-              ? `${selectedVoucher.name} · −${formatVnd(discount)}`
-              : vouchers.isPending && vouchers.fetchStatus !== "idle"
-                ? "Đang tìm mã dùng được…"
-                : usableVouchers.length
-                  ? `${usableVouchers.length} mã dùng được cho đơn này`
-                  : "Chưa có mã dùng được"}
-          </Text>
+          <Ionicons
+            name={selectedVoucher ? "pricetag" : "pricetags-outline"}
+            size={20}
+            color={selectedVoucher || usableVouchers.length ? colors.primary : colors.textSecondary}
+          />
+          {selectedVoucher ? (
+            <>
+              <View style={styles.voucherInfo}>
+                <Text style={styles.voucherName} numberOfLines={1}>
+                  {selectedVoucher.name}
+                </Text>
+                <Text style={styles.voucherCode} numberOfLines={1}>
+                  Mã {selectedVoucher.code}
+                </Text>
+              </View>
+              <Text style={styles.voucherAmount}>−{formatVnd(discount)}</Text>
+            </>
+          ) : (
+            <>
+              <Text
+                style={[
+                  styles.voucherText,
+                  usableVouchers.length ? styles.voucherInvite : styles.muted,
+                ]}
+                numberOfLines={1}
+              >
+                {vouchers.isPending && vouchers.fetchStatus !== "idle"
+                  ? "Đang tìm mã dùng được…"
+                  : usableVouchers.length
+                    ? "Chọn mã để được giảm giá"
+                    : "Chưa có mã dùng được"}
+              </Text>
+              {usableVouchers.length ? (
+                <View style={styles.voucherBadge}>
+                  <Text style={styles.voucherBadgeText}>
+                    {usableVouchers.length} mã
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          )}
           <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
         </Pressable>
       </View>
@@ -552,7 +587,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.surface,
   },
+  voucherRowOn: { borderColor: colors.primary, backgroundColor: colors.highlight },
+  voucherRowApplied: { borderWidth: 1.5 },
   voucherText: { flex: 1, ...textStyles.body, color: colors.text },
+  voucherInvite: { fontFamily: fonts.semibold, color: colors.primary },
+  voucherInfo: { flex: 1 },
+  voucherName: { ...textStyles.body, fontFamily: fonts.semibold, color: colors.text },
+  voucherCode: { ...textStyles.caption, color: colors.textSecondary },
+  voucherAmount: { ...textStyles.heading, fontFamily: fonts.bold, color: colors.primary },
+  voucherBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.secondary,
+  },
+  voucherBadgeText: { ...textStyles.label, fontFamily: fonts.bold, color: colors.text },
   sumRow: { flexDirection: "row", justifyContent: "space-between" },
   mainBtn: { marginTop: spacing.sm },
   resultHead: {
