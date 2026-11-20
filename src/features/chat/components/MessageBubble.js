@@ -6,10 +6,15 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 
 // Bong bóng tin: của mình bên phải (nền đậm), đối tác bên trái. Đang gửi / lỗi "Gửi lại".
 // Ảnh đính kèm (imageUrls) hiện phía trên chữ; bấm ảnh để xem to. Chữ BE đã che SĐT / email / STK thành "***"
+// Từ ngữ vi phạm: BE vẫn gửi tin nhưng che bằng "*" (content); originalContent là bản gốc → mặc định hiện bản che,
+// dưới bong bóng có dòng "Đã che từ ngữ không phù hợp · Xem" để tự bấm xem / "Ẩn lại" (cả người gửi lẫn người nhận)
 export function MessageBubble({ message: m, onRetry }) {
   const mine = m.isMine;
   const images = m.imageUrls ?? [];
   const [viewing, setViewing] = useState(null); // uri ảnh đang xem to
+  const [revealed, setRevealed] = useState(false);
+  const masked = !!m.originalContent && m.originalContent !== m.content;
+  const text = masked && revealed ? m.originalContent : m.content;
   return (
     <View style={[styles.wrap, mine ? styles.right : styles.left]}>
       {images.length ? (
@@ -40,8 +45,29 @@ export function MessageBubble({ message: m, onRetry }) {
             m.failed && styles.failed,
           ]}
         >
-          <Text style={mine ? styles.textMine : styles.text}>{m.content}</Text>
+          <Text style={mine ? styles.textMine : styles.text}>{text}</Text>
         </View>
+      ) : null}
+      {masked ? (
+        <Pressable
+          onPress={() => setRevealed((v) => !v)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            revealed ? "Ẩn lại từ ngữ không phù hợp" : "Xem tin gốc"
+          }
+          style={styles.maskRow}
+        >
+          <Ionicons
+            name={revealed ? "eye-off-outline" : "eye-outline"}
+            size={14}
+            color={colors.textSecondary}
+          />
+          <Text style={styles.maskText}>
+            {revealed ? "Ẩn lại" : "Đã che từ ngữ không phù hợp · "}
+            {revealed ? null : <Text style={styles.maskLink}>Xem</Text>}
+          </Text>
+        </Pressable>
       ) : null}
       {m.failed ? (
         <Pressable
@@ -103,6 +129,13 @@ const styles = StyleSheet.create({
   text: { ...textStyles.body, color: colors.text },
   textMine: { ...textStyles.body, color: colors.onPrimary },
   time: { ...textStyles.caption, color: colors.textSecondary },
+  maskRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  maskText: { ...textStyles.caption, color: colors.textSecondary },
+  maskLink: {
+    fontFamily: fonts.semibold,
+    color: colors.accent,
+    textDecorationLine: "underline",
+  },
   error: {
     ...textStyles.caption,
     fontFamily: fonts.semibold,

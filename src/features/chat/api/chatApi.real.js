@@ -78,6 +78,9 @@ const toMessage = (m) => ({
   id: m.id,
   senderId: m.senderId,
   content: m.content ?? "", // BE đã che SĐT / email / số tài khoản thành "***" trước khi lưu
+  // [CHỜ BE] Tin có từ ngữ vi phạm: content = bản đã che "*", originalContent = bản gốc để người dùng bấm xem
+  // (SĐT / email / STK vẫn che). null = tin không có từ nào bị che
+  originalContent: m.originalContent ?? null,
   imageUrls: m.imageUrls ?? [],
   createdAt: m.createdAt,
   isMine: !!m.isMine,
