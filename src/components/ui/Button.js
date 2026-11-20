@@ -74,7 +74,7 @@ export function Button({
           <Text style={[styles.text, v.text]}>{title}</Text>
         </View>
       ) : (
-        <Text style={[styles.text, v.text]}>{title}</Text>
+        <Text style={[styles.text, styles.fill, v.text]}>{title}</Text>
       )}
     </Pressable>
   );
@@ -88,7 +88,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  text: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 24 },
+  text: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 24, textAlign: "center" },
+  // Chữ trải hết bề ngang nút (căn giữa bằng textAlign). Nếu để chữ co vừa khít nội dung, một số máy Android
+  // (Oppo/Xiaomi… đổi font hệ thống) đo chữ hụt vài px → rớt chữ cuối xuống dòng 2 bị khuất ("Xem món tương | tự")
+  fill: { alignSelf: "stretch" },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
