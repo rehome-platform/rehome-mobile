@@ -76,6 +76,7 @@ export function useRoomSocket(id, conversation, active) {
         id: m.id,
         senderId: m.senderId,
         content: m.content ?? "",
+        originalContent: m.originalContent ?? null, // bản gốc khi có từ bị che (xem chatApi.real toMessage)
         imageUrls: m.imageUrls ?? [],
         createdAt: m.createdAt,
         isMine: false,
@@ -149,7 +150,8 @@ export function useSendMessage(id) {
         list.map((m) => (m.id === tempId ? msg : m)),
       ),
     onError: (e, { tempId }) => {
-      // Gửi quá nhanh / tin có từ ngữ bị cấm (BE #274, không lưu tin) → báo lý do; tin hiện "Chưa gửi được"
+      // Gửi quá nhanh / tin có từ ngữ bị cấm → báo lý do; tin hiện "Chưa gửi được".
+      // CONTENT_VIOLATION chỉ còn là dự phòng: BE bản mới cho gửi và che từ bằng "*" (xem MessageBubble)
       if (
         e?.code === ERROR_CODES.MESSAGE_RATE_LIMITED ||
         e?.code === ERROR_CODES.CONTENT_VIOLATION
