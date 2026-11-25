@@ -364,6 +364,13 @@ export default function OrderDetailScreen() {
         </InfoBox>
       ) : null}
 
+      {order.status === S.PACKED ? (
+        <InfoBox title="ReHome đã đóng gói xong">
+          Đơn đã có mã vận đơn GHN và đang chờ shipper tới lấy. Đơn không huỷ
+          được nữa.
+        </InfoBox>
+      ) : null}
+
       {shipping ? (
         <>
           {order.ghnTrackingCode ? (

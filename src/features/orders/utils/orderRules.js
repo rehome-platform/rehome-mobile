@@ -17,11 +17,13 @@ export const canChangeAddress = (o) =>
 export const canConfirm = (o) => o.status === S.DELIVERED; // [CHỜ BE] có cho SHIPPING không (câu 9)
 export const canRate = (o) =>
   o.status === S.COMPLETED && o.serviceRating == null; // API 67
-// Có vận đơn GHN → xem được hành trình ở mọi bước SAU khi gửi đi: đang giao, đã giao, hoàn thành, và
-// đơn bị huỷ do giao thất bại (vẫn có mã). BE trả /orders/{id}/tracking ở mọi trạng thái
+// Có vận đơn GHN → xem được hành trình từ lúc đóng gói xong (PACKED đã có mã, chờ GHN lấy): đang giao,
+// đã giao, hoàn thành, và đơn bị huỷ do giao thất bại (vẫn có mã). BE trả /orders/{id}/tracking ở mọi trạng thái
 export const canTrack = (o) =>
   !!o?.ghnTrackingCode &&
-  [S.SHIPPING, S.DELIVERED, S.COMPLETED, S.CANCELLED].includes(o.status);
+  [S.PACKED, S.SHIPPING, S.DELIVERED, S.COMPLETED, S.CANCELLED].includes(
+    o.status,
+  );
 
 // Đơn huỷ có hoàn tiền (đã từng trả) — đơn huỷ vì hết hạn thanh toán thì không
 export const wasRefunded = (o) =>
@@ -43,6 +45,7 @@ export const orderStepOf = (o) =>
     PENDING_PAYMENT: 0, // xong Đặt hàng → đang chờ Thanh toán
     PAID: 1, // xong Thanh toán → chờ Kho đóng gói
     PACKING: 1, // đang Kho đóng gói
+    PACKED: 2, // xong đóng gói → chờ GHN tới lấy (bước Đang giao sắp diễn ra)
     SHIPPING: 2, // xong đóng gói → đang giao
     DELIVERED: 3, // đã giao tới nơi → chờ Hoàn thành
     COMPLETED: 4,

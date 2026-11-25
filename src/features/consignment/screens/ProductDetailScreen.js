@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
 import {
   ORDER_STEPS,
+  orderStepValue,
   PRODUCT_ENDED_LABEL,
   PRODUCT_STATUS,
   PRODUCT_VIEW,
@@ -151,7 +152,7 @@ function OrderTracker({ status }) {
   const index =
     status === "DELIVERED"
       ? 3
-      : ORDER_STEPS.findIndex((s) => s.value === status);
+      : ORDER_STEPS.findIndex((s) => s.value === orderStepValue(status));
   return (
     <View style={styles.tracker}>
       {ORDER_STEPS.map((step, i) => {

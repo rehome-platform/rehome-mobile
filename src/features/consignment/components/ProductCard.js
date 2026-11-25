@@ -2,7 +2,11 @@ import dayjs from "dayjs";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
-import { ORDER_STEPS, PRODUCT_VIEW } from "@/constants/consignment";
+import {
+  ORDER_STEPS,
+  PRODUCT_VIEW,
+  orderStepValue,
+} from "@/constants/consignment";
 import { WITHDRAWAL_STATUS } from "@/constants/withdrawal";
 import { formatVnd } from "@/utils/money";
 import {
@@ -78,7 +82,9 @@ function Detail({ product, view }) {
     );
   }
   if (view === PRODUCT_VIEW.HAS_ORDER) {
-    const step = ORDER_STEPS.find((s) => s.value === product.order?.status);
+    const step = ORDER_STEPS.find(
+      (s) => s.value === orderStepValue(product.order?.status),
+    );
     return (
       <>
         <Text style={styles.price}>{formatVnd(product.currentPrice)}</Text>
