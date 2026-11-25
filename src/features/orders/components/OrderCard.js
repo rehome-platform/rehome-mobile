@@ -54,6 +54,8 @@ function Footer({ order, onPay, onTrack, onConfirm, onRate, onReturn }) {
     case S.PAID:
     case S.PACKING:
       return <Text style={styles.muted}>ReHome đang chuẩn bị hàng</Text>;
+    case S.PACKED:
+      return <Text style={styles.muted}>Đã đóng gói · chờ GHN tới lấy hàng</Text>;
     case S.SHIPPING:
       return (
         <>

@@ -3,6 +3,7 @@ export const ORDER_STATUS = {
   PENDING_PAYMENT: "PENDING_PAYMENT",
   PAID: "PAID",
   PACKING: "PACKING",
+  PACKED: "PACKED", // BE a2ee3c6 (19/11): đã đóng gói + có mã vận đơn GHN, chờ GHN tới lấy
   SHIPPING: "SHIPPING",
   DELIVERED: "DELIVERED",
   COMPLETED: "COMPLETED",
@@ -13,6 +14,7 @@ export const ORDER_STATUS_LABEL = {
   PENDING_PAYMENT: "Chờ thanh toán",
   PAID: "Đã thanh toán",
   PACKING: "Đang đóng gói",
+  PACKED: "Đã đóng gói",
   SHIPPING: "Đang giao",
   DELIVERED: "Đã giao",
   COMPLETED: "Hoàn thành",
@@ -31,7 +33,7 @@ export const ORDER_TABS = [
   {
     key: "PROCESSING",
     label: "Đang xử lý",
-    statuses: [ORDER_STATUS.PAID, ORDER_STATUS.PACKING],
+    statuses: [ORDER_STATUS.PAID, ORDER_STATUS.PACKING, ORDER_STATUS.PACKED],
   },
   {
     key: "SHIPPING",

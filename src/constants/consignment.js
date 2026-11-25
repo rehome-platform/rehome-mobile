@@ -91,6 +91,9 @@ export const ORDER_STEPS = [
   { value: "SHIPPING", label: "Đang giao" },
   { value: "COMPLETED", label: "Hoàn thành" },
 ];
+// BE tách PACKING (đang đóng gói) / PACKED (đóng xong, chờ GHN lấy) — cả hai cùng nấc "Đã đóng gói"
+export const orderStepValue = (status) =>
+  status === "PACKED" ? "PACKING" : status;
 // "Đồ ký gửi của tôi": tab theo hành trình của MÓN (gộp yêu cầu ký gửi + sản phẩm)
 export const CONSIGN_STAGE = {
   PENDING: "PENDING", // yêu cầu chờ ReHome duyệt

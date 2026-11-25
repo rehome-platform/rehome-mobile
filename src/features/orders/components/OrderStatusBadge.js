@@ -7,6 +7,7 @@ const TONE = {
   [S.PENDING_PAYMENT]: "warning",
   [S.PAID]: "info",
   [S.PACKING]: "info",
+  [S.PACKED]: "info",
   [S.SHIPPING]: "info",
   [S.DELIVERED]: "warning",
   [S.COMPLETED]: "success",
