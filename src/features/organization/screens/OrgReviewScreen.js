@@ -33,6 +33,18 @@ import { isSubmittedFile } from "@/features/organization/utils/files";
 
 const formatDate = (value) => (value ? dayjs(value).format("DD/MM/YYYY") : "");
 
+// Lỗi trùng của BE → ô cần sửa ở bước Tổ chức + chữ trên nút
+const DUPLICATE_FIELD = {
+  [ERROR_CODES.ORGANIZATION_TAX_CODE_TAKEN]: {
+    field: "taxCode",
+    action: "Sửa mã số thuế",
+  },
+  [ERROR_CODES.ORGANIZATION_EMAIL_TAKEN]: {
+    field: "contactEmail",
+    action: "Sửa email liên hệ",
+  },
+};
+
 // Toạ độ điểm nhận (BE bắt buộc) → upload mọi tệp song song (logo, 2 mặt CCCD, giấy tờ) → gửi hồ sơ
 async function submitApplication(data) {
   const { info, documents, location } = data;
@@ -75,6 +87,7 @@ export default function OrgReviewScreen() {
   const documents = useOrgRegisterStore((s) => s.documents);
   const location = useOrgRegisterStore((s) => s.location);
   const mode = useOrgRegisterStore((s) => s.mode);
+  const setFieldError = useOrgRegisterStore((s) => s.setFieldError);
   const queryClient = useQueryClient();
   const options = useOrgOptions();
 
@@ -114,6 +127,13 @@ export default function OrgReviewScreen() {
 
   // Về đúng bước để sửa (các bước giữa vẫn giữ dữ liệu) → bấm Tiếp tục để quay lại đây
   const edit = (step) => router.dismissTo(`/org/registration/${step}`);
+
+  // MST / email đã có tổ chức khác dùng → về bước Tổ chức, ô đó báo đỏ sẵn và được chọn để sửa ngay
+  const duplicate = DUPLICATE_FIELD[submit.error?.code];
+  const fixDuplicate = () => {
+    setFieldError({ field: duplicate.field, message: submit.error.message });
+    edit("info");
+  };
 
   return (
     <Screen
@@ -233,11 +253,12 @@ export default function OrgReviewScreen() {
       </Checkbox>
 
       <ErrorBox message={submit.error?.message}>
-        {submit.error?.code === ERROR_CODES.ORGANIZATION_EMAIL_TAKEN ||
-        submit.error?.code === ERROR_CODES.ORGANIZATION_TAX_CODE_TAKEN ? (
-          <Text style={styles.muted}>
-            Bấm "Sửa" ở khối Tổ chức để đổi email liên hệ hoặc mã số thuế.
-          </Text>
+        {duplicate ? (
+          <Button
+            title={duplicate.action}
+            variant="secondary"
+            onPress={fixDuplicate}
+          />
         ) : null}
       </ErrorBox>
     </Screen>

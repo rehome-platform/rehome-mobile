@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { locateAddress } from "@/features/organization/utils/geocode";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
@@ -44,12 +44,27 @@ export default function OrgInfoScreen() {
     handleSubmit,
     setValue,
     setError,
+    setFocus,
     watch,
     formState: { errors, isDirty },
   } = useForm({
     resolver: zodResolver(orgInfoSchema),
     defaultValues: saved ?? { ...EMPTY_INFO, contactEmail: loginEmail ?? "" }, // điền sẵn email đăng nhập
   });
+
+  // Từ bước Xem lại bấm "Sửa mã số thuế / email liên hệ" (BE báo trùng) → ô đó báo đỏ + đặt con trỏ vào để sửa
+  const fieldError = useOrgRegisterStore((s) => s.fieldError);
+  const setFieldError = useOrgRegisterStore((s) => s.setFieldError);
+  useFocusEffect(
+    useCallback(() => {
+      if (!fieldError) return;
+      setError(fieldError.field, { message: fieldError.message });
+      setFieldError(null);
+      // Chờ màn chuyển xong mới mở bàn phím, không thì focus bị bỏ qua
+      const timer = setTimeout(() => setFocus(fieldError.field), 350);
+      return () => clearTimeout(timer);
+    }, [fieldError, setError, setFocus, setFieldError]),
+  );
 
   const logoUri = watch("logoUri");
   const displayName = watch("displayName");
@@ -203,6 +218,7 @@ export default function OrgInfoScreen() {
           <TextField
             label="Mã số thuế"
             helper="Không bắt buộc — câu lạc bộ thường chưa có"
+            ref={field.ref}
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -273,6 +289,7 @@ export default function OrgInfoScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             helper="Email tổ chức nhận thông báo và người quyên góp liên hệ. Mặc định là email đăng nhập, đổi được"
+            ref={field.ref}
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
