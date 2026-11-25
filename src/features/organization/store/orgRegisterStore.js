@@ -9,12 +9,15 @@ const EMPTY = {
   representative: null,
   documents: null,
   location: null,
+  // Lỗi BE trả ở bước Gửi (MST / email trùng) cần hiện ở bước Tổ chức: { field, message } — bước đó đọc rồi xoá
+  fieldError: null,
 };
 
 export const useOrgRegisterStore = create((set) => ({
   ...EMPTY,
   // key: "info" | "representative" | "documents" | "location"
   saveStep: (key, data) => set({ [key]: data }),
+  setFieldError: (fieldError) => set({ fieldError }),
   setMode: (mode) => set({ mode }),
   reset: () => set(EMPTY),
 }));
