@@ -56,6 +56,15 @@ export function useLiveTryonHistory() {
   });
 }
 
+// Xoá video đã quay → làm mới danh sách lịch sử
+export function useDeleteLiveTryon() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId) => tryonLiveApi.deleteSession(sessionId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tryonLiveKeys.history }),
+  });
+}
+
 // Chỉ gọi khi KHÔNG có video để upload (mất kết nối giữa chừng...) - xem tryonLiveApi.real.js
 export function useCompleteLiveTryon() {
   return useMutation({

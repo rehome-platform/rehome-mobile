@@ -30,6 +30,12 @@ export async function getHistory({ page = 0, size = 20 } = {}) {
   return { ...p, content: p.content ?? [] };
 }
 
+// DELETE /tryon/live/sessions/{id} - Member xoá video đã quay của chính mình (mất khỏi lịch sử, không hoàn lượt).
+// 404 khi video không còn / không phải của mình
+export async function deleteSession(sessionId) {
+  return unwrap(await api.delete(`/tryon/live/sessions/${sessionId}`));
+}
+
 // PATCH /tryon/live/sessions/{id}/complete - chỉ dùng khi KHÔNG có video (vd. mất kết nối giữa chừng),
 // chỉ để audit, không hoàn quota. Khi có video, trang WebView tự upload và BE tự đánh dấu COMPLETED.
 export async function completeSession(sessionId, { status, actualDurationSeconds }) {

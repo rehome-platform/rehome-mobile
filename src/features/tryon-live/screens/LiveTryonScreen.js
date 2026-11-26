@@ -291,7 +291,7 @@ export default function LiveTryonScreen() {
       clearInterval(countdownRef.current);
       router.replace({
         pathname: "/tryon-live/result",
-        params: { videoUrl: event.videoUrl, productId },
+        params: { videoUrl: event.videoUrl, productId, sessionId: session.sessionId },
       });
       return;
     }
