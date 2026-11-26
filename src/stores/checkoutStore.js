@@ -6,7 +6,7 @@ import { DEFAULT_GATEWAY } from "@/constants/order";
 export const useCheckoutStore = create((set) => ({
   addressId: null, // địa chỉ đang chọn ở checkout (null = dùng địa chỉ mặc định)
   paymentMethod: DEFAULT_GATEWAY, // mặc định VNPay (đã bỏ MoMo 17/11); nhớ lựa chọn trong lúc dùng app
-  // Đơn vừa tạo, chờ thanh toán (mỗi đơn 1 món): [{id, orderNo, warehouseId, warehouseName, itemName, subtotal, shippingFee, totalAmount, status, paymentDeadline}]
+  // Đơn vừa tạo, chờ thanh toán (mỗi đơn 1 món): [{id, orderNo, warehouseId, warehouseName, itemName, itemThumbnail, subtotal, shippingFee, totalAmount, status, paymentDeadline}]
   pendingOrders: [],
 
   setAddressId: (addressId) => set({ addressId }),

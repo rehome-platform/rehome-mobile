@@ -186,6 +186,7 @@ export default function CheckoutScreen() {
               return {
                 ...o,
                 itemName: line?.name ?? null,
+                itemThumbnail: line?.thumbnailUrl ?? null, // ảnh món ở màn Chờ thanh toán
                 warehouseName: line?.warehouseName ?? "Địa điểm ký gửi",
               };
             }),

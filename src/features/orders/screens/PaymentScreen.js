@@ -3,7 +3,9 @@ import {
   Alert,
   AppState,
   BackHandler,
+  Image,
   Linking,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -38,6 +40,7 @@ import { toDate } from "../utils/time";
 import { PaymentCountdown } from "../components/PaymentCountdown";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 // Tên hiện cho một đơn: tên món (đơn mới luôn 1 món — BE 963758f). Mở từ checkout: itemName do checkout ghép;
 // mở từ Đơn hàng: items của chi tiết đơn (đơn cũ có thể nhiều món). Không có thì dùng tên kho
@@ -46,6 +49,9 @@ const orderLabel = (o) => {
   if (items.length > 1) return `${items[0].name} + ${items.length - 1} món`;
   return o.itemName ?? items[0]?.name ?? o.warehouseName;
 };
+// Ảnh món của đơn: mở từ checkout có itemThumbnail; mở từ Đơn hàng lấy từ items / firstItem
+const orderThumb = (o) =>
+  o.itemThumbnail ?? o.items?.[0]?.thumbnailUrl ?? o.firstItem?.thumbnailUrl ?? null;
 
 const POLL_MS = 3000;
 const POLL_WINDOW_MS = 60 * 1000; // chỉ hỏi liên tục 60 giây sau mỗi lần mở MoMo / quay lại app
@@ -113,6 +119,7 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const [gateway, setGateway] = useState(null); // MOMO / VNPAY đã mở → nhờ BE hỏi lại cổng đó khi kiểm tra
 
   const ids = orders.map((o) => o.id);
+  const { open: openPhoto, viewer } = usePhotoViewer();
   // Trạng thái thật luôn hỏi BE — không tin kết quả trên đường quay về từ MoMo (F-057)
   const status = useQuery({
     queryKey: orderKeys.statuses(ids),
@@ -349,6 +356,29 @@ function PaymentView({ initialOrders, fromStore = false }) {
       <View style={styles.table}>
         {orders.map((o, i) => (
           <View key={o.id} style={styles.row}>
+            {/* Ảnh món để nhận ra đang trả cho món nào. Bấm → xem ảnh to, KHÔNG mở trang sản phẩm:
+                món đang RESERVED nên trang sản phẩm sẽ báo "đang có người khác thanh toán" — dễ hiểu nhầm */}
+            {orderThumb(o) ? (
+              <Pressable
+                onPress={() => openPhoto([orderThumb(o)])}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`Xem ảnh ${orderLabel(o)}`}
+                style={styles.thumb}
+              >
+                <Image
+                  source={{ uri: orderThumb(o) }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Pressable>
+            ) : (
+              <View style={styles.thumb}>
+                <Ionicons
+                  name="shirt-outline"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </View>
+            )}
             <View style={styles.rowInfo}>
               <Text style={styles.rowTitle} numberOfLines={2}>
                 {orders.length > 1 ? `Đơn ${i + 1} — ` : ""}
@@ -406,6 +436,7 @@ function PaymentView({ initialOrders, fromStore = false }) {
           </View>
         </NoteBox>
       ) : null}
+      {viewer}
     </Screen>
   );
 }
@@ -488,6 +519,15 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.neutral,
   },
   rowInfo: { flex: 1, gap: 2 },
+  thumb: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderRadius: radius.input,
+    backgroundColor: colors.neutral,
+  },
   rowTitle: {
     ...textStyles.body,
     fontFamily: fonts.semibold,
