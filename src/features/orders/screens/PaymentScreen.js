@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   AppState,
@@ -117,6 +117,8 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const [method, setMethod] = useState(storeMethod ?? DEFAULT_GATEWAY);
   const [paidBy, setPaidBy] = useState(null); // hiện "Đã thanh toán bằng Ví ReHome" ở màn kết quả
   const [gateway, setGateway] = useState(null); // MOMO / VNPAY đã mở → nhờ BE hỏi lại cổng đó khi kiểm tra
+  // Vừa mở trang VNPay, chưa quay lại app → lần quay lại đầu tiên kiểm tra 1 lần và báo nếu chưa trả xong
+  const returningFrom = useRef(null);
 
   const ids = orders.map((o) => o.id);
   const { open: openPhoto, viewer } = usePhotoViewer();
@@ -167,12 +169,18 @@ function PaymentView({ initialOrders, fromStore = false }) {
     queryClient.invalidateQueries({ queryKey: ["wallet"] }); // trả bằng ví → số dư đổi
   }, [done]);
 
-  // Quay lại app (từ MoMo / app khác) → hỏi BE ngay + hỏi tiếp 60 giây
+  // Quay lại app (từ VNPay / app khác) → hỏi BE ngay + hỏi tiếp 60 giây.
+  // Nếu vừa từ trang thanh toán về mà đơn chưa PAID (thoát giữa chừng, huỷ…) → toast "Chưa nhận được xác nhận…";
+  // đơn vẫn Chờ thanh toán, bấm thanh toán lại được (VNPay hoặc Ví)
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (s) => {
-      if (s === "active" && !done) {
-        status.refetch();
-        setPollUntil(Date.now() + POLL_WINDOW_MS);
+    const sub = AppState.addEventListener("change", async (s) => {
+      if (s !== "active" || done) return;
+      setPollUntil(Date.now() + POLL_WINDOW_MS);
+      const from = returningFrom.current;
+      returningFrom.current = null;
+      const res = await status.refetch();
+      if (from && res.data && !res.data.every((o) => o.status === ORDER_STATUS.PAID)) {
+        showToast(`Chưa nhận được xác nhận thanh toán từ ${PAYMENT_METHOD_LABEL[from]}`);
       }
     });
     return () => sub.remove();
@@ -251,6 +259,7 @@ function PaymentView({ initialOrders, fromStore = false }) {
         );
       setGateway(method);
       setPollUntil(Date.now() + POLL_WINDOW_MS);
+      returningFrom.current = method;
       // [TẠM] dev build hiện tại chưa có module native expo-web-browser → mở trình duyệt ngoài.
       // Quay lại app → AppState "active" → hỏi BE (effect bên trên).
       // Lần build lại dev build sau → đổi sang WebBrowser.openBrowserAsync (mở ngay trong app)
