@@ -94,8 +94,17 @@ export default function ResetPasswordScreen() {
       footer={<Button title="Đặt mật khẩu" onPress={onSubmit} loading={reset.isPending} />}
       contentStyle={styles.content}
     >
+      {/* BE chỉ gửi mã cho tài khoản đang hoạt động + đã xác thực email, nhưng luôn trả như nhau (chống dò
+          tài khoản) → không khẳng định "đã gửi", ghi trung lập như phần gửi link (AU-05) và chỉ lối cho
+          tài khoản chưa xác thực */}
       <Text style={styles.desc}>
-        Nhập mã 6 số đã gửi tới <Text style={styles.bold}>{email}</Text> và đặt mật khẩu mới.
+        Nếu <Text style={styles.bold}>{email}</Text> là tài khoản ReHome đã xác
+        thực email, mình vừa gửi mã 6 số tới email này. Nhập mã và đặt mật khẩu
+        mới.
+      </Text>
+      <Text style={styles.desc}>
+        Không thấy thư? Kiểm tra mục Spam. Tài khoản chưa xác thực email thì
+        không nhận được mã: hãy đăng nhập để xác thực email trước.
       </Text>
 
       <View style={styles.group}>
