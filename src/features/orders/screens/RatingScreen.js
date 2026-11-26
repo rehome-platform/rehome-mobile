@@ -2,15 +2,14 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
@@ -56,7 +55,7 @@ export default function RatingScreen() {
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
   const [photos, setPhotos] = useState([]);
-  const [viewing, setViewing] = useState(null); // ảnh đang xem to (chế độ chỉ đọc)
+  const viewer = usePhotoViewer(); // bấm ảnh đã gửi → xem to (chế độ chỉ đọc)
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -195,10 +194,10 @@ export default function RatingScreen() {
             ) : null}
             {ratedImages.length ? (
               <View style={styles.thumbs}>
-                {ratedImages.map((uri) => (
+                {ratedImages.map((uri, i) => (
                   <Pressable
                     key={uri}
-                    onPress={() => setViewing(uri)}
+                    onPress={() => viewer.open(ratedImages, i)}
                     accessibilityRole="imagebutton"
                     accessibilityLabel="Xem ảnh"
                   >
@@ -256,25 +255,7 @@ export default function RatingScreen() {
         </>
       ) : null}
 
-      <Modal
-        visible={!!viewing}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setViewing(null)}
-      >
-        <Pressable style={styles.viewer} onPress={() => setViewing(null)}>
-          {viewing ? (
-            <Image
-              source={{ uri: viewing }}
-              style={styles.full}
-              resizeMode="contain"
-            />
-          ) : null}
-          <View style={styles.close}>
-            <Ionicons name="close" size={28} color={colors.onPrimary} />
-          </View>
-        </Pressable>
-      </Modal>
+      {viewer.viewer}
     </Screen>
   );
 }
@@ -332,12 +313,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
   },
-  viewer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.92)",
-  },
-  full: { width: "100%", height: "80%" },
-  close: { position: "absolute", top: 48, right: 20 },
 });
