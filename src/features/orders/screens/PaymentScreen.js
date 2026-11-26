@@ -111,10 +111,10 @@ function PaymentView({ initialOrders, fromStore = false }) {
   const [paying, setPaying] = useState(false);
   const [checking, setChecking] = useState(false); // chỉ quay vòng khi người dùng bấm "Kiểm tra lại"
   const storeMethod = useCheckoutStore((s) => s.paymentMethod);
-  // Mở từ checkout → theo lựa chọn ở BR-08; mở từ Đơn hàng → VNPay (đã bỏ MoMo 17/11), đổi được ngay tại đây
-  const [method, setMethod] = useState(
-    fromStore ? storeMethod : DEFAULT_GATEWAY,
-  );
+  const setStoreMethod = useCheckoutStore((s) => s.setPaymentMethod);
+  // Chọn phương thức CHỈ ở màn này (màn Đặt hàng đã bỏ chỗ chọn để khỏi hỏi 2 lần). Mở chọn sẵn lựa chọn lần
+  // trước trong phiên dùng app (mặc định VNPay — đã bỏ MoMo 17/11). Ví không đủ thì PaymentMethodPicker tự đổi
+  const [method, setMethod] = useState(storeMethod ?? DEFAULT_GATEWAY);
   const [paidBy, setPaidBy] = useState(null); // hiện "Đã thanh toán bằng Ví ReHome" ở màn kết quả
   const [gateway, setGateway] = useState(null); // MOMO / VNPAY đã mở → nhờ BE hỏi lại cổng đó khi kiểm tra
 
@@ -401,7 +401,10 @@ function PaymentView({ initialOrders, fromStore = false }) {
         <Text style={styles.methodTitle}>PHƯƠNG THỨC</Text>
         <PaymentMethodPicker
           value={method}
-          onChange={setMethod}
+          onChange={(m) => {
+            setMethod(m);
+            setStoreMethod(m); // nhớ cho lần mua sau (màn Đặt hàng không còn chỗ chọn)
+          }}
           amount={total}
         />
       </View>
