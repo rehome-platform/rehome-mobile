@@ -11,6 +11,7 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { ChipGroup } from "@/components/ui/ChipGroup";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { Button } from "@/components/ui/Button";
+import { ClothingIcon } from "@/components/ui/ClothingIcon";
 import { CATEGORY_GROUPS, groupOfCategory } from "@/constants/consignItem";
 import { useCategoryOptions } from "@/features/catalog/hooks/useCatalogOptions";
 
@@ -77,11 +78,19 @@ export function CategoryPicker({ value, onChange }) {
                 pressed && styles.pressed,
               ]}
             >
-              <Ionicons
-                name={g.icon}
-                size={28}
-                color={selected ? colors.primary : colors.textSecondary}
-              />
+              {g.svg ? (
+                <ClothingIcon
+                  name={g.svg}
+                  size={28}
+                  color={selected ? colors.primary : colors.textSecondary}
+                />
+              ) : (
+                <Ionicons
+                  name={g.icon}
+                  size={28}
+                  color={selected ? colors.primary : colors.textSecondary}
+                />
+              )}
               <Text
                 style={[styles.tileText, selected && styles.tileTextSelected]}
               >
