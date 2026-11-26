@@ -3,6 +3,7 @@ export const ERROR_CODES = {
   NETWORK: "NETWORK",
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
   ACCOUNT_BANNED: "ACCOUNT_BANNED",
+  SESSION_EXPIRED: "SESSION_EXPIRED", // app tự đặt: refresh bị BE từ chối (không tồn tại / hết hạn / thu hồi) → phải đăng nhập lại
   WRONG_PASSWORD: "WRONG_PASSWORD", // đổi mật khẩu: sai mật khẩu hiện tại
   NEW_PASSWORD_SAME_AS_OLD: "NEW_PASSWORD_SAME_AS_OLD", // đổi mật khẩu: mới trùng cũ
   GOOGLE_ACCOUNT_CONFLICT: "GOOGLE_ACCOUNT_CONFLICT", // email đã gắn với tài khoản Google khác

@@ -2,7 +2,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { ENV } from "@/config/env";
 import { tokenStorage } from "@/lib/storage/tokenStorage";
-import { toApiError } from "./errors";
+import { ApiError, toApiError } from "./errors";
 import { ERROR_CODES } from "@/constants/errorCodes";
 
 // Server Render ngủ khi không dùng: request đầu tiên có thể mất vài chục giây
@@ -103,10 +103,21 @@ api.interceptors.response.use(
       ) {
         return Promise.reject(toApiError(refreshError));
       }
-      // Refresh bị BE từ chối (hết hạn, ACCOUNT_BANNED [CHỜ BE]) hoặc không có refresh token → đăng xuất
-      const reason = refreshError.response
+      // Refresh bị BE từ chối hoặc không có refresh token → đăng xuất.
+      // Bị khoá: giữ nguyên lỗi để màn Đăng nhập hiện lý do khoá. Còn lại (refresh token không tồn tại — bị xoá do
+      // đăng xuất / đặt lại mật khẩu ở máy khác, hết hạn, bị thu hồi) → câu dễ hiểu thay cho câu kỹ thuật của BE
+      const raw = refreshError.response
         ? toApiError(refreshError)
         : toApiError(error);
+      const reason =
+        raw.code === ERROR_CODES.ACCOUNT_BANNED
+          ? raw
+          : new ApiError({
+              status: 401,
+              code: ERROR_CODES.SESSION_EXPIRED,
+              message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+              detail: raw.message,
+            });
       onSessionExpired(reason);
       return Promise.reject(reason);
     }
