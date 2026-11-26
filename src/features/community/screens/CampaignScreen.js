@@ -31,6 +31,7 @@ import {
 import { VerifiedBadge } from "../components/VerifiedBadge";
 import { CONVERSATION_TYPE } from "@/constants/chat";
 import { useOpenConversation } from "@/features/chat/hooks/useChat";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/community");
@@ -51,6 +52,7 @@ export default function CampaignScreen() {
   const query = useCampaign(id);
   const c = query.data;
   const { open: openChat, isOpening } = useOpenConversation();
+  const { open: openPhoto, viewer } = usePhotoViewer();
   const here = `/campaigns/${id}`;
   const needLogin = () =>
     askLogin(
@@ -159,7 +161,14 @@ export default function CampaignScreen() {
     <Screen onRefresh={refreshActive} scroll padded={false} header={header} footer={footer}>
       <View style={styles.cover}>
         {c.coverUrl ? (
-          <Image source={{ uri: c.coverUrl }} style={StyleSheet.absoluteFill} />
+          <Pressable
+            onPress={() => openPhoto([c.coverUrl])}
+            accessibilityRole="imagebutton"
+            accessibilityLabel="Xem ảnh bìa"
+            style={StyleSheet.absoluteFill}
+          >
+            <Image source={{ uri: c.coverUrl }} style={StyleSheet.absoluteFill} />
+          </Pressable>
         ) : null}
         <Text style={[styles.tag, !open && styles.tagClosed]}>
           {open ? "ĐANG NHẬN ĐỒ" : "ĐÃ ĐÓNG"}
@@ -236,6 +245,7 @@ export default function CampaignScreen() {
           ))}
         </Section>
       </View>
+      {viewer}
     </Screen>
   );
 }

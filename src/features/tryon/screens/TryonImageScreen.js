@@ -28,6 +28,7 @@ import { useDeleteTryonImage, useTryonImage } from "../hooks/useTryon";
 import { shortTitle } from "../utils/tryonRules";
 import { AiBadge } from "../components/AiBadge";
 import { OutfitItemRow } from "../components/OutfitItemRow";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/tryon/collection");
@@ -41,6 +42,7 @@ export default function TryonImageScreen() {
   const cart = useCart();
   const addToCart = useAddToCart();
   const remove = useDeleteTryonImage();
+  const { open: openPhoto, viewer } = usePhotoViewer();
 
   if (!isAuthed) return <Redirect href="/login" />;
 
@@ -124,13 +126,21 @@ export default function TryonImageScreen() {
   return (
     <Screen scroll header={header} contentStyle={styles.content}>
       <View style={styles.photo}>
-        <Image
-          source={{ uri: img.imageUrl }}
+        <Pressable
+          onPress={() => openPhoto([img.imageUrl])}
+          accessibilityRole="imagebutton"
+          accessibilityLabel="Xem ảnh thử đồ"
           style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
+        >
+          <Image
+            source={{ uri: img.imageUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+        </Pressable>
         <AiBadge />
       </View>
+      {viewer}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>SẢN PHẨM TRONG ẢNH NÀY</Text>

@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Image,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -47,6 +48,7 @@ import { TermProgress } from "@/features/consignment/components/TermProgress";
 import { PickupInfo } from "@/features/consignment/components/PickupInfo";
 import { freeWindowOf } from "@/features/withdrawals/utils/withdrawalRules";
 import { MessageWarehouseButton } from "@/features/chat/components/MessageWarehouseButton";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
@@ -58,10 +60,21 @@ function ProductHead({ product }) {
   const sub = [product.brandName, product.size ? `Size ${product.size}` : null]
     .filter(Boolean)
     .join(" · ");
+  const { open, viewer } = usePhotoViewer();
+  // Bấm ảnh → xem to; có đủ bộ ảnh (photos) thì vuốt qua cả bộ, không thì chỉ ảnh đại diện
+  const urls = product.photos?.length
+    ? product.photos.map((p) => p?.url ?? p)
+    : [product.photoUrl];
   return (
     <View style={styles.head}>
       {product.photoUrl ? (
-        <Image source={{ uri: product.photoUrl }} style={styles.thumb} />
+        <Pressable
+          onPress={() => open(urls)}
+          accessibilityRole="imagebutton"
+          accessibilityLabel="Xem ảnh sản phẩm"
+        >
+          <Image source={{ uri: product.photoUrl }} style={styles.thumb} />
+        </Pressable>
       ) : (
         <View style={styles.thumb} />
       )}
@@ -76,6 +89,7 @@ function ProductHead({ product }) {
           {product.warehouseName ? ` · ${product.warehouseName}` : ""}
         </Text>
       </View>
+      {viewer}
     </View>
   );
 }
