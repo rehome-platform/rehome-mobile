@@ -1,12 +1,24 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { formatVnd } from "@/utils/money";
 
-// Một dòng món: ảnh nhỏ · tên · giá. faded: món không đặt được
+// Một dòng món: ảnh nhỏ · tên · giá. faded: món không đặt được.
+// Bấm cả dòng → mở trang sản phẩm để xem lại ảnh, mô tả (như Shopee); Back quay về đúng màn Đặt hàng
 export function OrderLine({ line, faded }) {
   return (
-    <View style={[styles.line, faded && styles.faded]}>
+    <Pressable
+      onPress={() => router.push(`/products/${line.productId}`)}
+      disabled={!line.productId}
+      accessibilityRole="button"
+      accessibilityLabel={`Xem sản phẩm ${line.name}`}
+      style={({ pressed }) => [
+        styles.line,
+        faded && styles.faded,
+        pressed && styles.pressed,
+      ]}
+    >
       <View style={styles.thumb}>
         {line.thumbnailUrl ? (
           <Image
@@ -27,7 +39,7 @@ export function OrderLine({ line, faded }) {
       <Text style={[styles.price, faded && styles.struck]}>
         {formatVnd(line.price)}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -94,6 +106,7 @@ const styles = StyleSheet.create({
   body: { padding: spacing.lg, gap: spacing.md },
   line: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   faded: { opacity: 0.5 },
+  pressed: { opacity: 0.7 },
   thumb: {
     width: 48,
     height: 48,
