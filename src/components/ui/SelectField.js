@@ -1,12 +1,22 @@
-import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   FlatList,
+  Keyboard,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -61,7 +71,35 @@ export function SelectField({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const selected = options.find((o) => o.value === value);
+
+  // Modal không tự đẩy lên khi bàn phím mở (Android) → khung chọn nằm dưới bàn phím; gõ tìm làm danh sách
+  // ngắn lại thì cả khung bị che mất. Đo chiều cao bàn phím, đặt khung ngay trên bàn phím
+  const [keyboard, setKeyboard] = useState(0);
+  useEffect(() => {
+    if (!open) return undefined;
+    const ios = Platform.OS === "ios";
+    const show = Keyboard.addListener(
+      ios ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboard(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      ios ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboard(0),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+      setKeyboard(0);
+    };
+  }, [open]);
+  // Chiều cao khung: tối đa 70% màn hình, và không vượt phần còn trống phía trên bàn phím.
+  // Có ô tìm → giữ cố định chiều cao này để gõ tìm danh sách ngắn lại khung không bị tụt xuống
+  const sheetHeight = Math.min(
+    screenHeight * 0.7,
+    screenHeight - keyboard - insets.top - spacing.xl,
+  );
 
   // Bỏ dấu sẵn 1 lần khi danh sách đổi; gõ tìm chỉ còn so chuỗi
   const indexed = useMemo(
@@ -130,7 +168,14 @@ export function SelectField({
           accessibilityLabel="Đóng"
         />
         <View
-          style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md }]}
+          style={[
+            styles.sheet,
+            {
+              marginBottom: keyboard,
+              paddingBottom: keyboard ? spacing.md : insets.bottom + spacing.md,
+            },
+            searchable ? { height: sheetHeight } : { maxHeight: sheetHeight },
+          ]}
         >
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>{label ?? placeholder}</Text>
@@ -155,6 +200,8 @@ export function SelectField({
           ) : null}
           <FlatList
             data={shown}
+            // Khung cố định / có trần chiều cao → danh sách co lại và cuộn bên trong, không tràn xuống dưới
+            style={searchable ? styles.listFill : styles.listShrink}
             keyExtractor={(o) => String(o.value)}
             keyboardShouldPersistTaps="handled"
             getItemLayout={(_, index) => ({
@@ -204,7 +251,6 @@ const styles = StyleSheet.create({
   },
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
   sheet: {
-    maxHeight: "70%",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     borderTopLeftRadius: radius.card,
@@ -236,6 +282,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.neutral,
   },
   pressed: { opacity: 0.7 },
+  listFill: { flex: 1 },
+  listShrink: { flexShrink: 1 },
   optionText: { flex: 1, ...textStyles.body, fontSize: 16, color: colors.text },
   optionActive: { fontFamily: fonts.semibold, color: colors.primary },
   empty: {
