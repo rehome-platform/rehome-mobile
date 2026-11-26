@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 // Bong bóng tin: của mình bên phải (nền đậm), đối tác bên trái. Đang gửi / lỗi "Gửi lại".
 // Ảnh đính kèm (imageUrls) hiện phía trên chữ; bấm ảnh để xem to. Chữ BE đã che SĐT / email / STK thành "***"
@@ -11,7 +12,7 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 export function MessageBubble({ message: m, onRetry }) {
   const mine = m.isMine;
   const images = m.imageUrls ?? [];
-  const [viewing, setViewing] = useState(null); // uri ảnh đang xem to
+  const photos = usePhotoViewer(); // bấm ảnh → xem to (nút X, vuốt qua ảnh khác trong cùng tin)
   const [revealed, setRevealed] = useState(false);
   const masked = !!m.originalContent && m.originalContent !== m.content;
   const text = masked && revealed ? m.originalContent : m.content;
@@ -19,10 +20,10 @@ export function MessageBubble({ message: m, onRetry }) {
     <View style={[styles.wrap, mine ? styles.right : styles.left]}>
       {images.length ? (
         <View style={[styles.images, mine ? styles.imagesRight : null]}>
-          {images.map((uri) => (
+          {images.map((uri, i) => (
             <Pressable
               key={uri}
-              onPress={() => setViewing(uri)}
+              onPress={() => photos.open(images, i)}
               accessibilityRole="imagebutton"
               accessibilityLabel="Xem ảnh"
             >
@@ -83,25 +84,7 @@ export function MessageBubble({ message: m, onRetry }) {
         </Text>
       )}
 
-      <Modal
-        visible={!!viewing}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setViewing(null)}
-      >
-        <Pressable style={styles.viewer} onPress={() => setViewing(null)}>
-          {viewing ? (
-            <Image
-              source={{ uri: viewing }}
-              style={styles.full}
-              resizeMode="contain"
-            />
-          ) : null}
-          <View style={styles.close}>
-            <Ionicons name="close" size={28} color={colors.onPrimary} />
-          </View>
-        </Pressable>
-      </Modal>
+      {photos.viewer}
     </View>
   );
 }
@@ -141,12 +124,4 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.error,
   },
-  viewer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.92)",
-  },
-  full: { width: "100%", height: "80%" },
-  close: { position: "absolute", top: 48, right: 20 },
 });

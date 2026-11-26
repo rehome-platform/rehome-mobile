@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { Image, Modal, Pressable, StyleSheet, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { colors, radius, spacing } from "@/theme";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
-// Hàng ảnh nhỏ; bấm → xem to (bấm bất kỳ đâu / nút Back để đóng)
+// Hàng ảnh nhỏ; bấm → xem to bằng trình xem ảnh chung (nút X đóng, vuốt qua ảnh khác, Back để đóng)
 export function PhotoThumbs({ urls }) {
-  const [open, setOpen] = useState(null);
+  const photos = usePhotoViewer();
   if (!urls?.length) return null;
   return (
     <>
@@ -13,7 +12,7 @@ export function PhotoThumbs({ urls }) {
         {urls.map((u, i) => (
           <Pressable
             key={`${u}-${i}`}
-            onPress={() => setOpen(u)}
+            onPress={() => photos.open(urls, i)}
             accessibilityRole="imagebutton"
             accessibilityLabel={`Xem ảnh ${i + 1}`}
             style={styles.thumb}
@@ -22,32 +21,7 @@ export function PhotoThumbs({ urls }) {
           </Pressable>
         ))}
       </View>
-      <Modal
-        visible={!!open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(null)}
-      >
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => setOpen(null)}
-          accessibilityLabel="Đóng ảnh"
-        >
-          {open ? (
-            <Image
-              source={{ uri: open }}
-              style={styles.full}
-              resizeMode="contain"
-            />
-          ) : null}
-          <Ionicons
-            name="close"
-            size={28}
-            color={colors.surface}
-            style={styles.close}
-          />
-        </Pressable>
-      </Modal>
+      {photos.viewer}
     </>
   );
 }
@@ -61,12 +35,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
   },
-  backdrop: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.overlay,
-  },
-  full: { width: "100%", height: "80%" },
-  close: { position: "absolute", top: spacing.xxl, right: spacing.lg },
 });
