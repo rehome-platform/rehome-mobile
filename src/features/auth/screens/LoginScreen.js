@@ -56,14 +56,22 @@ export default function LoginScreen() {
     if (typeof params.email === "string") setValue("email", params.email);
   }, [params.email, setValue]);
 
-  // Gửi lại OTP rồi sang AU-04. Resend lỗi (vd 429 vừa gửi) vẫn chuyển màn
+  // Gửi lại OTP rồi sang AU-04. Resend lỗi (vd 429 gửi quá nhiều lần) vẫn chuyển màn,
+  // nhưng báo cho AU-04 biết CHƯA gửi được (sendError) để không ghi "đã gửi mã mới"
   const goVerify = async (email) => {
+    let sendError = null;
     try {
       await authApi.resendOtp({ email, purpose: OTP_PURPOSE.REGISTER });
-    } catch {}
+    } catch (e) {
+      sendError = e.message || "Chưa gửi được mã mới.";
+    }
     router.push({
       pathname: "/verify-email",
-      params: { email, reason: "unverified" },
+      params: {
+        email,
+        reason: "unverified",
+        ...(sendError ? { sendError } : {}),
+      },
     });
   };
 
