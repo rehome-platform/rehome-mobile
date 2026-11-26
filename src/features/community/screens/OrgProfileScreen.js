@@ -134,6 +134,7 @@ export default function OrgProfileScreen() {
           name={o.displayName}
           size={64}
           initialOf="first"
+          viewable
         />
         <View style={styles.flex}>
           <Text style={styles.name}>{o.displayName}</Text>

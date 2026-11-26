@@ -51,7 +51,12 @@ export default function ProfileScreen() {
       contentStyle={styles.content}
     >
       <View style={styles.top}>
-        <Avatar uri={user?.avatarUrl} name={user?.fullName} size={80} />
+        <Avatar
+          uri={user?.avatarUrl}
+          name={user?.fullName}
+          size={80}
+          viewable
+        />
         <Text style={styles.name}>{user?.fullName}</Text>
         <Text style={styles.code}>{user?.memberCode}</Text>
       </View>
