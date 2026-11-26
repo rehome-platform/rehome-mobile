@@ -19,14 +19,20 @@ const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/login");
 
 export default function VerifyEmailScreen() {
-  // email: bắt buộc; reason = "unverified" khi mở từ AU-02 (đăng nhập tài khoản chưa xác thực)
-  const { email: rawEmail, reason } = useLocalSearchParams();
+  // email: bắt buộc; reason = "unverified" khi mở từ AU-02 (đăng nhập tài khoản chưa xác thực);
+  // sendError: AU-02 gửi lại mã KHÔNG thành công (vd 429 quá nhiều lần) → không được ghi "đã gửi mã mới"
+  const { email: rawEmail, reason, sendError } = useLocalSearchParams();
   const email = typeof rawEmail === "string" ? rawEmail : "";
+  const initialSendError =
+    reason === "unverified" && typeof sendError === "string" ? sendError : null;
 
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState(null); // lỗi mã → hiện ngay dưới 6 ô
-  const [formError, setFormError] = useState(null); // lỗi khác → khung lỗi
+  // lỗi khác → khung lỗi. Mở từ AU-02 mà chưa gửi được mã → hiện luôn lý do của BE
+  const [formError, setFormError] = useState(initialSendError);
   const [notice, setNotice] = useState(null); // "Đã gửi mã mới…"
+  // Chưa gửi được mã lúc mở màn; gửi lại thành công thì tắt
+  const [notSent, setNotSent] = useState(!!initialSendError);
   const countdown = useCountdown(RESEND_SECONDS);
 
   const verify = useMutation({
@@ -50,6 +56,7 @@ export default function VerifyEmailScreen() {
     onSuccess: () => {
       setOtp("");
       setOtpError(null);
+      setNotSent(false);
       setNotice("Đã gửi mã mới. Mã cũ không dùng được nữa.");
       countdown.restart();
     },
@@ -84,13 +91,23 @@ export default function VerifyEmailScreen() {
     >
       <View style={styles.intro}>
         <Text style={styles.title}>Nhập mã 6 số</Text>
-        <Text style={styles.desc}>
-          {reason === "unverified"
-            ? "Tài khoản chưa xác thực email. Mình đã gửi mã mới tới "
-            : "Mình vừa gửi mã tới "}
-          <Text style={styles.bold}>{email}</Text>. Kiểm tra cả mục Spam nếu
-          chưa thấy.
-        </Text>
+        {notSent ? (
+          // Chưa gửi được mã mới: mã gửi trước đó (nếu còn trong 5 phút) vẫn nhập được
+          <Text style={styles.desc}>
+            Tài khoản chưa xác thực email. Chưa gửi được mã mới tới{" "}
+            <Text style={styles.bold}>{email}</Text>. Nếu hộp thư còn mã nhận
+            trong 5 phút gần đây thì nhập mã đó, hoặc bấm "Gửi lại mã" sau ít
+            phút.
+          </Text>
+        ) : (
+          <Text style={styles.desc}>
+            {reason === "unverified"
+              ? "Tài khoản chưa xác thực email. Mình đã gửi mã mới tới "
+              : "Mình vừa gửi mã tới "}
+            <Text style={styles.bold}>{email}</Text>. Kiểm tra cả mục Spam nếu
+            chưa thấy.
+          </Text>
+        )}
       </View>
 
       <View style={styles.otpGroup}>
