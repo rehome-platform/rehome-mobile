@@ -9,8 +9,11 @@ import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
 export const metaLine = (...parts) => parts.filter(Boolean).join(" · ");
 
 // Thẻ sản phẩm trên sàn (BR-01, BR-02) kiểu Shopee: thẻ trắng bo góc, ảnh 3:4 (quần áo chụp dọc),
-// nhãn nhỏ "Đã kiểm định" góc trên trái, nhãn "-x%" góc trên phải khi đã giảm giá
-export function ProductCard({ product, onPress, style }) {
+// nhãn nhỏ "Đã kiểm định" góc trên trái, nhãn "-x%" góc trên phải khi đã giảm giá,
+// nhãn "Của bạn" góc dưới phải khi món do chính người đang xem ký gửi (BE trả isMine trong danh sách)
+// → nhận ra hàng của mình ngay trên sàn, không phải mở chi tiết. showMine={false}: nơi chỉ toàn hàng của mình
+export function ProductCard({ product, onPress, style, showMine = true }) {
+  const mine = showMine && product.isMine === true;
   const off = discountPercent(product.currentPrice, product.originalPrice);
   return (
     <Pressable
@@ -40,6 +43,12 @@ export function ProductCard({ product, onPress, style }) {
         {off > 0 ? <Text style={styles.off}>-{off}%</Text> : null}
         {/* Gói thành viên: người ký gửi có quyền ưu tiên hiển thị (BE xếp lên trên + featured = true) */}
         {product.featured ? <FeaturedBadge small style={styles.featured} /> : null}
+        {mine ? (
+          <View style={styles.mine} accessibilityLabel="Món bạn ký gửi">
+            <Ionicons name="person" size={10} color={colors.onPrimary} />
+            <Text style={styles.mineText}>Của bạn</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.body}>
@@ -105,6 +114,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
   },
   featured: { position: "absolute", left: spacing.xs, bottom: spacing.xs },
+  mine: {
+    position: "absolute",
+    right: spacing.xs,
+    bottom: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  mineText: {
+    ...textStyles.label,
+    fontSize: 10,
+    fontFamily: fonts.semibold,
+    color: colors.onPrimary,
+  },
   body: { gap: 2, padding: spacing.sm },
   name: { ...textStyles.body, color: colors.text },
   meta: { ...textStyles.caption, color: colors.textSecondary },
