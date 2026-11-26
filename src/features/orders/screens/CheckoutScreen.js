@@ -13,7 +13,6 @@ import { colors, fonts, radius, spacing, textStyles, tones } from "@/theme";
 import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
-import { PaymentMethodPicker } from "../components/PaymentMethodPicker";
 import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -84,8 +83,6 @@ export default function CheckoutScreen() {
   const addresses = useAddresses();
   const storeAddressId = useCheckoutStore((s) => s.addressId);
   const setPendingOrders = useCheckoutStore((s) => s.setPendingOrders);
-  const paymentMethod = useCheckoutStore((s) => s.paymentMethod);
-  const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
 
   const [ids, setIds] = useState(() =>
     buyNowId
@@ -426,16 +423,8 @@ export default function CheckoutScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>THANH TOÁN</Text>
-        <PaymentMethodPicker
-          value={paymentMethod}
-          onChange={setPaymentMethod}
-          // Đã biết phí ship → so ví với tổng thật (đã trừ mã giảm); chưa biết → so tiền hàng và nhắc cần đủ phí ship
-          amount={Math.max(0, sum(okLines) + (feeTotal ?? 0) - discount)}
-          isSubtotal={!feesKnown}
-        />
-      </View>
+      {/* Không chọn phương thức ở đây: chọn MỘT lần ở bước Thanh toán (màn đó vẫn phải có, vì còn mở từ
+          Đơn hàng và để đổi sang Ví khi VNPay lỗi) — tránh hỏi 2 lần */}
 
       <VoucherPickerSheet
         visible={voucherSheet}
@@ -450,8 +439,8 @@ export default function CheckoutScreen() {
 
       <NoteBox>
         {feesKnown
-          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."
-          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán (đếm ngược ở bước sau)."}
+          ? "Phí vận chuyển tính theo GHN tới địa chỉ đã chọn. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán; bạn chọn VNPay hoặc Ví ReHome ở bước sau."
+          : "Phí vận chuyển của từng đơn được tính khi đặt và hiện ở bước thanh toán, trước khi bạn trả tiền. Đặt xong, hàng được giữ riêng cho bạn trong thời gian thanh toán; bạn chọn VNPay hoặc Ví ReHome ở bước sau."}
       </NoteBox>
 
       {__DEV__ && MOCK.orders ? (
