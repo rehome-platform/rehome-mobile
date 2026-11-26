@@ -30,6 +30,7 @@ import { cartItems, useCart } from "@/features/cart/hooks/useCart";
 import { useDeleteTryonImage, useTryonImage } from "../hooks/useTryon";
 import { AiBadge } from "../components/AiBadge";
 import { OutfitItemRow } from "../components/OutfitItemRow";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -55,6 +56,7 @@ export default function TryonResultScreen() {
   const jobRunning = useTryonJobStore((s) => isTryonBusy(s.job));
   const start = useTryonJobStore((s) => s.start);
   const remove = useDeleteTryonImage();
+  const { open: openPhoto, viewer } = usePhotoViewer();
 
   // Mở đúng ảnh vừa tạo (từ thông báo tại máy / bộ sưu tập) → coi như đã xem, tắt khung nổi "đã xong"
   const doneHere = useTryonJobStore(
@@ -229,11 +231,18 @@ export default function TryonResultScreen() {
       contentStyle={styles.content}
     >
       <View style={styles.photo}>
-        <Image
-          source={{ uri: img.imageUrl }}
+        <Pressable
+          onPress={() => openPhoto([img.imageUrl])}
+          accessibilityRole="imagebutton"
+          accessibilityLabel="Xem ảnh thử đồ"
           style={StyleSheet.absoluteFill}
-          resizeMode="cover"
-        />
+        >
+          <Image
+            source={{ uri: img.imageUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+        </Pressable>
         <AiBadge />
         <View style={styles.photoNote}>
           <Text style={styles.caption}>
@@ -262,6 +271,7 @@ export default function TryonResultScreen() {
       </View>
 
       <Text style={styles.caption}>Ảnh đã tự lưu vào bộ sưu tập của bạn</Text>
+      {viewer}
     </Screen>
   );
 }

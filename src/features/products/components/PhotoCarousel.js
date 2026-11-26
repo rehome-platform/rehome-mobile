@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   FlatList,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -9,11 +10,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
-// Ảnh lướt ngang từng ảnh + số trang "1/3". dimmed: món không còn bán; label: nhãn góc trên ("ĐÃ BÁN")
+// Ảnh lướt ngang từng ảnh + số trang "1/3". dimmed: món không còn bán; label: nhãn góc trên ("ĐÃ BÁN").
+// Bấm ảnh → xem toàn màn hình (ảnh gốc, không lớp mờ), vuốt qua lại như ở đây
 export function PhotoCarousel({ photos = [], dimmed = false, label }) {
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
+  const { open, viewer } = usePhotoViewer();
   const size = { width, height: width }; // ảnh vuông, kín chiều ngang
 
   return (
@@ -28,8 +32,19 @@ export function PhotoCarousel({ photos = [], dimmed = false, label }) {
           onMomentumScrollEnd={(e) =>
             setIndex(Math.round(e.nativeEvent.contentOffset.x / width))
           }
-          renderItem={({ item }) => (
-            <Image source={{ uri: item.url }} style={size} resizeMode="cover" />
+          renderItem={({ item, index: i }) => (
+            <Pressable
+              onPress={() =>
+                open(
+                  photos.map((p) => p.url),
+                  i,
+                )
+              }
+              accessibilityRole="imagebutton"
+              accessibilityLabel={`Xem ảnh ${i + 1}`}
+            >
+              <Image source={{ uri: item.url }} style={size} resizeMode="cover" />
+            </Pressable>
           )}
         />
       ) : (
@@ -48,6 +63,7 @@ export function PhotoCarousel({ photos = [], dimmed = false, label }) {
           {index + 1}/{photos.length}
         </Text>
       ) : null}
+      {viewer}
     </View>
   );
 }

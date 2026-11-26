@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -13,8 +13,27 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, textStyles } from "@/theme";
 
+// Dùng ở màn có ảnh: const { open, viewer } = usePhotoViewer(); bấm ảnh → open(urls, i); đặt {viewer} trong JSX.
+// URL rỗng bị bỏ; không còn ảnh nào thì không mở
+export function usePhotoViewer() {
+  const [state, setState] = useState(null);
+  const open = useCallback((photos = [], index = 0) => {
+    const list = photos.filter(Boolean);
+    if (!list.length) return;
+    setState({ photos: list, index: Math.min(Math.max(index, 0), list.length - 1) });
+  }, []);
+  const viewer = (
+    <PhotoViewer
+      photos={state?.photos ?? []}
+      index={state ? state.index : null}
+      onClose={() => setState(null)}
+    />
+  );
+  return { open, viewer };
+}
+
 // Xem ảnh phóng to toàn màn hình, vuốt ngang qua lại giữa các ảnh. photos: mảng URL; index: ảnh mở đầu tiên
-// (null = đóng). Dùng chung: ảnh hiện vật quyên góp, có thể dùng cho ảnh khác sau này
+// (null = đóng). Dùng chung cho mọi ảnh trong app (qua usePhotoViewer)
 export function PhotoViewer({ photos = [], index, onClose }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();

@@ -31,6 +31,7 @@ import {
 } from "@/features/community/utils/communityRules";
 import { useMyCampaign } from "@/features/orgPortal/hooks/useMyCampaign";
 import { useCloseCampaign } from "@/features/orgPortal/hooks/useCampaignMutations";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/org/campaigns");
@@ -73,6 +74,7 @@ export default function OrgCampaignDetailScreen() {
   const user = useAuthStore((s) => s.user);
   const query = useMyCampaign(id);
   const close = useCloseCampaign(id);
+  const { open: openPhoto, viewer } = usePhotoViewer();
   const { refetch } = query;
 
   // Quay lại từ màn sửa / đơn chờ lấy → số đơn có thể đã đổi
@@ -183,10 +185,17 @@ export default function OrgCampaignDetailScreen() {
       >
         <View style={styles.cover}>
           {c.coverUrl ? (
-            <Image
-              source={{ uri: c.coverUrl }}
+            <Pressable
+              onPress={() => openPhoto([c.coverUrl])}
+              accessibilityRole="imagebutton"
+              accessibilityLabel="Xem ảnh bìa"
               style={StyleSheet.absoluteFill}
-            />
+            >
+              <Image
+                source={{ uri: c.coverUrl }}
+                style={StyleSheet.absoluteFill}
+              />
+            </Pressable>
           ) : null}
           <Text
             style={[
@@ -326,6 +335,7 @@ export default function OrgCampaignDetailScreen() {
           </Section>
         </View>
       </ScrollView>
+      {viewer}
     </Screen>
   );
 }

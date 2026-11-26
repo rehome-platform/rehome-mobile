@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,7 @@ import { daysLeft } from "@/utils/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
 import { consignKeys } from "@/features/consignment/api/queryKeys";
 import { StatusBadge } from "@/features/consignment/components/StatusBadge";
+import { usePhotoViewer } from "@/components/ui/PhotoViewer";
 
 const goBack = () =>
   router.canGoBack() ? router.back() : router.replace("/consign");
@@ -218,6 +220,7 @@ export default function FormDetailScreen() {
     queryFn: () => consignmentApi.getForm(id),
     enabled: status === "authenticated",
   });
+  const { open: openPhoto, viewer } = usePhotoViewer();
 
   if (status !== "authenticated") return <Redirect href="/login" />;
 
@@ -260,7 +263,8 @@ export default function FormDetailScreen() {
 
   const form = query.data;
   const timeline = buildTimeline(form);
-  const thumb = form.photoUrls?.[0];
+  const photos = form.photoUrls ?? [];
+  const thumb = photos[0];
   const subtitle = [form.categoryName, form.brandName]
     .filter(Boolean)
     .join(" · ");
@@ -319,7 +323,18 @@ export default function FormDetailScreen() {
         <Section title="SẢN PHẨM">
           <View style={styles.product}>
             {thumb ? (
-              <Image source={{ uri: thumb }} style={styles.thumb} />
+              // Bấm → xem mọi ảnh đã gửi, vuốt qua lại; nhiều ảnh thì góc ảnh có "+n"
+              <Pressable
+                onPress={() => openPhoto(photos)}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`Xem ${photos.length} ảnh sản phẩm`}
+                style={styles.thumb}
+              >
+                <Image source={{ uri: thumb }} style={styles.thumbImage} />
+                {photos.length > 1 ? (
+                  <Text style={styles.thumbCount}>+{photos.length - 1}</Text>
+                ) : null}
+              </Pressable>
             ) : (
               <View style={styles.thumb} />
             )}
@@ -361,6 +376,7 @@ export default function FormDetailScreen() {
           </Section>
         ) : null}
       </ScrollView>
+      {viewer}
     </Screen>
   );
 }
@@ -406,8 +422,21 @@ const styles = StyleSheet.create({
   thumb: {
     width: 72,
     height: 72,
+    overflow: "hidden",
     borderRadius: radius.input,
     backgroundColor: colors.neutral,
+  },
+  thumbImage: { width: "100%", height: "100%" },
+  thumbCount: {
+    position: "absolute",
+    right: 4,
+    bottom: 4,
+    paddingHorizontal: 6,
+    borderRadius: radius.pill,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    color: colors.onPrimary,
+    ...textStyles.caption,
   },
   productInfo: { flex: 1, gap: 2 },
   productName: { ...textStyles.heading, color: colors.text },
