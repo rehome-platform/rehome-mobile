@@ -1,6 +1,13 @@
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  Alert,
+  BackHandler,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { router, useFocusEffect } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -124,14 +131,25 @@ export default function EditProfileScreen() {
     save.mutate(values);
   });
 
-  // Đã sửa mà bấm Huỷ → hỏi trước khi bỏ
-  const onCancel = () => {
+  // Đã sửa mà bấm Huỷ / mũi tên ← / nút Back Android → hỏi trước khi bỏ
+  const onCancel = useCallback(() => {
     if (!isDirty) return leave();
     Alert.alert("Bỏ thay đổi?", "Những gì bạn vừa sửa sẽ không được lưu.", [
       { text: "Sửa tiếp", style: "cancel" },
       { text: "Bỏ thay đổi", style: "destructive", onPress: leave },
     ]);
-  };
+  }, [isDirty]);
+
+  // Nút Back cứng của Android (và cử chỉ vuốt Back) không đi qua AppHeader → chặn riêng, giống ItemEditorScreen
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        onCancel();
+        return true;
+      });
+      return () => sub.remove();
+    }, [onCancel]),
+  );
 
   return (
     <Screen
