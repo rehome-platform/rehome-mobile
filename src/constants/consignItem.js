@@ -4,12 +4,14 @@
 // Nhóm danh mục. Danh mục không khớp nhóm nào → "Khác".
 // [CHỜ BE/Moderator] thêm danh mục Giày dép, Mũ nón, Túi xách, Phụ kiện → tự vào đúng nhóm
 export const CATEGORY_GROUPS = [
-  { key: "TOP", label: "Áo", icon: "shirt-outline", pattern: /^áo/i },
-  { key: "BOTTOM", label: "Quần", icon: "man-outline", pattern: /^quần/i },
+  // svg: vẽ bằng ClothingIcon (Ionicons không có quần / váy đầm); icon: tên Ionicons dự phòng
+  { key: "TOP", label: "Áo", icon: "shirt-outline", svg: "shirt", pattern: /^áo/i },
+  { key: "BOTTOM", label: "Quần", icon: "man-outline", svg: "pants", pattern: /^quần/i },
   {
     key: "DRESS",
     label: "Váy & Đầm",
     icon: "woman-outline",
+    svg: "dress",
     pattern: /^(váy|đầm|chân váy|jumpsuit)/i,
   },
   {
