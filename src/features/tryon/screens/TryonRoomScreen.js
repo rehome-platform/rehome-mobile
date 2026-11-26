@@ -384,9 +384,14 @@ export default function TryonRoomScreen() {
         />
       </View>
 
-      {/* [GIẢ ĐỊNH 0.5 A8] chưa có ảnh người mẫu — tạm khung + icon */}
+      {/* [GIẢ ĐỊNH 0.5 A8] chưa có ảnh người mẫu — tạm khung + icon theo người mẫu đang chọn (nữ / nam) */}
       <View style={styles.model}>
-        <Ionicons name="body-outline" size={96} color={colors.textSecondary} />
+        <Ionicons
+          name={modelType === MODEL_TYPE.MALE ? "man-outline" : "woman-outline"}
+          size={96}
+          color={colors.textSecondary}
+          accessibilityLabel={`Người mẫu ${model}`}
+        />
         <Text style={styles.modelLabel}>
           Người mẫu {model} — {ready ? "sẵn sàng tạo ảnh" : "chưa có outfit"}
         </Text>
