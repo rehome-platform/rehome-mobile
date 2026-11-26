@@ -85,7 +85,11 @@ export default function LiveTryonHistoryScreen() {
           onPress={() =>
             router.push({
               pathname: "/tryon-live/result",
-              params: { videoUrl: item.videoUrl, productId: item.productId },
+              params: {
+                videoUrl: item.videoUrl,
+                productId: item.productId,
+                sessionId: item.sessionId,
+              },
             })
           }
           accessibilityRole="button"

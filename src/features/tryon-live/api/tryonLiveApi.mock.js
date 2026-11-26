@@ -56,6 +56,11 @@ export async function markStarted() {
   return null;
 }
 
+export async function deleteSession() {
+  await delay(200);
+  return null;
+}
+
 export async function completeSession() {
   await delay(150);
   return null;

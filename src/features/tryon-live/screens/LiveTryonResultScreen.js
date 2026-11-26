@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { Asset } from "expo-media-library";
 import * as MediaLibrary from "expo-media-library";
@@ -9,14 +10,17 @@ import { Screen } from "@/components/ui/Screen";
 import { AppHeader } from "@/components/ui/AppHeader";
 import { Button } from "@/components/ui/Button";
 import { showToast } from "@/utils/toast";
-import { spacing } from "@/theme";
+import { colors, spacing } from "@/theme";
+import { useDeleteLiveTryon } from "../hooks/useTryonLive";
 
 const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
-// Xem lại + tải về video thử đồ AI real-time 10s vừa quay xong (BE đã lưu, videoUrl công khai)
+// Xem lại + tải về / xoá video thử đồ AI real-time 10s vừa quay xong (BE đã lưu, videoUrl công khai).
+// Nút thùng rác trên header (giống màn ảnh thử đồ): xoá khỏi lịch sử, không hoàn lượt đã dùng
 export default function LiveTryonResultScreen() {
-  const { videoUrl, productId } = useLocalSearchParams();
+  const { videoUrl, productId, sessionId } = useLocalSearchParams();
   const [downloading, setDownloading] = useState(false);
+  const remove = useDeleteLiveTryon();
   const player = useVideoPlayer(videoUrl, (p) => {
     p.loop = true;
     p.play();
@@ -52,8 +56,63 @@ export default function LiveTryonResultScreen() {
 
   const retry = () => router.replace(`/tryon-live/${productId}`);
 
+  const confirmDelete = () =>
+    Alert.alert(
+      "Xoá video thử đồ này?",
+      "Video biến mất khỏi lịch sử, không khôi phục được và không hoàn lại lượt đã dùng. Video đã tải về máy vẫn còn.",
+      [
+        { text: "Giữ lại", style: "cancel" },
+        {
+          text: "Xoá video",
+          style: "destructive",
+          onPress: () => {
+            player.pause();
+            remove.mutate(sessionId, {
+              onSuccess: () => {
+                showToast("Đã xoá video thử đồ");
+                goBack();
+              },
+              onError: (e) => {
+                // 404: video đã bị xoá trước đó (vd. ở máy khác) → coi như xong
+                if (e.status === 404) {
+                  showToast("Video này không còn nữa");
+                  return goBack();
+                }
+                player.play();
+                Alert.alert("Chưa xoá được video", e.message ?? "Vui lòng thử lại.");
+              },
+            });
+          },
+        },
+      ],
+    );
+
+  const header = (
+    <AppHeader
+      title="Video thử đồ AI"
+      onBack={goBack}
+      right={
+        sessionId ? (
+          <Pressable
+            onPress={confirmDelete}
+            disabled={remove.isPending}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Xoá video"
+          >
+            <Ionicons
+              name="trash-outline"
+              size={22}
+              color={remove.isPending ? colors.textSecondary : colors.text}
+            />
+          </Pressable>
+        ) : null
+      }
+    />
+  );
+
   return (
-    <Screen header={<AppHeader title="Video thử đồ AI" onBack={goBack} />} padded={false}>
+    <Screen header={header} padded={false}>
       <VideoView
         player={player}
         style={styles.video}
