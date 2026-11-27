@@ -366,6 +366,13 @@ export default function WithdrawalDetailScreen() {
 
       {w.status === W.PENDING_PICKUP ? (
         <View style={styles.dashed}>
+          {/* Chốt 27/11 (cách A): phí rút hàng CHỈ trả trên app, quầy không thu tiền mặt — BE chặn bàn giao khi chưa trả */}
+          {unpaid ? (
+            <Text style={styles.text}>
+              <Text style={styles.strong}>Quầy không thu tiền mặt.</Text> Trả
+              phí trên app trước khi đến, chưa trả thì chưa nhận được hàng.
+            </Text>
+          ) : null}
           <Text style={styles.text}>
             Đến quầy <Text style={styles.strong}>đọc mã Member</Text> để
             Moderator đối chiếu rồi bàn giao.{" "}
@@ -469,6 +476,7 @@ const styles = StyleSheet.create({
   eventHead: { flexDirection: "row", gap: spacing.sm },
   feeRow: { flexDirection: "row", justifyContent: "space-between" },
   dashed: {
+    gap: spacing.sm,
     padding: spacing.md,
     borderWidth: 1,
     borderStyle: "dashed",
