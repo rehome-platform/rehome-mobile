@@ -353,12 +353,18 @@ export default function ReturnDetailScreen() {
         </>
       ) : null}
 
+      {/* Từ chối lúc duyệt: món CHƯA rời tay người mua (chưa gửi GHN) → giữ món, không hoàn tiền, không có bước nhận lại */}
       {r.status === R.CANCELLED ? (
-        <InfoBox title="Yêu cầu đã huỷ">
-          {r.cancelReason === RETURN_CANCEL_REASON.HANDOVER_EXPIRED
-            ? "Quá hạn bàn giao cho GHN nên yêu cầu tự huỷ. Đơn trở lại bình thường, hàng vẫn là của bạn."
-            : `ReHome từ chối yêu cầu.${r.cancelNote ? ` ${r.cancelNote}` : ""} Đơn trở lại bình thường.`}
-        </InfoBox>
+        r.cancelReason === RETURN_CANCEL_REASON.HANDOVER_EXPIRED ? (
+          <InfoBox title="Yêu cầu đã huỷ">
+            Quá hạn bàn giao cho GHN nên yêu cầu tự huỷ. Đơn trở lại bình
+            thường, hàng vẫn là của bạn.
+          </InfoBox>
+        ) : (
+          <InfoBox title="ReHome từ chối yêu cầu trả hàng">
+            {`${r.cancelNote ? `Lý do: ${r.cancelNote}\n` : ""}Món vẫn ở chỗ bạn, không cần gửi trả và không được hoàn tiền. Đơn trở lại bình thường. Cần hỏi thêm thì bấm Nhắn ReHome bên dưới.`}
+          </InfoBox>
+        )
       ) : null}
 
       {/* ---- Phần chung ---- */}

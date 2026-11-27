@@ -23,9 +23,18 @@ const MISSING = {
   shipBackFee: null, // phí ReHome gửi lại hàng không hợp lệ
 };
 
+// Yêu cầu đã huỷ: BE không có field lý do huỷ riêng → suy ra. Đã từng được duyệt (có handoverDeadline) mà huỷ
+// = quá hạn bàn giao GHN; chưa duyệt mà huỷ = Moderator từ chối, lý do Moderator nhập nằm ở resolutionNote
+const cancelInfo = (r) => {
+  if (r.status !== "CANCELLED") return {};
+  if (r.handoverDeadline) return { cancelReason: "HANDOVER_EXPIRED", cancelNote: null };
+  return { cancelReason: "REJECTED", cancelNote: r.resolutionNote ?? null };
+};
+
 const toDetail = (r, o) => ({
   ...MISSING,
   ...r,
+  ...cancelInfo(r),
   photoUrls: r.photoUrls ?? [],
   orderNo: r.orderNo ?? o?.orderNo ?? null,
   warehouseId: o?.warehouseId ?? null,
