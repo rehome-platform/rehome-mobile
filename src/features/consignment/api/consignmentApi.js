@@ -31,6 +31,9 @@ export const consignmentApi = {
   getProduct,
   reducePrice: impl.reducePrice,
   decideEndOfTerm: impl.decideEndOfTerm,
+  // Thương lượng giá ký gửi lại (đặc tả 27/11, [CHỜ BE]) — chỉ gọi khi FEATURES.reconsignNegotiation
+  counterOfferReConsign: impl.counterOfferReConsign,
+  declineReConsign: impl.declineReConsign,
   // [DEV] chỉ có ở mock: giả lập Moderator đề xuất giá mới (ReconsignScreen)
   mockProposeNewPrice: mock.mockProposeNewPrice,
 };

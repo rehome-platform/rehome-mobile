@@ -7,6 +7,7 @@ import {
   CONSIGN_LIMITS,
   END_OF_TERM_DECISION,
   FORM_STATUS,
+  PRODUCT_STATUS,
 } from "@/constants/consignment";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import { BRANDS, CATEGORIES } from "@/features/catalog/api/catalogApi.mock";
@@ -414,6 +415,57 @@ export async function mockProposeNewPrice(productId) {
       : x,
   );
 }
+// ---------- Thương lượng giá ký gửi lại (đặc tả 27/11) — mock tối giản cho chế độ MOCK.consignment ----------
+const patchDecision = (decisionId, patch) => {
+  const p = products.find((x) => x.endOfTermDecision?.id === decisionId);
+  if (!p)
+    throw new ApiError({
+      status: 404,
+      code: "HTTP_404",
+      message: "Không tìm thấy yêu cầu xử lý cuối kỳ.",
+    });
+  const { endOfTermDecision, ...rest } = patch(p);
+  products = products.map((x) =>
+    x.id === p.id
+      ? {
+          ...x,
+          ...rest,
+          endOfTermDecision: { ...x.endOfTermDecision, ...endOfTermDecision },
+        }
+      : x,
+  );
+};
+
+export async function counterOfferReConsign(decisionId, { price, note }) {
+  await delay(500);
+  patchDecision(decisionId, (x) => ({
+    endOfTermDecision: {
+      reConsignStatus: "COUNTER_OFFERED",
+      memberCounterPrice: price,
+      memberCounterNote: note ?? null,
+      counteredAt: new Date().toISOString(),
+      counterRoundsUsed: (x.endOfTermDecision.counterRoundsUsed ?? 0) + 1,
+    },
+  }));
+  return null;
+}
+
+export async function declineReConsign(decisionId, { reason }) {
+  await delay(500);
+  patchDecision(decisionId, () => ({
+    status: PRODUCT_STATUS.WITHDRAWN,
+    endOfTermDecision: {
+      decision: END_OF_TERM_DECISION.TAKE_BACK,
+      reConsignStatus: "DECLINED",
+      declineReason: reason ?? null,
+      declinedAt: new Date().toISOString(),
+      takenBackAt: null,
+      pickupDeadline: dayjs().add(7, "day").toISOString(),
+    },
+  }));
+  return null;
+}
+
 // ---------- Phase 5 (rút hàng) ----------
 // withdrawalApi.mock dùng: đọc / sửa sản phẩm trong RAM (mảng products được thay mới mỗi lần sửa)
 export const mockFindMyProduct = (id) => {

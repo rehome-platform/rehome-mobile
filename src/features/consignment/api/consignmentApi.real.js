@@ -178,6 +178,25 @@ export async function reducePrice(id, newPrice) {
   );
 }
 
+// ===== Thương lượng giá ký gửi lại (đặc tả 27/11, [CHỜ BE]) =====
+// Đề xuất giá khác cho biên nhận ReHome vừa đề xuất. price ≥ 10.000đ, note ≤ 300 ký tự
+export async function counterOfferReConsign(decisionId, { price, note }) {
+  return unwrap(
+    await api.post(`/end-of-term-decisions/${decisionId}/counter-offer`, {
+      price,
+      note: note || undefined,
+    }),
+  );
+}
+// Không đồng ý giá → BE huỷ biên nhận nháp, chuyển sang nhận lại hàng miễn phí (TAKE_BACK)
+export async function declineReConsign(decisionId, { reason }) {
+  return unwrap(
+    await api.post(`/end-of-term-decisions/${decisionId}/decline`, {
+      reason: reason || undefined,
+    }),
+  );
+}
+
 // API 24 → { decision, newReceiptId }
 export async function decideEndOfTerm(decisionId, decision) {
   return unwrap(

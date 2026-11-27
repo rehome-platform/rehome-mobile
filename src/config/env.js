@@ -40,4 +40,7 @@ export const FEATURES = {
   // Gọi API thật — [CHỜ BE] ship-back-quote / invalid-choice SHIP_BACK / ship-back/pay.
   // Tắt tới khi BE xong (bật sớm thì người dùng bấm vào sẽ lỗi). BE deploy xong → đổi true rồi test
   returnShipBack: false,
+  // Thương lượng giá ký gửi lại cuối kỳ (đặc tả 27/11): đề xuất giá khác / không đồng ý → nhận lại, hạn xác nhận.
+  // [CHỜ BE] counter-offer / decline / reConsignStatus. Tắt = luồng cũ (chỉ xem & xác nhận biên nhận mới)
+  reconsignNegotiation: false,
 };

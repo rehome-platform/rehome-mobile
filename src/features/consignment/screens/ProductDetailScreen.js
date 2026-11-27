@@ -27,8 +27,11 @@ import {
   PRODUCT_ENDED_LABEL,
   PRODUCT_STATUS,
   PRODUCT_VIEW,
+  RECONSIGN_LIMITS,
+  RECONSIGN_STATUS,
 } from "@/constants/consignment";
 import { WITHDRAWAL_STATUS } from "@/constants/withdrawal";
+import { FEATURES } from "@/config/env";
 import { formatVnd } from "@/utils/money";
 import {
   commissionRates,
@@ -38,6 +41,7 @@ import {
   formatRate,
   getProductView,
   productTiming,
+  reconsignStatusOf,
 } from "@/utils/consignment";
 import { consignmentApi } from "@/features/consignment/api/consignmentApi";
 import { DONATE_ENABLED } from "@/features/consignment/api/donateApi";
@@ -361,6 +365,47 @@ function DonationBox({ donation: d }) {
 }
 
 // Nút "Quyên góp" (đặc tả 11/11) — chỉ hiện khi món đang ở trường hợp được quyên góp (donateCaseOf)
+// Ký gửi lại: khung trạng thái theo bước thương lượng (đặc tả 27/11; tắt cờ thì chỉ 2 bước cũ)
+function RepricingBox({ product }) {
+  const stage = reconsignStatusOf(product);
+  const d = product.endOfTermDecision;
+  if (stage === RECONSIGN_STATUS.PROPOSED)
+    return (
+      <View style={styles.infoBox}>
+        <Text style={styles.boxTitle}>ReHome đã đề xuất giá ký gửi lại</Text>
+        <Text style={styles.body}>
+          Xem giá đề xuất rồi xác nhận biên nhận mới để hàng lên sàn lại
+          {FEATURES.reconsignNegotiation
+            ? ", đề xuất giá khác hoặc không đồng ý (nhận lại hàng miễn phí)"
+            : ""}
+          .
+          {FEATURES.reconsignNegotiation && d?.proposalDeadline
+            ? ` Hạn phản hồi ${fmtDate(d.proposalDeadline)}.`
+            : ""}
+        </Text>
+      </View>
+    );
+  if (stage === RECONSIGN_STATUS.COUNTER_OFFERED)
+    return (
+      <View style={styles.infoBox}>
+        <Text style={styles.boxTitle}>Đang chờ ReHome phản hồi giá bạn đề xuất</Text>
+        <Text style={styles.body}>
+          Bạn đề xuất {formatVnd(d?.memberCounterPrice)}. ReHome phản hồi trong
+          khoảng {RECONSIGN_LIMITS.MODERATOR_RESPONSE_DAYS} ngày.
+        </Text>
+      </View>
+    );
+  return (
+    <View style={styles.infoBox}>
+      <Text style={styles.boxTitle}>Đang chờ ReHome đề xuất giá mới</Text>
+      <Text style={styles.body}>
+        Bạn đã chọn ký gửi lại. Moderator {product.warehouseName} sẽ xem lại
+        tình trạng món hàng và đề xuất giá mới, thường trong 1–2 ngày làm việc.
+      </Text>
+    </View>
+  );
+}
+
 function DonateLink({ product, label }) {
   if (!DONATE_ENABLED || !donateCaseOf(product)) return null;
   return (
@@ -442,9 +487,11 @@ function Footer({ product, view }) {
     );
   }
   if (view === PRODUCT_VIEW.REPRICING) {
+    // Đã có đề xuất giá → việc chính của người ký gửi là xem & phản hồi
+    const proposed = reconsignStatusOf(product) === RECONSIGN_STATUS.PROPOSED;
     return (
       <Button
-        title="Xem tiến trình ký gửi lại"
+        title={proposed ? "Xem giá đề xuất & phản hồi" : "Xem tiến trình ký gửi lại"}
         onPress={() => router.push(`${base}/reconsign`)}
       />
     );
@@ -591,14 +638,7 @@ export default function ProductDetailScreen() {
         ) : null}
 
         {view === PRODUCT_VIEW.REPRICING ? (
-          <View style={styles.infoBox}>
-            <Text style={styles.boxTitle}>Đang chờ ReHome đề xuất giá mới</Text>
-            <Text style={styles.body}>
-              Bạn đã chọn ký gửi lại. Moderator {product.warehouseName} sẽ xem
-              lại tình trạng món hàng và đề xuất giá mới, thường trong 1–2 ngày
-              làm việc.
-            </Text>
-          </View>
+          <RepricingBox product={product} />
         ) : null}
         {/* Đã bán: BE trả kèm order (payoutDueAt / payoutAt) → hiện mốc tiền vào ví */}
         {view === PRODUCT_VIEW.ENDED && product.order ? (

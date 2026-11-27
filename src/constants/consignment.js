@@ -46,6 +46,30 @@ export const END_OF_TERM_DECISION = {
   UNCLAIMED: "UNCLAIMED",
 };
 
+// Thương lượng giá ký gửi lại (đặc tả 27/11, [CHỜ BE] field reConsignStatus trên endOfTermDecision):
+// chờ ReHome đề xuất → chờ bạn xác nhận (hạn 7 ngày) ⇄ bạn đề xuất giá khác → ReHome phản hồi …
+// → đã xác nhận (lên sàn) | không đồng ý / quá hạn (chuyển sang nhận lại hàng miễn phí)
+export const RECONSIGN_STATUS = {
+  AWAITING_PRICE: "AWAITING_PRICE",
+  PROPOSED: "PROPOSED",
+  COUNTER_OFFERED: "COUNTER_OFFERED",
+  CONFIRMED: "CONFIRMED",
+  DECLINED: "DECLINED",
+  EXPIRED: "EXPIRED",
+};
+// Phản hồi của ReHome cho giá bạn đề xuất
+export const RECONSIGN_RESPONSE = {
+  ACCEPTED: "ACCEPTED",
+  REPROPOSED: "REPROPOSED",
+  KEPT: "KEPT",
+};
+export const RECONSIGN_LIMITS = {
+  MIN_PRICE: 10000, // giá tối thiểu đăng bán
+  NOTE_MAX: 300,
+  MAX_COUNTER_ROUNDS: 2, // dự phòng — số thật lấy maxCounterRounds từ BE
+  MODERATOR_RESPONSE_DAYS: 2,
+};
+
 // Trạng thái HIỂN THỊ (chỉ ở app), suy ra từ dữ liệu API bằng getProductView (làm ở nhánh sản phẩm)
 export const PRODUCT_VIEW = {
   SELLING: "SELLING", // ON_SALE, chưa tới cuối kỳ
