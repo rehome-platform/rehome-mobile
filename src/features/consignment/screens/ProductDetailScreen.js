@@ -304,22 +304,11 @@ function AwaitingBody({ product }) {
         </View>
       ) : null}
 
-      <View style={styles.option}>
-        <Text style={styles.boxTitle}>Nhận lại hàng</Text>
-        <Text style={styles.body}>
-          Đến {product.warehouseName} lấy hàng về.{" "}
-          <Text style={styles.bold}>Miễn phí</Text> — không tính phí rút hàng ở
-          bước này.
-        </Text>
-      </View>
-      <View style={styles.option}>
-        <Text style={styles.boxTitle}>Ký gửi lại với giá mới</Text>
-        <Text style={styles.body}>
-          Moderator đề xuất giá mới, bạn đồng ý thì ký biên nhận mới. Hàng vẫn ở
-          địa điểm ký gửi, bạn không phải đi lại. Chu kỳ
-          {` ${total}`} ngày tính lại từ đầu, hoa hồng về mức kỳ 1.
-        </Text>
-      </View>
+      {/* Chi tiết 2 cách (nhận lại / ký gửi lại) chỉ nằm ở màn Xử lý cuối kỳ — ở đây tóm 1 dòng, khỏi lặp */}
+      <Text style={styles.muted}>
+        Bạn chọn nhận lại hàng (miễn phí) hoặc ký gửi lại với giá mới. Không
+        muốn giữ thì có thể quyên góp.
+      </Text>
     </>
   );
 }
@@ -443,29 +432,11 @@ function Footer({ product, view }) {
   if (view === PRODUCT_VIEW.AWAITING_DECISION) {
     return (
       <View style={styles.footerCol}>
-        <View style={styles.footerRow}>
-          <Button
-            title="Nhận lại hàng"
-            variant="secondary"
-            style={styles.flex}
-            onPress={() =>
-              router.push({
-                pathname: `${base}/end-of-term`,
-                params: { choice: "TAKE_BACK" },
-              })
-            }
-          />
-          <Button
-            title="Ký gửi lại"
-            style={styles.flex}
-            onPress={() =>
-              router.push({
-                pathname: `${base}/end-of-term`,
-                params: { choice: "RE_CONSIGN" },
-              })
-            }
-          />
-        </View>
+        {/* Một nút → màn Xử lý cuối kỳ (chọn 1 trong 2 ở đó). Trước đây 2 nút ở đây rồi màn sau hỏi lại y hệt */}
+        <Button
+          title="Chọn cách xử lý cuối kỳ"
+          onPress={() => router.push(`${base}/end-of-term`)}
+        />
         <DonateLink product={product} label="Hoặc quyên góp món này" />
       </View>
     );
@@ -721,14 +692,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
   },
   historyRow: { flexDirection: "row", justifyContent: "space-between" },
-  option: {
-    gap: spacing.xs,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.neutral,
-    borderRadius: radius.input,
-    backgroundColor: colors.surface,
-  },
   tracker: { flexDirection: "row", marginTop: spacing.sm },
   trackStep: { flex: 1, alignItems: "center", gap: spacing.xs },
   trackDot: {

@@ -263,9 +263,13 @@ function EndOfTermBody({ product, header, initialChoice }) {
 
         {history.length >= 2 ? (
           <NoteBox>
-            {`Sản phẩm đã qua ${history.length} kỳ, giá hạ từ ${formatVnd(history[0].price)} xuống ${formatVnd(
-              history[history.length - 1].price,
-            )} mà chưa bán được. Cân nhắc hạ tiếp hoặc nhận về.`}
+            {Number(history[0].price) > Number(history[history.length - 1].price)
+              ? `Sản phẩm đã qua ${history.length} kỳ, giá hạ từ ${formatVnd(history[0].price)} xuống ${formatVnd(
+                  history[history.length - 1].price,
+                )} mà chưa bán được. Cân nhắc hạ tiếp hoặc nhận về.`
+              : `Sản phẩm đã qua ${history.length} kỳ ở giá ${formatVnd(
+                  history[history.length - 1].price,
+                )} mà chưa bán được. Nếu ký gửi lại, cân nhắc hạ giá để dễ bán hơn.`}
           </NoteBox>
         ) : null}
       </View>
