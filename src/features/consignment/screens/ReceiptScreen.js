@@ -26,6 +26,7 @@ import { NoteBox } from "@/components/ui/NoteBox";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useAuthStore } from "@/stores/authStore";
+import { FEATURES } from "@/config/env";
 import { showToast } from "@/utils/toast";
 import { formatVnd } from "@/utils/money";
 import { ERROR_CODES } from "@/constants/errorCodes";
@@ -393,6 +394,25 @@ function PendingReceipt({ receipt, header }) {
           "ReHome vừa sửa biên nhận này. Bạn xem lại nội dung mới rồi xác nhận nhé.",
         );
       }
+      // Ký gửi lại đang thương lượng (đặc tả 27/11): chờ ReHome phản hồi giá bạn đề xuất / quá hạn xác nhận
+      if (
+        [
+          ERROR_CODES.RE_CONSIGN_WAITING_MODERATOR,
+          ERROR_CODES.RE_CONSIGN_PROPOSAL_EXPIRED,
+        ].includes(e.code)
+      ) {
+        queryClient.invalidateQueries({ queryKey: ["consign", "products"] });
+        queryClient.invalidateQueries({ queryKey: ["consign", "product"] });
+        return Alert.alert("Chưa xác nhận được", e.message, [
+          {
+            text: "Xem tiến trình",
+            onPress: () =>
+              receipt.productId
+                ? router.replace(`/my-products/${receipt.productId}/reconsign`)
+                : goBack(),
+          },
+        ]);
+      }
       if (e.status === 409) {
         // Đã xác nhận ở nơi khác → tải lại để hiện bản Đã xác nhận
         queryClient.invalidateQueries({
@@ -464,9 +484,23 @@ function PendingReceipt({ receipt, header }) {
         ) : null}
         {receipt.previousPrice ? (
           <NoteBox>
-            {`Ký gửi lại: ReHome đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
-              receipt.previousPrice,
-            )}).${receipt.moderatorNote ? ` Ghi chú ReHome: ${receipt.moderatorNote}` : ""}`}
+            <Text style={styles.noteText}>
+              {`Ký gửi lại: ReHome đề xuất ${formatVnd(receipt.agreedPrice)} (giá cuối kỳ trước ${formatVnd(
+                receipt.previousPrice,
+              )}).${receipt.moderatorNote ? ` Ghi chú ReHome: ${receipt.moderatorNote}` : ""}`}
+              {/* Thương lượng (đặc tả 27/11): chưa ưng giá → quay lại màn Ký gửi lại */}
+              {FEATURES.reconsignNegotiation && receipt.productId ? (
+                <Text
+                  style={styles.link}
+                  accessibilityRole="link"
+                  onPress={() =>
+                    router.push(`/my-products/${receipt.productId}/reconsign`)
+                  }
+                >
+                  {"\n"}Chưa đồng ý giá? Đề xuất giá khác hoặc nhận lại hàng
+                </Text>
+              ) : null}
+            </Text>
           </NoteBox>
         ) : null}
 
@@ -655,6 +689,7 @@ const styles = StyleSheet.create({
   small: { ...textStyles.caption, color: colors.textSecondary },
   left: { textAlign: "left" },
   link: { fontFamily: fonts.semibold, color: colors.primary },
+  noteText: { ...textStyles.body, color: colors.textSecondary },
   voided: {
     gap: spacing.xs,
     padding: spacing.md,

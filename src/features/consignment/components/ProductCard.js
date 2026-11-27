@@ -5,6 +5,7 @@ import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import {
   ORDER_STEPS,
   PRODUCT_VIEW,
+  RECONSIGN_STATUS,
   orderStepValue,
 } from "@/constants/consignment";
 import { WITHDRAWAL_STATUS } from "@/constants/withdrawal";
@@ -16,7 +17,9 @@ import {
   formatRate,
   getProductView,
   productTiming,
+  reconsignStatusOf,
 } from "@/utils/consignment";
+import { FEATURES } from "@/config/env";
 import { ProductBadge } from "./ProductBadge";
 import { FeaturedBadge } from "@/features/membership/components/FeaturedBadge";
 
@@ -75,9 +78,19 @@ function Detail({ product, view }) {
   }
 
   if (view === PRODUCT_VIEW.REPRICING) {
+    const stage = reconsignStatusOf(product);
+    const due = product.endOfTermDecision?.proposalDeadline;
     return (
       <Text style={styles.sub}>
-        Đã chọn ký gửi lại · đang chờ ReHome đề xuất giá mới
+        {stage === RECONSIGN_STATUS.PROPOSED
+          ? `Ký gửi lại · ReHome đã đề xuất giá, chờ bạn xác nhận${
+              FEATURES.reconsignNegotiation && due
+                ? ` trước ${dayjs(due).format("DD/MM")}`
+                : ""
+            }`
+          : stage === RECONSIGN_STATUS.COUNTER_OFFERED
+            ? "Ký gửi lại · chờ ReHome phản hồi giá bạn đề xuất"
+            : "Đã chọn ký gửi lại · đang chờ ReHome đề xuất giá mới"}
       </Text>
     );
   }

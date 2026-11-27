@@ -1,8 +1,11 @@
 import dayjs from "dayjs";
+import { FEATURES } from "@/config/env";
 import {
   END_OF_TERM_DECISION,
   PRODUCT_STATUS,
   PRODUCT_VIEW,
+  RECONSIGN_LIMITS,
+  RECONSIGN_STATUS,
 } from "@/constants/consignment";
 import { DEGRADED_CHOICE, WITHDRAWAL_STATUS } from "@/constants/withdrawal";
 
@@ -26,6 +29,25 @@ export const commissionRates = (receipt) =>
     receipt.commissionRateTerm2,
     receipt.commissionRateTerm3,
   ].filter((r) => r != null);
+// Thương lượng giá ký gửi lại (đặc tả 27/11): bước hiện tại của món đang REPRICING.
+// Tắt cờ / BE chưa trả reConsignStatus → suy như luồng cũ: có biên nhận mới = chờ bạn xác nhận
+export function reconsignStatusOf(product) {
+  const d = product?.endOfTermDecision;
+  if (!d) return null;
+  if (FEATURES.reconsignNegotiation && d.reConsignStatus)
+    return d.reConsignStatus;
+  return d.newReceiptId
+    ? RECONSIGN_STATUS.PROPOSED
+    : RECONSIGN_STATUS.AWAITING_PRICE;
+}
+// Số lần bạn còn được đề xuất giá khác (0 khi tắt cờ)
+export function counterRoundsLeft(product) {
+  const d = product?.endOfTermDecision;
+  if (!FEATURES.reconsignNegotiation || !d) return 0;
+  const max = d.maxCounterRounds ?? RECONSIGN_LIMITS.MAX_COUNTER_ROUNDS;
+  return Math.max(0, max - (d.counterRoundsUsed ?? 0));
+}
+
 // Quy đổi dữ liệu sản phẩm → trạng thái hiển thị. BE chưa chốt cách báo "chờ xử lý cuối kỳ"
 // → mọi chỗ khác chỉ gọi hàm này; BE chốt thì chỉ sửa ở đây [CHỜ BE]
 export function getProductView(p) {
