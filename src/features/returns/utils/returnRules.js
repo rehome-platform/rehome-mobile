@@ -1,6 +1,10 @@
 import dayjs from "dayjs";
 import { ORDER_STATUS } from "@/constants/order";
-import { RETURN_REASONS, RETURN_STATUS as R } from "@/constants/returns";
+import {
+  RETURN_REASONS,
+  RETURN_STATUS as R,
+  SHIP_BACK_STATUS as SB,
+} from "@/constants/returns";
 import { returnDeadlineOf } from "@/features/orders/utils/orderRules";
 
 // MỌI điều kiện của trả hàng đặt ở đây. Màn hình chỉ gọi hàm.
@@ -29,20 +33,31 @@ export const returnStepOf = (r) =>
     LOST: 4,
   })[r.status] ?? -1;
 
-// Hàng trả không hợp lệ đã xong việc: đã nhận lại tại quầy (pickedUpAt — [CHỜ BE] trả field này)
-// hoặc quá hạn nhận lại (hàng vô chủ) → không còn nút chọn cách nhận / mã Member
-export const invalidPickedUp = (r) => r.status === R.INVALID && !!r.pickedUpAt;
+// ReHome gửi lại (đặc tả 27/11): đã trả phí / đang gửi → hàng đã vào luồng gửi, hạn nhận lại 7 ngày thôi áp dụng
+export const shipBackInProgress = (r) =>
+  r.status === R.INVALID &&
+  [SB.PAID, SB.SHIPPING].includes(r.shipBackStatus);
+export const shipBackAwaitingPayment = (r) =>
+  r.status === R.INVALID && r.shipBackStatus === SB.AWAITING_PAYMENT;
+
+// Hàng trả không hợp lệ đã xong việc: đã nhận lại tại quầy (pickedUpAt — [CHỜ BE] trả field này),
+// GHN đã giao bản gửi lại, hoặc quá hạn nhận lại (hàng vô chủ) → không còn nút chọn cách nhận / mã Member
+export const invalidPickedUp = (r) =>
+  r.status === R.INVALID &&
+  (!!r.pickedUpAt || r.shipBackStatus === SB.DELIVERED);
 export const invalidPickupExpired = (r) =>
   r.status === R.INVALID &&
-  !r.pickedUpAt &&
+  !invalidPickedUp(r) &&
+  !shipBackInProgress(r) &&
   !!r.pickupDeadline &&
   dayjs(r.pickupDeadline).isBefore(dayjs());
 const invalidOpen = (r) =>
   r.status === R.INVALID && !invalidPickedUp(r) && !invalidPickupExpired(r);
 
-// Member cần làm gì đó: bàn giao GHN, hoặc chọn cách nhận lại hàng không hợp lệ (còn hạn)
+// Member cần làm gì đó: bàn giao GHN, chọn cách nhận lại hàng không hợp lệ (còn hạn), hoặc trả phí gửi lại
 export const needsAction = (r) =>
-  r.status === R.APPROVED || (invalidOpen(r) && !r.invalidReturnChoice);
+  r.status === R.APPROVED ||
+  (invalidOpen(r) && (!r.invalidReturnChoice || shipBackAwaitingPayment(r)));
 
 export const wasRefunded = (r) => [R.VALID, R.LOST].includes(r.status);
 

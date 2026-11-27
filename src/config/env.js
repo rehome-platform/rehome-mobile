@@ -33,3 +33,11 @@ export const MOCK = {
   // Bật lại true thì lệnh quyên góp chạy mock và bản release (APK) ẩn nút Quyên góp (DONATE_ENABLED)
   donateConsigned: false,
 };
+
+// Bật / tắt tính năng trên giao diện (khác MOCK: MOCK chọn API thật hay giả)
+export const FEATURES = {
+  // Hiện lựa chọn "ReHome gửi lại cho bạn" ở màn nhận lại hàng trả không hợp lệ (đặc tả 27/11).
+  // Gọi API thật — [CHỜ BE] ship-back-quote / invalid-choice SHIP_BACK / ship-back/pay.
+  // Tắt tới khi BE xong (bật sớm thì người dùng bấm vào sẽ lỗi). BE deploy xong → đổi true rồi test
+  returnShipBack: false,
+};

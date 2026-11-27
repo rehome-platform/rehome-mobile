@@ -4,9 +4,10 @@ import { formatCountdown } from "@/hooks/useCountdown";
 
 const TOTAL_SECONDS = 15 * 60; // hạn thanh toán của BE (app.order.payment-deadline-minutes)
 
-// Khối đếm ngược lớn "14:32" + thanh còn lại. Còn ≤ 1 phút → đổi màu đỏ
-export function PaymentCountdown({ seconds }) {
-  const ratio = Math.max(0, Math.min(1, seconds / TOTAL_SECONDS));
+// Khối đếm ngược lớn "14:32" + thanh còn lại. Còn ≤ 1 phút → đổi màu đỏ.
+// totalSeconds: độ dài cả hạn (thanh tiến độ) — mặc định 15 phút của đơn hàng; phí gửi lại hàng trả là 30 phút
+export function PaymentCountdown({ seconds, totalSeconds = TOTAL_SECONDS }) {
+  const ratio = Math.max(0, Math.min(1, seconds / totalSeconds));
   const urgent = seconds <= 60;
   return (
     <View style={styles.wrap} accessibilityLiveRegion="polite">

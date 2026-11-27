@@ -76,6 +76,28 @@ export const INVALID_RETURN_CHOICE_LABEL = {
   WAREHOUSE_PICKUP: "Đến địa điểm lấy",
 };
 
+// ReHome gửi lại hàng trả không hợp lệ, người mua trả phí GHN trước (đặc tả 27/11, [CHỜ BE]).
+// Field shipBackStatus nằm TRONG trạng thái INVALID: chờ trả phí → đã trả → đang gửi → đã giao | giao thất bại
+export const SHIP_BACK_STATUS = {
+  AWAITING_PAYMENT: "AWAITING_PAYMENT",
+  PAID: "PAID",
+  SHIPPING: "SHIPPING",
+  DELIVERED: "DELIVERED",
+  FAILED: "FAILED",
+};
+export const SHIP_BACK_STATUS_LABEL = {
+  AWAITING_PAYMENT: "Chờ bạn trả phí gửi lại",
+  PAID: "Đã trả phí, ReHome đang chuẩn bị gửi",
+  SHIPPING: "ReHome đang gửi lại cho bạn",
+  DELIVERED: "Đã giao tới bạn",
+  FAILED: "Giao không thành công, hàng đã về địa điểm",
+};
+// Số cho chữ hướng dẫn / thanh đếm ngược — hạn thật lấy theo BE (shipBackFeeDeadline)
+export const SHIP_BACK_LIMITS = {
+  FEE_DEADLINE_MINUTES: 30, // hạn trả phí sau khi chọn gửi lại
+  SHIP_WITHIN_DAYS: 2, // ReHome gửi trong 2 ngày sau khi trả phí
+};
+
 // [CHỜ BE câu 6] BE chưa có field lý do huỷ — mock tự đặt
 export const RETURN_CANCEL_REASON = {
   REJECTED: "REJECTED", // kho từ chối ngay khi duyệt

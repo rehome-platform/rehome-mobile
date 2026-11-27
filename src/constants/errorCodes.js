@@ -29,6 +29,11 @@ export const ERROR_CODES = {
   RETURN_WINDOW_EXPIRED: "RETURN_WINDOW_EXPIRED", // trả hàng: quá 3 ngày kể từ lúc giao (API 79, 409) — contract để trong message [CHỜ BE]
   RETURN_ALREADY_EXISTS: "RETURN_REQUEST_EXISTS", // trả hàng: đơn đã có yêu cầu (API 79, 409) — tên mã BE thật
   RETURN_HANDOVER_EXPIRED: "RETURN_HANDOVER_EXPIRED", // trả hàng: quá hạn bàn giao GHN (API 81, 409) — khớp BE
+  // Gửi lại hàng trả không hợp lệ (đặc tả 27/11, [CHỜ BE])
+  RETURN_SHIP_BACK_FEE_EXPIRED: "RETURN_SHIP_BACK_FEE_EXPIRED", // quá hạn trả phí gửi lại (409)
+  RETURN_SHIP_BACK_IN_PROGRESS: "RETURN_SHIP_BACK_IN_PROGRESS", // đã trả phí / đang gửi → không đổi lựa chọn (409)
+  RETURN_SHIP_BACK_ALREADY_PAID: "RETURN_SHIP_BACK_ALREADY_PAID", // trả phí lần 2 (409)
+  RETURN_PICKUP_EXPIRED: "RETURN_PICKUP_EXPIRED", // quá hạn nhận lại hàng trả (API 82, 409) — khớp BE
   PRODUCT_ALREADY_ORDERED: "PRODUCT_ALREADY_ORDERED", // rút hàng: món vừa có người đặt (API 90, 409) — contract để trong message [CHỜ BE]
   INCOMPLETE_OUTFIT: "INCOMPLETE_OUTFIT", // thử đồ: chưa đủ Áo + Quần hoặc Đầm (API 97, 409) — contract để trong message [CHỜ BE]
   CAMPAIGN_LIMIT_REACHED: "CAMPAIGN_LIMIT_REACHED", // chiến dịch: đã có đủ chiến dịch đang mở (409) — BE 2c9533b
