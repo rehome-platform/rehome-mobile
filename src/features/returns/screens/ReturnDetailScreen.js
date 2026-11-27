@@ -32,7 +32,12 @@ import { OrderItemRow } from "@/features/orders/components/OrderItemRow";
 import { useWallet } from "@/features/wallet/hooks/useWallet";
 import { returnsApi } from "../api/returnsApi";
 import { useReturn, useReturnMutation } from "../hooks/useReturns";
-import { splitReasonText, wasRefunded } from "../utils/returnRules";
+import {
+  invalidPickedUp,
+  invalidPickupExpired,
+  splitReasonText,
+  wasRefunded,
+} from "../utils/returnRules";
 import { ReturnStatusBadge } from "../components/ReturnStatusBadge";
 import { ReturnStatusTimeline } from "../components/ReturnStatusTimeline";
 import { PhotoThumbs } from "../components/PhotoThumbs";
@@ -124,7 +129,12 @@ export default function ReturnDetailScreen() {
 
   const reason = splitReasonText(r.reason);
   const refunded = wasRefunded(r);
-  const choosing = r.status === R.INVALID && !r.invalidReturnChoice;
+  // Hàng không hợp lệ: đã nhận lại tại quầy (BE thêm pickedUpAt — [CHỜ BE], chưa có thì luôn null)
+  // hoặc quá hạn nhận lại (hàng vô chủ) → hết việc phải làm, ẩn nút chọn cách nhận / mã Member
+  const pickedUp = invalidPickedUp(r);
+  const pickupExpired = invalidPickupExpired(r);
+  const choosing =
+    r.status === R.INVALID && !r.invalidReturnChoice && !pickedUp && !pickupExpired;
 
   const subline = refunded
     ? `Hoàn tất ${fmt(r.resolvedAt)}`
@@ -177,7 +187,7 @@ export default function ReturnDetailScreen() {
         onPress={() => router.push(`/returns/${r.id}/pickup-choice`)}
       />
     );
-  } else if (r.status === R.INVALID) {
+  } else if (r.status === R.INVALID && !pickedUp && !pickupExpired) {
     footer = (
       <Button
         title="Mã Member của tôi"
@@ -312,7 +322,15 @@ export default function ReturnDetailScreen() {
               </View>
             </Section>
           ) : null}
-          {choosing ? (
+          {pickedUp ? (
+            <InfoBox strong title="Bạn đã nhận lại hàng">
+              {`Đã nhận tại ${r.warehouseName ?? "địa điểm ký gửi"} lúc ${fmt(r.pickedUpAt)}. Yêu cầu trả hàng đã kết thúc.`}
+            </InfoBox>
+          ) : pickupExpired ? (
+            <InfoBox strong title="Đã hết hạn nhận lại hàng">
+              {`Hết hạn ${fmt(r.pickupDeadline)} mà bạn chưa nhận lại hàng. Món thành hàng vô chủ và ReHome xử lý theo quy định.`}
+            </InfoBox>
+          ) : choosing ? (
             <InfoBox title="Món này đang ở địa điểm ký gửi, cần bạn chọn cách nhận">
               <Text style={styles.text}>
                 ReHome chỉ giữ hàng của bạn trong thời hạn có giới hạn. Còn{" "}

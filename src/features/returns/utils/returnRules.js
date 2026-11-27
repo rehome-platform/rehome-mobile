@@ -29,9 +29,20 @@ export const returnStepOf = (r) =>
     LOST: 4,
   })[r.status] ?? -1;
 
-// Member cần làm gì đó: bàn giao GHN, hoặc chọn cách nhận lại hàng không hợp lệ
+// Hàng trả không hợp lệ đã xong việc: đã nhận lại tại quầy (pickedUpAt — [CHỜ BE] trả field này)
+// hoặc quá hạn nhận lại (hàng vô chủ) → không còn nút chọn cách nhận / mã Member
+export const invalidPickedUp = (r) => r.status === R.INVALID && !!r.pickedUpAt;
+export const invalidPickupExpired = (r) =>
+  r.status === R.INVALID &&
+  !r.pickedUpAt &&
+  !!r.pickupDeadline &&
+  dayjs(r.pickupDeadline).isBefore(dayjs());
+const invalidOpen = (r) =>
+  r.status === R.INVALID && !invalidPickedUp(r) && !invalidPickupExpired(r);
+
+// Member cần làm gì đó: bàn giao GHN, hoặc chọn cách nhận lại hàng không hợp lệ (còn hạn)
 export const needsAction = (r) =>
-  r.status === R.APPROVED || (r.status === R.INVALID && !r.invalidReturnChoice);
+  r.status === R.APPROVED || (invalidOpen(r) && !r.invalidReturnChoice);
 
 export const wasRefunded = (r) => [R.VALID, R.LOST].includes(r.status);
 
