@@ -45,6 +45,15 @@ export function useReturnCount(tab) {
   });
 }
 
+// Phí ReHome gửi lại hàng trả không hợp lệ tới địa chỉ đang chọn (BE gọi GHN). Đổi địa chỉ → hỏi lại
+export function useShipBackQuote(ret, address, enabled = true) {
+  return useQuery({
+    queryKey: [...returnKeys.detail(ret?.id), "ship-back-quote", address?.id],
+    queryFn: () => returnsApi.getShipBackQuote({ ret, address }),
+    enabled: enabled && !!ret && !!address,
+  });
+}
+
 // Gửi / bàn giao / chọn cách nhận / khung Mock: làm mới yêu cầu trả + đơn (dòng ở BR-11) + ví (hoàn tiền)
 export function useReturnMutation(mutationFn) {
   const queryClient = useQueryClient();

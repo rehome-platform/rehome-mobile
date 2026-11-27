@@ -22,12 +22,19 @@ import { formatPhone } from "@/utils/format";
 import { showToast } from "@/utils/toast";
 import { ERROR_CODES } from "@/constants/errorCodes";
 import {
+  INVALID_RETURN_CHOICE as C,
   INVALID_RETURN_CHOICE_LABEL,
   RETURN_CANCEL_REASON,
   RETURN_STATUS as R,
+  SHIP_BACK_LIMITS,
+  SHIP_BACK_STATUS as SB,
 } from "@/constants/returns";
+import { PAYMENT_METHOD_LABEL } from "@/constants/order";
 import { toDate } from "@/features/orders/utils/time";
-import { formatTimeLeft } from "@/features/orders/utils/orderRules";
+import {
+  formatTimeLeft,
+  ghnTrackingUrl,
+} from "@/features/orders/utils/orderRules";
 import { OrderItemRow } from "@/features/orders/components/OrderItemRow";
 import { useWallet } from "@/features/wallet/hooks/useWallet";
 import { returnsApi } from "../api/returnsApi";
@@ -35,6 +42,7 @@ import { useReturn, useReturnMutation } from "../hooks/useReturns";
 import {
   invalidPickedUp,
   invalidPickupExpired,
+  shipBackAwaitingPayment,
   splitReasonText,
   wasRefunded,
 } from "../utils/returnRules";
@@ -53,6 +61,91 @@ const PACKING_TIPS = [
   "Dùng lại túi hoặc thùng của đơn gốc nếu còn",
   "Shipper mang phiếu trả hàng tới, bạn không cần in",
 ];
+
+// Người mua chọn "ReHome gửi lại" (đặc tả 27/11): chờ trả phí → đã trả → đang gửi (mã GHN)
+function ShipBackBox({ r }) {
+  const fee = formatVnd(Number(r.shipBackFee));
+  const copy = async () => {
+    await Clipboard.setStringAsync(r.shipBackTrackingCode);
+    showToast("Đã sao chép mã vận đơn");
+  };
+  const to = (
+    <>
+      <Text style={styles.sectionTitle}>GỬI TỚI</Text>
+      <Text style={styles.strong}>
+        {r.shipBackRecipientName} · {formatPhone(r.shipBackPhone)}
+      </Text>
+      <Text style={styles.muted}>{r.shipBackAddressDetail}</Text>
+    </>
+  );
+
+  if (r.shipBackStatus === SB.AWAITING_PAYMENT)
+    return (
+      <InfoBox strong title={`Chờ bạn trả phí gửi lại ${fee}`}>
+        <Text style={styles.text}>
+          Trả trước{" "}
+          <Text style={styles.strong}>
+            {toDate(r.shipBackFeeDeadline).format("HH:mm DD/MM")}
+          </Text>{" "}
+          bằng Ví ReHome hoặc VNPay. Quá hạn thì lựa chọn gửi lại bị huỷ, bạn
+          chọn lại cách nhận hàng.
+        </Text>
+        {to}
+      </InfoBox>
+    );
+
+  if (r.shipBackStatus === SB.PAID)
+    return (
+      <InfoBox strong title="Đã trả phí, ReHome đang chuẩn bị gửi">
+        <Text style={styles.text}>
+          {`Đã trả ${fee}${r.shipBackPaymentMethod ? ` bằng ${PAYMENT_METHOD_LABEL[r.shipBackPaymentMethod] ?? r.shipBackPaymentMethod}` : ""}${r.shipBackPaidAt ? ` lúc ${fmt(r.shipBackPaidAt)}` : ""}. ReHome đóng gói và gửi trong ${SHIP_BACK_LIMITS.SHIP_WITHIN_DAYS} ngày, bạn sẽ nhận thông báo kèm mã vận đơn GHN.`}
+        </Text>
+        {to}
+      </InfoBox>
+    );
+
+  // Dữ liệu cũ: BE đã lưu SHIP_BACK nhưng chưa có luồng gửi lại (không có shipBackStatus)
+  if (r.shipBackStatus !== SB.SHIPPING)
+    return (
+      <InfoBox strong title="Bạn đã chọn: ReHome gửi lại cho bạn">
+        Cần hỏi thêm về việc gửi lại thì bấm Nhắn ReHome bên dưới.
+      </InfoBox>
+    );
+
+  return (
+    <>
+      <InfoBox strong title="ReHome đang gửi lại cho bạn">
+        <Text style={styles.text}>
+          {`Đã giao cho GHN${r.shipBackShippedAt ? ` lúc ${fmt(r.shipBackShippedAt)}` : ""}. Nhớ nghe máy khi shipper gọi — giao không thành công thì không hoàn phí và hàng về lại địa điểm ký gửi.`}
+        </Text>
+        {to}
+      </InfoBox>
+      {r.shipBackTrackingCode ? (
+        <View style={styles.codeBox}>
+          <View style={styles.flex}>
+            <Text style={styles.muted}>Mã vận đơn GHN</Text>
+            <Text style={styles.code}>{r.shipBackTrackingCode}</Text>
+            <Text
+              style={styles.link}
+              accessibilityRole="link"
+              onPress={() =>
+                Linking.openURL(ghnTrackingUrl(r.shipBackTrackingCode))
+              }
+            >
+              Theo dõi trên GHN
+            </Text>
+          </View>
+          <Button
+            title="Sao chép"
+            variant="secondary"
+            onPress={copy}
+            style={styles.smallBtn}
+          />
+        </View>
+      ) : null}
+    </>
+  );
+}
 
 function InfoBox({ title, children, strong }) {
   return (
@@ -187,7 +280,19 @@ export default function ReturnDetailScreen() {
         onPress={() => router.push(`/returns/${r.id}/pickup-choice`)}
       />
     );
-  } else if (r.status === R.INVALID && !pickedUp && !pickupExpired) {
+  } else if (shipBackAwaitingPayment(r) && !pickupExpired) {
+    footer = (
+      <Button
+        title={`Trả phí gửi lại ${formatVnd(Number(r.shipBackFee))}`}
+        onPress={() => router.push(`/returns/${r.id}/ship-back-pay`)}
+      />
+    );
+  } else if (
+    r.status === R.INVALID &&
+    r.invalidReturnChoice === C.WAREHOUSE_PICKUP &&
+    !pickedUp &&
+    !pickupExpired
+  ) {
     footer = (
       <Button
         title="Mã Member của tôi"
@@ -324,8 +429,12 @@ export default function ReturnDetailScreen() {
           ) : null}
           {pickedUp ? (
             <InfoBox strong title="Bạn đã nhận lại hàng">
-              {`Đã nhận tại ${r.warehouseName ?? "địa điểm ký gửi"} lúc ${fmt(r.pickedUpAt)}. Yêu cầu trả hàng đã kết thúc.`}
+              {r.shipBackStatus === SB.DELIVERED
+                ? `GHN đã giao tới ${r.shipBackAddressDetail ?? "địa chỉ của bạn"} lúc ${fmt(r.shipBackDeliveredAt)}. Yêu cầu trả hàng đã kết thúc.`
+                : `Đã nhận tại ${r.warehouseName ?? "địa điểm ký gửi"} lúc ${fmt(r.pickedUpAt)}. Yêu cầu trả hàng đã kết thúc.`}
             </InfoBox>
+          ) : r.invalidReturnChoice === C.SHIP_BACK && !pickupExpired ? (
+            <ShipBackBox r={r} />
           ) : pickupExpired ? (
             <InfoBox strong title="Đã hết hạn nhận lại hàng">
               {`Hết hạn ${fmt(r.pickupDeadline)} mà bạn chưa nhận lại hàng. Món thành hàng vô chủ và ReHome xử lý theo quy định.`}
@@ -341,6 +450,13 @@ export default function ReturnDetailScreen() {
               </Text>
             </InfoBox>
           ) : (
+            <>
+            {/* Gửi lại thất bại: GHN hoàn hàng về kho → BE chuyển sang đến lấy, hạn mới; không hoàn phí */}
+            {r.shipBackStatus === SB.FAILED ? (
+              <InfoBox title="Giao không thành công">
+                {`GHN không giao được nên hàng đã về ${r.warehouseName ?? "địa điểm ký gửi"}${r.shipBackFailedAt ? ` (${fmt(r.shipBackFailedAt)})` : ""}. Phí gửi lại không được hoàn. Bạn đến địa điểm lấy hàng trước hạn bên dưới.`}
+              </InfoBox>
+            ) : null}
             <InfoBox
               strong
               title={`Bạn đã chọn: ${INVALID_RETURN_CHOICE_LABEL[r.invalidReturnChoice] ?? r.invalidReturnChoice}`}
@@ -367,6 +483,7 @@ export default function ReturnDetailScreen() {
                 </Text>
               ) : null}
             </InfoBox>
+            </>
           )}
         </>
       ) : null}

@@ -60,6 +60,9 @@ const toSummary = (r, o) => ({
   invalidReturnChoice: r.invalidReturnChoice,
   pickupDeadline: r.pickupDeadline,
   pickedUpAt: r.pickedUpAt ?? null, // [CHỜ BE] nhận lại hàng không hợp lệ tại quầy
+  // [CHỜ BE] gửi lại hàng không hợp lệ (đặc tả 27/11) — dòng trạng thái trên thẻ
+  shipBackStatus: r.shipBackStatus ?? null,
+  shipBackFeeDeadline: r.shipBackFeeDeadline ?? null,
   itemCount: o?.items?.length ?? 0,
   firstItem: o?.items?.[0] ?? null,
 });

@@ -2,7 +2,10 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
 import { formatVnd } from "@/utils/money";
-import { RETURN_STATUS as R } from "@/constants/returns";
+import {
+  RETURN_STATUS as R,
+  SHIP_BACK_STATUS as SB,
+} from "@/constants/returns";
 import { toDate } from "@/features/orders/utils/time";
 import { formatTimeLeft } from "@/features/orders/utils/orderRules";
 import {
@@ -32,6 +35,16 @@ function nextStep(r) {
     case R.INVALID:
       if (invalidPickedUp(r)) return { text: "Bạn đã nhận lại hàng" };
       if (invalidPickupExpired(r)) return { text: "Đã hết hạn nhận lại hàng" };
+      // ReHome gửi lại (đặc tả 27/11)
+      if (r.shipBackStatus === SB.AWAITING_PAYMENT)
+        return {
+          text: `Trả phí gửi lại trước ${toDate(r.shipBackFeeDeadline).format("HH:mm")}`,
+          strong: true,
+        };
+      if (r.shipBackStatus === SB.PAID)
+        return { text: "ReHome đang chuẩn bị gửi lại cho bạn" };
+      if (r.shipBackStatus === SB.SHIPPING)
+        return { text: "ReHome đang gửi lại cho bạn" };
       return r.invalidReturnChoice
         ? {
             text: `Đến địa điểm lấy trước ${toDate(r.pickupDeadline).format("DD/MM")}`,

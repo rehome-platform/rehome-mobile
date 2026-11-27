@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { colors, fonts, radius, spacing, textStyles } from "@/theme";
+import { FEATURES } from "@/config/env";
 import { Screen } from "@/components/ui/Screen";
 import { refreshActive } from "@/lib/query/refresh";
 import { AppHeader } from "@/components/ui/AppHeader";
@@ -17,16 +18,24 @@ import { Button } from "@/components/ui/Button";
 import { ErrorBox } from "@/components/ui/ErrorBox";
 import { useAuthStore } from "@/stores/authStore";
 import { showToast } from "@/utils/toast";
+import { formatVnd } from "@/utils/money";
+import { formatAddress, formatPhone } from "@/utils/format";
 import {
   INVALID_RETURN_CHOICE as C,
   RETURN_STATUS as R,
+  SHIP_BACK_LIMITS,
 } from "@/constants/returns";
+import { useAddresses } from "@/features/addresses/hooks/useAddresses";
 import { OrderItemRow } from "@/features/orders/components/OrderItemRow";
 import { useSecondsLeft } from "@/features/orders/hooks/useSecondsLeft";
 import { toDate } from "@/features/orders/utils/time";
 import { formatTimeLeft } from "@/features/orders/utils/orderRules";
 import { returnsApi } from "../api/returnsApi";
-import { useReturn, useReturnMutation } from "../hooks/useReturns";
+import {
+  useReturn,
+  useReturnMutation,
+  useShipBackQuote,
+} from "../hooks/useReturns";
 
 const fmt = (v) => (v ? toDate(v).format("DD/MM/YYYY HH:mm") : "");
 
@@ -66,7 +75,81 @@ function OptionCard({
   );
 }
 
-// RT-04 · Chọn cách nhận lại hàng trả không hợp lệ (/returns/<id>/pickup-choice)
+// Gửi lại: chọn địa chỉ nhận (sổ địa chỉ) + phí GHN tới địa chỉ đó
+function ShipBackAddress({ addresses, address, onPick, quote }) {
+  if (addresses.isPending)
+    return <ActivityIndicator color={colors.primary} />;
+  if (!addresses.data?.length)
+    return (
+      <Text
+        style={styles.link}
+        accessibilityRole="link"
+        onPress={() => router.push("/addresses/new")}
+      >
+        + Thêm địa chỉ nhận hàng
+      </Text>
+    );
+  return (
+    <View style={styles.gapSm}>
+      <Text style={styles.caption}>GỬI TỚI</Text>
+      {addresses.data.map((a) => {
+        const on = a.id === address?.id;
+        return (
+          <Pressable
+            key={a.id}
+            onPress={() => onPick(a.id)}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: on }}
+            style={[styles.addr, on && styles.addrOn]}
+          >
+            <View style={[styles.radioSm, on && styles.radioOn]}>
+              {on ? <View style={styles.radioDotSm} /> : null}
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.strong}>
+                {a.recipientName} · {formatPhone(a.phone)}
+              </Text>
+              <Text style={styles.caption}>{formatAddress(a)}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
+      <Text
+        style={styles.link}
+        accessibilityRole="link"
+        onPress={() => router.push("/addresses/new")}
+      >
+        + Thêm địa chỉ khác
+      </Text>
+      <View style={styles.feeRow}>
+        <Text style={styles.muted}>Phí GHN tới địa chỉ này</Text>
+        {quote.isSuccess ? (
+          <Text style={styles.strong}>{formatVnd(quote.data.fee)}</Text>
+        ) : quote.isError ? (
+          <Text
+            style={styles.link}
+            accessibilityRole="button"
+            onPress={() => quote.refetch()}
+          >
+            Thử lại
+          </Text>
+        ) : (
+          <ActivityIndicator color={colors.primary} />
+        )}
+      </View>
+      {quote.isError ? (
+        <Text style={styles.error}>{quote.error.message}</Text>
+      ) : null}
+      <Text style={styles.caption}>
+        Giao không thành công (không nghe máy, sai địa chỉ…) thì không hoàn phí,
+        hàng về địa điểm ký gửi để bạn đến lấy.
+      </Text>
+    </View>
+  );
+}
+
+// RT-04 · Chọn cách nhận lại hàng trả không hợp lệ (/returns/<id>/pickup-choice):
+// đến địa điểm lấy (miễn phí) hoặc ReHome gửi lại qua GHN (người mua trả phí trước — đặc tả 27/11)
 export default function PickupChoiceScreen() {
   const { id } = useLocalSearchParams();
   const isAuthed = useAuthStore((s) => s.status === "authenticated");
@@ -75,9 +158,16 @@ export default function PickupChoiceScreen() {
   const left = useSecondsLeft(
     r?.pickupDeadline ? toDate(r.pickupDeadline).valueOf() : 0,
   );
-  const [choice, setChoice] = useState(C.WAREHOUSE_PICKUP); // lựa chọn duy nhất (lead chốt 18/11)
+  const [choice, setChoice] = useState(C.WAREHOUSE_PICKUP);
+  // Gửi lại (đặc tả 27/11): địa chỉ nhận chọn trong sổ địa chỉ — mặc định địa chỉ mặc định của người mua
+  const addresses = useAddresses();
+  const [addressId, setAddressId] = useState(null);
+  const address =
+    addresses.data?.find((a) => a.id === addressId) ?? addresses.data?.[0];
+  const shipBack = FEATURES.returnShipBack && choice === C.SHIP_BACK;
+  const quote = useShipBackQuote(r, address, shipBack);
   const choose = useReturnMutation((c) =>
-    returnsApi.chooseInvalidReturn(id, c),
+    returnsApi.chooseInvalidReturn(id, c, { ret: r, address }),
   );
 
   if (!isAuthed) return <Redirect href="/login" />;
@@ -114,6 +204,29 @@ export default function PickupChoiceScreen() {
   const expired = left === 0;
   const first = r.items[0];
 
+  const fee = quote.data?.fee;
+
+  // Gửi lại: chốt phí theo địa chỉ → sang màn trả phí (hạn 30 phút)
+  const confirmShipBack = () =>
+    Alert.alert(
+      "ReHome gửi lại cho bạn?",
+      `Phí GHN ${formatVnd(fee)}, trả trong ${SHIP_BACK_LIMITS.FEE_DEADLINE_MINUTES} phút tới bằng Ví ReHome hoặc VNPay. Giao không thành công thì không hoàn phí, hàng về ${r.warehouseName ?? "địa điểm ký gửi"} để bạn đến lấy.`,
+      [
+        { text: "Chưa", style: "cancel" },
+        {
+          text: "Xác nhận",
+          onPress: () =>
+            choose.mutate(C.SHIP_BACK, {
+              onSuccess: () => router.replace(`/returns/${id}/ship-back-pay`),
+              onError: (e) => {
+                showToast(e.message);
+                query.refetch();
+              },
+            }),
+        },
+      ],
+    );
+
   const confirm = () =>
     Alert.alert(
       "Đến địa điểm lấy lại hàng?",
@@ -137,7 +250,14 @@ export default function PickupChoiceScreen() {
       ],
     );
 
-  const footer = expired ? null : (
+  const footer = expired ? null : shipBack ? (
+    <Button
+      title={fee != null ? `Xác nhận & trả phí ${formatVnd(fee)}` : "Xác nhận gửi lại"}
+      loading={choose.isPending}
+      disabled={!address || fee == null}
+      onPress={confirmShipBack}
+    />
+  ) : (
     <Button
       title="Xác nhận đến địa điểm lấy"
       loading={choose.isPending}
@@ -217,8 +337,25 @@ export default function PickupChoiceScreen() {
             ) : null}
           </OptionCard>
 
-          {/* Lead chốt 18/11: KHÔNG làm "ReHome gửi lại" (trả phí ship) trong phạm vi đồ án → chỉ còn đến lấy.
-              BE vẫn nhận SHIP_BACK nhưng chỉ lưu lựa chọn, không thu phí / tạo vận đơn → app không cho chọn */}
+          {/* Đặc tả 27/11: ReHome gửi lại qua GHN, người mua trả phí trước. Tắt bằng FEATURES.returnShipBack */}
+          {FEATURES.returnShipBack ? (
+            <OptionCard
+              title="ReHome gửi lại cho bạn"
+              desc={`Gửi qua GHN tới địa chỉ bạn chọn. Bạn trả phí ship trước, ReHome gửi trong ${SHIP_BACK_LIMITS.SHIP_WITHIN_DAYS} ngày.`}
+              tag={shipBack && fee != null ? formatVnd(fee) : null}
+              selected={choice === C.SHIP_BACK}
+              onPress={() => setChoice(C.SHIP_BACK)}
+            >
+              {shipBack ? (
+                <ShipBackAddress
+                  addresses={addresses}
+                  address={address}
+                  onPick={setAddressId}
+                  quote={quote}
+                />
+              ) : null}
+            </OptionCard>
+          ) : null}
 
           <View style={styles.warn}>
             <Text style={styles.strong}>
@@ -333,6 +470,41 @@ const styles = StyleSheet.create({
     backgroundColor: colors.highlight,
   },
   boxTitle: { ...textStyles.heading, color: colors.text },
+  addr: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    borderRadius: radius.input,
+    backgroundColor: colors.surface,
+  },
+  addrOn: { borderColor: colors.primary },
+  radioSm: {
+    width: 18,
+    height: 18,
+    marginTop: 2,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: colors.textSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioDotSm: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  feeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  error: { ...textStyles.caption, color: colors.error },
   warn: {
     gap: spacing.xs,
     padding: spacing.md,
