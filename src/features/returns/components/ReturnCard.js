@@ -5,7 +5,11 @@ import { formatVnd } from "@/utils/money";
 import { RETURN_STATUS as R } from "@/constants/returns";
 import { toDate } from "@/features/orders/utils/time";
 import { formatTimeLeft } from "@/features/orders/utils/orderRules";
-import { needsAction } from "../utils/returnRules";
+import {
+  invalidPickedUp,
+  invalidPickupExpired,
+  needsAction,
+} from "../utils/returnRules";
 import { ReturnStatusBadge } from "./ReturnStatusBadge";
 
 // Dòng cuối thẻ: việc Member cần làm (đậm) hoặc tình trạng hiện tại (mờ)
@@ -26,6 +30,8 @@ function nextStep(r) {
     case R.LOST:
       return { text: "Đã hoàn tiền vào ví của bạn" };
     case R.INVALID:
+      if (invalidPickedUp(r)) return { text: "Bạn đã nhận lại hàng" };
+      if (invalidPickupExpired(r)) return { text: "Đã hết hạn nhận lại hàng" };
       return r.invalidReturnChoice
         ? {
             text: `Đến địa điểm lấy trước ${toDate(r.pickupDeadline).format("DD/MM")}`,

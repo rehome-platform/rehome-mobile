@@ -21,11 +21,21 @@ const MISSING = {
   warehouseAddress: null, // RT-04: địa chỉ / giờ mở cửa địa điểm đang giữ hàng
   warehouseOpeningHours: null,
   shipBackFee: null, // phí ReHome gửi lại hàng không hợp lệ
+  pickedUpAt: null, // [CHỜ BE] lúc người mua nhận lại hàng không hợp lệ tại quầy
+};
+
+// Yêu cầu đã huỷ: BE không có field lý do huỷ riêng → suy ra. Đã từng được duyệt (có handoverDeadline) mà huỷ
+// = quá hạn bàn giao GHN; chưa duyệt mà huỷ = Moderator từ chối, lý do Moderator nhập nằm ở resolutionNote
+const cancelInfo = (r) => {
+  if (r.status !== "CANCELLED") return {};
+  if (r.handoverDeadline) return { cancelReason: "HANDOVER_EXPIRED", cancelNote: null };
+  return { cancelReason: "REJECTED", cancelNote: r.resolutionNote ?? null };
 };
 
 const toDetail = (r, o) => ({
   ...MISSING,
   ...r,
+  ...cancelInfo(r),
   photoUrls: r.photoUrls ?? [],
   orderNo: r.orderNo ?? o?.orderNo ?? null,
   warehouseId: o?.warehouseId ?? null,
@@ -49,6 +59,7 @@ const toSummary = (r, o) => ({
   handoverDeadline: r.handoverDeadline,
   invalidReturnChoice: r.invalidReturnChoice,
   pickupDeadline: r.pickupDeadline,
+  pickedUpAt: r.pickedUpAt ?? null, // [CHỜ BE] nhận lại hàng không hợp lệ tại quầy
   itemCount: o?.items?.length ?? 0,
   firstItem: o?.items?.[0] ?? null,
 });

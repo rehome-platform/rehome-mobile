@@ -32,7 +32,12 @@ import { OrderItemRow } from "@/features/orders/components/OrderItemRow";
 import { useWallet } from "@/features/wallet/hooks/useWallet";
 import { returnsApi } from "../api/returnsApi";
 import { useReturn, useReturnMutation } from "../hooks/useReturns";
-import { splitReasonText, wasRefunded } from "../utils/returnRules";
+import {
+  invalidPickedUp,
+  invalidPickupExpired,
+  splitReasonText,
+  wasRefunded,
+} from "../utils/returnRules";
 import { ReturnStatusBadge } from "../components/ReturnStatusBadge";
 import { ReturnStatusTimeline } from "../components/ReturnStatusTimeline";
 import { PhotoThumbs } from "../components/PhotoThumbs";
@@ -124,7 +129,12 @@ export default function ReturnDetailScreen() {
 
   const reason = splitReasonText(r.reason);
   const refunded = wasRefunded(r);
-  const choosing = r.status === R.INVALID && !r.invalidReturnChoice;
+  // Hàng không hợp lệ: đã nhận lại tại quầy (BE thêm pickedUpAt — [CHỜ BE], chưa có thì luôn null)
+  // hoặc quá hạn nhận lại (hàng vô chủ) → hết việc phải làm, ẩn nút chọn cách nhận / mã Member
+  const pickedUp = invalidPickedUp(r);
+  const pickupExpired = invalidPickupExpired(r);
+  const choosing =
+    r.status === R.INVALID && !r.invalidReturnChoice && !pickedUp && !pickupExpired;
 
   const subline = refunded
     ? `Hoàn tất ${fmt(r.resolvedAt)}`
@@ -177,7 +187,7 @@ export default function ReturnDetailScreen() {
         onPress={() => router.push(`/returns/${r.id}/pickup-choice`)}
       />
     );
-  } else if (r.status === R.INVALID) {
+  } else if (r.status === R.INVALID && !pickedUp && !pickupExpired) {
     footer = (
       <Button
         title="Mã Member của tôi"
@@ -312,7 +322,15 @@ export default function ReturnDetailScreen() {
               </View>
             </Section>
           ) : null}
-          {choosing ? (
+          {pickedUp ? (
+            <InfoBox strong title="Bạn đã nhận lại hàng">
+              {`Đã nhận tại ${r.warehouseName ?? "địa điểm ký gửi"} lúc ${fmt(r.pickedUpAt)}. Yêu cầu trả hàng đã kết thúc.`}
+            </InfoBox>
+          ) : pickupExpired ? (
+            <InfoBox strong title="Đã hết hạn nhận lại hàng">
+              {`Hết hạn ${fmt(r.pickupDeadline)} mà bạn chưa nhận lại hàng. Món thành hàng vô chủ và ReHome xử lý theo quy định.`}
+            </InfoBox>
+          ) : choosing ? (
             <InfoBox title="Món này đang ở địa điểm ký gửi, cần bạn chọn cách nhận">
               <Text style={styles.text}>
                 ReHome chỉ giữ hàng của bạn trong thời hạn có giới hạn. Còn{" "}
@@ -353,12 +371,18 @@ export default function ReturnDetailScreen() {
         </>
       ) : null}
 
+      {/* Từ chối lúc duyệt: món CHƯA rời tay người mua (chưa gửi GHN) → giữ món, không hoàn tiền, không có bước nhận lại */}
       {r.status === R.CANCELLED ? (
-        <InfoBox title="Yêu cầu đã huỷ">
-          {r.cancelReason === RETURN_CANCEL_REASON.HANDOVER_EXPIRED
-            ? "Quá hạn bàn giao cho GHN nên yêu cầu tự huỷ. Đơn trở lại bình thường, hàng vẫn là của bạn."
-            : `ReHome từ chối yêu cầu.${r.cancelNote ? ` ${r.cancelNote}` : ""} Đơn trở lại bình thường.`}
-        </InfoBox>
+        r.cancelReason === RETURN_CANCEL_REASON.HANDOVER_EXPIRED ? (
+          <InfoBox title="Yêu cầu đã huỷ">
+            Quá hạn bàn giao cho GHN nên yêu cầu tự huỷ. Đơn trở lại bình
+            thường, hàng vẫn là của bạn.
+          </InfoBox>
+        ) : (
+          <InfoBox title="ReHome từ chối yêu cầu trả hàng">
+            {`${r.cancelNote ? `Lý do: ${r.cancelNote}\n` : ""}Món vẫn ở chỗ bạn, không cần gửi trả và không được hoàn tiền. Đơn trở lại bình thường. Cần hỏi thêm thì bấm Nhắn ReHome bên dưới.`}
+          </InfoBox>
+        )
       ) : null}
 
       {/* ---- Phần chung ---- */}
