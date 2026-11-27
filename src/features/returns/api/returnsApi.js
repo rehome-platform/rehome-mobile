@@ -19,6 +19,7 @@ export const returnsApi = {
       : impl.chooseInvalidReturn(id, choice),
   getShipBackQuote: ship.getShipBackQuote, // ({ ret, address }) → { fee }
   payShipBack: ship.payShipBack, // ({ ret, method }) → { paid, payUrl }
+  syncShipBackPayment: ship.syncShipBackPayment, // (id) → BE hỏi lại VNPay
   // [DEV] chỉ dùng trong khung Mock (__DEV__)
   mockReturnAction: mock.mockReturnAction,
   MOCK_RETURN_ACTIONS: mock.MOCK_RETURN_ACTIONS,

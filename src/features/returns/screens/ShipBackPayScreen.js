@@ -63,6 +63,12 @@ export default function ShipBackPayScreen() {
   const paid =
     !!r?.shipBackStatus && r.shipBackStatus !== SB.AWAITING_PAYMENT;
 
+  // Đã mở VNPay → nhờ BE hỏi lại cổng trước (IPN có thể chưa về), rồi đọc lại yêu cầu. Lỗi hỏi cổng thì bỏ qua
+  const checkPaid = async () => {
+    await returnsApi.syncShipBackPayment(id).catch(() => null);
+    return query.refetch();
+  };
+
   // Trả xong (Ví ngay / VNPay qua IPN) → về chi tiết yêu cầu
   useEffect(() => {
     if (!paid) return;
@@ -74,7 +80,7 @@ export default function ShipBackPayScreen() {
   useEffect(() => {
     if (stage !== "gateway") return;
     const t = setInterval(() => {
-      if (Date.now() < pollUntil) query.refetch();
+      if (Date.now() < pollUntil) checkPaid();
     }, POLL_MS);
     return () => clearInterval(t);
   }, [stage, pollUntil]);
@@ -87,7 +93,7 @@ export default function ShipBackPayScreen() {
       setPollUntil(Date.now() + POLL_WINDOW_MS);
       const from = returning.current;
       returning.current = false;
-      const res = await query.refetch();
+      const res = await checkPaid();
       if (from && res.data?.shipBackStatus === SB.AWAITING_PAYMENT)
         showToast(
           `Chưa nhận được xác nhận thanh toán từ ${PAYMENT_METHOD_LABEL[method]}`,
@@ -230,7 +236,7 @@ export default function ShipBackPayScreen() {
               loading={query.isFetching}
               onPress={async () => {
                 setPollUntil(Date.now() + POLL_WINDOW_MS);
-                const res = await query.refetch();
+                const res = await checkPaid();
                 if (res.data?.shipBackStatus === SB.AWAITING_PAYMENT)
                   showToast(
                     `Chưa nhận được xác nhận thanh toán từ ${PAYMENT_METHOD_LABEL[method]}`,

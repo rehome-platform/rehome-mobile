@@ -1,3 +1,4 @@
+import * as ExpoLinking from "expo-linking";
 import { api, unwrap } from "@/lib/api/client";
 
 // ===== ReHome gửi lại hàng trả không hợp lệ — người mua trả phí GHN trước (đặc tả 27/11, [CHỜ BE]) =====
@@ -26,10 +27,22 @@ export async function chooseShipBack({ ret, address }) {
   );
 }
 
-// Trả phí: WALLET → { paid: true } (trừ ví ngay) · VNPAY → { payUrl } (IPN về thì shipBackStatus = PAID)
+// Trả phí: WALLET → { paid: true } (trừ ví ngay) · VNPAY → { payUrl } (IPN về thì shipBackStatus = PAID).
+// redirectUrl: trả VNPay xong cổng mở lại đúng màn yêu cầu trả hàng trong app (BE F150: không bắt buộc)
 export async function payShipBack({ ret, method }) {
   const res = unwrap(
-    await api.post(`/return-requests/${ret.id}/ship-back/pay`, { method }),
+    await api.post(`/return-requests/${ret.id}/ship-back/pay`, {
+      method,
+      redirectUrl:
+        method === "VNPAY"
+          ? ExpoLinking.createURL(`returns/${ret.id}`)
+          : undefined,
+    }),
   );
   return { paid: !!res?.paid, payUrl: res?.payUrl ?? null };
+}
+
+// Nhờ BE hỏi lại VNPay (khi IPN chưa về) → { paid, shipBackStatus, amount, paidAt }. Lỗi thì bỏ qua
+export async function syncShipBackPayment(id) {
+  return unwrap(await api.get(`/return-requests/${id}/ship-back/payment-status`));
 }
